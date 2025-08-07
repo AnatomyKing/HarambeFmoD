@@ -1,0 +1,7 @@
+{
+	"credit": "AnatomyKing(𝕏🐦@LuukMus,ᵈᶦˢᶜᵒʳᵈ@anatomyking)",
+	"parent": "item/generated",
+	"textures": {
+		"layer0": "harambefmod:item/banana_cow_egg"
+	}
+}
