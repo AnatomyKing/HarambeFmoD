@@ -33,6 +33,9 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
         tag(BlockTags.MINEABLE_WITH_AXE)
                 .add(ModBlocks.BANANA_COW_EGG.get());
 
+        tag(BlockTags.MINEABLE_WITH_HOE)
+                .add(ModBlocks.MUSAVACCA_FLOWER.get());
+
 
     }
 }

@@ -7,7 +7,9 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
@@ -15,11 +17,12 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 
-public class MusavaccaFlowerBlock extends Block {
+public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
     private static final VoxelShape SHAPE = box(2, 0, 2, 14, 14, 14);
 
     public MusavaccaFlowerBlock(BlockBehaviour.Properties props) {
-        super(props.sound(SoundType.CROP).randomTicks());
+        // keep .randomTicks() in your registry so randomTick runs
+        super(props.sound(SoundType.CROP));
     }
 
     @Override
@@ -30,63 +33,80 @@ public class MusavaccaFlowerBlock extends Block {
         return SHAPE;
     }
 
-    /* Try immediately, then retry on changes/ticks */
+    /* ---------------- Random “growth” into an egg ---------------- */
+
     @Override
-    public void onPlace(@NotNull BlockState state, @NotNull Level level,
-                        @NotNull BlockPos pos, @NotNull BlockState oldState, boolean isMoving) {
-        super.onPlace(state, level, pos, oldState, isMoving);
-        if (!level.isClientSide) {
-            if (!tryConvertUnderOak((ServerLevel) level, pos)) {
-                level.scheduleTick(pos, this, 1);
-            }
+    public boolean isRandomlyTicking(@NotNull BlockState state) {
+        return true; // we check conditions inside
+    }
+
+    @Override
+    public void randomTick(@NotNull BlockState state, @NotNull ServerLevel level,
+                           @NotNull BlockPos pos, @NotNull RandomSource random) {
+        if (random.nextInt(3) == 0) { // ~1/3 chance to try
+            tryConvertUnderOak(level, pos);
         }
     }
 
+    /* ---------------- Bonemeal API ---------------- */
+
     @Override
-    public void neighborChanged(@NotNull BlockState state, @NotNull Level level,
-                                @NotNull BlockPos pos, @NotNull Block neighbor,
-                                @NotNull BlockPos fromPos, boolean isMoving) {
-        super.neighborChanged(state, level, pos, neighbor, fromPos, isMoving);
-        if (!level.isClientSide) level.scheduleTick(pos, this, 1);
+    public boolean isValidBonemealTarget(@NotNull LevelReader level,
+                                         @NotNull BlockPos pos,
+                                         @NotNull BlockState state) {
+        // must be directly under oak log AND have air below to move the flower down
+        return hasOakAbove(level, pos) && hasAirBelow(level, pos);
     }
 
     @Override
-    public void tick(@NotNull BlockState state, @NotNull ServerLevel level,
-                     @NotNull BlockPos pos, @NotNull RandomSource random) {
+    public boolean isBonemealSuccess(@NotNull Level level,
+                                     @NotNull RandomSource random,
+                                     @NotNull BlockPos pos,
+                                     @NotNull BlockState state) {
+        return true;
+    }
+
+    @Override
+    public void performBonemeal(@NotNull ServerLevel level,
+                                @NotNull RandomSource random,
+                                @NotNull BlockPos pos,
+                                @NotNull BlockState state) {
         tryConvertUnderOak(level, pos);
     }
 
+    /* ---------------- Helpers ---------------- */
+
+    // Accept LevelReader here so you can call them from both bonemeal (LevelReader) and ticks.
+    private static boolean hasOakAbove(LevelReader level, BlockPos flowerPos) {
+        return level.getBlockState(flowerPos.above()).is(BlockTags.OAK_LOGS);
+    }
+
+    private static boolean hasAirBelow(LevelReader level, BlockPos flowerPos) {
+        return level.getBlockState(flowerPos.below()).isAir();
+    }
+
     /**
-     * If placed directly under an OAK log and there is free space below,
-     * transform the current flower block into the ATTACHED age-0 egg,
-     * and move the flower one block DOWN.
-     *
-     * Layout after conversion:
+     * If directly under OAK log and there is air below:
      *   pos.above()  = OAK_LOG
      *   pos          = BANANA_COW_EGG (attached=true, age=0)
      *   pos.below()  = MUSAVACCA_FLOWER
      */
-    private boolean tryConvertUnderOak(ServerLevel level, BlockPos flowerPos) {
-        BlockPos logPos   = flowerPos.above();
-        BlockPos belowPos = flowerPos.below();
+    private void tryConvertUnderOak(ServerLevel level, BlockPos flowerPos) {
+        if (!hasOakAbove(level, flowerPos) || !hasAirBelow(level, flowerPos)) return;
 
-        // Require oak log above and empty space below to move the flower down
-        if (!level.getBlockState(logPos).is(BlockTags.OAK_LOGS)) return false;
-        if (!level.getBlockState(belowPos).isAir()) return false;
-
-        // Convert: put egg where the flower is…
-        level.setBlock(flowerPos,
+        level.setBlock(
+                flowerPos,
                 ModBlocks.BANANA_COW_EGG.get().defaultBlockState()
                         .setValue(BananaCowEggBlock.AGE, 0)
                         .setValue(BananaCowEggBlock.ATTACHED, true),
-                Block.UPDATE_ALL);
+                Block.UPDATE_ALL
+        );
 
-        // …and move the flower one block down.
-        level.setBlock(belowPos,
+        level.setBlock(
+                flowerPos.below(),
                 ModBlocks.MUSAVACCA_FLOWER.get().defaultBlockState(),
-                Block.UPDATE_ALL);
-
-        return true;
+                Block.UPDATE_ALL
+        );
     }
 
     /** If the flower is removed later, also remove any egg above (no drops here). */

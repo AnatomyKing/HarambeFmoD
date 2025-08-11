@@ -6,37 +6,32 @@ import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.storage.loot.LootTable;
 
 import java.util.Set;
 import java.util.stream.Collectors;
 
-
 public final class ModBlockLootSubProvider extends BlockLootSubProvider {
 
-    /** The registry lookup is injected by the LootTableProvider. */
     public ModBlockLootSubProvider(HolderLookup.Provider lookup) {
-        super(Set.<Item>of(),                        // no explosion-immune blocks
-                FeatureFlags.DEFAULT_FLAGS,            // all vanilla flags enabled
-                lookup);
+        super(Set.<Item>of(), FeatureFlags.DEFAULT_FLAGS, lookup);
     }
 
-    /** Actual loot-table contents. */
     @Override
     protected void generate() {
-        
+        // Normal blocks
         dropSelf(ModBlocks.BANANA_PEARL_BLOCK.get());
+        dropSelf(ModBlocks.MUSAVACCA_FLOWER.get());
 
-
-        add(ModBlocks.BANANA_COW_EGG.get(),
-                createSilkTouchOnlyTable(ModBlocks.BANANA_COW_EGG.get()));
+        // Egg drops are fully controlled by BananaCowEggBlock.spawnAfterBreak (stage items + flower).
+        // Provide an EMPTY loot table to avoid double drops or wrong items.
+        add(ModBlocks.BANANA_COW_EGG.get(), LootTable.lootTable());
     }
 
-    /** Validation list – every registered block must appear here. */
     @Override
     protected Iterable<Block> getKnownBlocks() {
-        return ModBlocks.BLOCKS.getEntries()         // DeferredHolder<?>
-                .stream()
-                .map(entry -> (Block) entry.value()) // cast to Block
+        return ModBlocks.BLOCKS.getEntries().stream()
+                .map(h -> (Block) h.value())
                 .collect(Collectors.toList());
     }
 }
