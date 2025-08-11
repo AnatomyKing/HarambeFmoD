@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cross",
+  "textures": {
+    "cross": "harambefmod:block/banana_cow_egg_stem_stage1"
+  }
+}
+

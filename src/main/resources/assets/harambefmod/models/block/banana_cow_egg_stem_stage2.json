@@ -1,0 +1,56 @@
+{
+	"format_version": "1.21.6",
+	"credit": "Made with Blockbench",
+	"parent": "minecraft:block/cross",
+	"textures": {
+		"1": "harambefmod:block/banana_cow_egg_top_stage2",
+		"2": "harambefmod:block/banana_cow_egg_side_stage2",
+		"3": "harambefmod:block/banana_cow_egg_bottom_stage2",
+		"cross": "harambefmod:block/banana_cow_egg_stem_stage2",
+		"particle": "harambefmod:block/banana_cow_egg_top_stage2"
+	},
+	"elements": [
+		{
+			"from": [0.8, 0, 8],
+			"to": [15.2, 16, 8],
+			"shade": false,
+			"rotation": {"angle": 45, "axis": "y", "origin": [8, 8, 8], "rescale": true},
+			"faces": {
+				"north": {"uv": [0, 0, 16, 16], "texture": "#cross"},
+				"south": {"uv": [0, 0, 16, 16], "texture": "#cross"}
+			}
+		},
+		{
+			"from": [8, 0, 0.8],
+			"to": [8, 16, 15.2],
+			"shade": false,
+			"rotation": {"angle": 45, "axis": "y", "origin": [8, 8, 8], "rescale": true},
+			"faces": {
+				"east": {"uv": [0, 0, 16, 16], "texture": "#cross"},
+				"west": {"uv": [0, 0, 16, 16], "texture": "#cross"}
+			}
+		},
+		{
+			"from": [1, 0, 1],
+			"to": [15, 15, 15],
+			"rotation": {"angle": 0, "axis": "y", "origin": [0, 0, -1]},
+			"faces": {
+				"north": {"uv": [0, 1, 14, 16], "texture": "#2"},
+				"east": {"uv": [0, 1, 14, 16], "texture": "#2"},
+				"south": {"uv": [0, 1, 14, 16], "texture": "#2"},
+				"west": {"uv": [0, 1, 14, 16], "texture": "#2"},
+				"up": {"uv": [1, 1, 15, 15], "texture": "#1", "cullface": "up"},
+				"down": {"uv": [1, 1, 15, 15], "texture": "#3", "cullface": "down"}
+			}
+		}
+	],
+	"groups": [
+		{
+			"name": "cross",
+			"origin": [8, 8, 8],
+			"color": 0,
+			"children": [0, 1]
+		},
+		2
+	]
+}
