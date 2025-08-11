@@ -31,7 +31,7 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
                 .add(ModBlocks.BANANA_PEARL_BLOCK.get());
 
         tag(BlockTags.MINEABLE_WITH_AXE)
-                .add(ModBlocks.BANANA_COW_EGG_BLOCK.get());
+                .add(ModBlocks.BANANA_COW_EGG.get());
 
 
     }

@@ -2,6 +2,7 @@ package net.anatomyworld.harambefmod.block;
 
 import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.block.custom.BananaCowEggBlock;
+import net.anatomyworld.harambefmod.block.custom.MusavaccaFlowerBlock;
 import net.anatomyworld.harambefmod.block.custom.PearlFireBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -30,21 +31,31 @@ public final class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .pushReaction(PushReaction.NORMAL)));
 
+
     /** Custom fire block that can have a random tint when ignited. */
     public static final DeferredBlock<PearlFireBlock> PEARL_FIRE =
             BLOCKS.register("pearl_fire", PearlFireBlock::new);
 
 
-    public static final DeferredHolder<Block, Block> BANANA_COW_EGG_BLOCK =
+    public static final DeferredBlock<BananaCowEggBlock> BANANA_COW_EGG =
             BLOCKS.register("banana_cow_egg",
                     () -> new BananaCowEggBlock(BlockBehaviour.Properties.of()
                             .mapColor(MapColor.COLOR_YELLOW)
-                            .strength(1.5F, 6.0F)
+                            .strength(0.3F)
                             .sound(SoundType.HONEY_BLOCK)
                             .noOcclusion()
-                            .noCollission()        // important for tiny egg model
-                            /* NO requiresCorrectToolForDrops() → any hand breaks & hatches */
-                            .pushReaction(PushReaction.NORMAL)));
+                            .noCollission()
+                            .randomTicks()));
+
+    public static final DeferredBlock<MusavaccaFlowerBlock> MUSAVACCA_FLOWER =
+            BLOCKS.register("musavacca_flower",
+                    () -> new MusavaccaFlowerBlock(BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.COLOR_YELLOW)
+                            .strength(0.1F)
+                            .sound(SoundType.CROP)
+                            .noOcclusion()
+                            .noCollission()
+                            .randomTicks()));
 
 
     /** Called from {@link net.anatomyworld.harambefmod.HarambeCore} to register blocks. */

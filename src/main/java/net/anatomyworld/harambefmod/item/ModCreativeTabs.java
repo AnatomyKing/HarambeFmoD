@@ -24,9 +24,11 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.ANYTOMITHIUM_INGOT.get());
                         output.accept(ModItems.ANYPHONE.get());
                         output.accept(ModItems.BANANA_COW_SPAWN_EGG.get());
-                        output.accept(ModItems.GOLIATH_BEETLE_SPAWN_EGG.get());
                         output.accept(ModItems.BANANA_PEARL_BLOCK_ITEM.get());
-                        output.accept(ModItems.BANANA_COW_EGG_BLOCK_ITEM.get());
+                        output.accept(ModItems.BANANA_COW_EGG_RIPE.get());
+                        output.accept(ModItems.BANANA_COW_EGG_UNRIPE.get());
+                        output.accept(ModItems.BANANA_COW_EGG_RIPENING.get());
+                        output.accept(ModItems.MUSAVACCA_FLOWER.get());
                         output.accept(ModItems.FLINT_AND_PEARL.get());
                     })
                     .build());

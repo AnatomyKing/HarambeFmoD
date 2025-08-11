@@ -15,10 +15,7 @@ import net.minecraft.client.model.geom.builders.*;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Blockbench export (128 × 128 UV) – compile-clean for NeoForge 1.21.1.
- * Adds baby-head scaling so calves get the classic “big-head” look.
- */
+
 public class BananaCowModel extends EntityModel<BananaCow> {
 
     /* ------------------------------------------------------------------ */

@@ -10,12 +10,7 @@ import net.minecraft.world.level.block.Block;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Generates loot tables for all mod blocks.
- *  • Banana Pearl Block → drops itself
- *  • Banana Cow Egg    → drops itself ONLY with Silk Touch
- *                        (otherwise our block‐class hatches the cow)
- */
+
 public final class ModBlockLootSubProvider extends BlockLootSubProvider {
 
     /** The registry lookup is injected by the LootTableProvider. */
@@ -28,12 +23,12 @@ public final class ModBlockLootSubProvider extends BlockLootSubProvider {
     /** Actual loot-table contents. */
     @Override
     protected void generate() {
-        // vanilla-style “drop the block itself”
+        
         dropSelf(ModBlocks.BANANA_PEARL_BLOCK.get());
 
-        // egg: Silk-Touch-only drop   → helper builds the JSON
-        add(ModBlocks.BANANA_COW_EGG_BLOCK.get(),
-                createSilkTouchOnlyTable(ModBlocks.BANANA_COW_EGG_BLOCK.get()));
+
+        add(ModBlocks.BANANA_COW_EGG.get(),
+                createSilkTouchOnlyTable(ModBlocks.BANANA_COW_EGG.get()));
     }
 
     /** Validation list – every registered block must appear here. */

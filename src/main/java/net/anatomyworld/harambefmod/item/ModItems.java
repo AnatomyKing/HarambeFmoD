@@ -3,6 +3,7 @@ package net.anatomyworld.harambefmod.item;
 import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.block.ModBlocks;
 import net.anatomyworld.harambefmod.entity.ModEntities;
+import net.anatomyworld.harambefmod.item.custom.BananaCowEggStageItem;
 import net.anatomyworld.harambefmod.item.custom.FlintAndPearlItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -64,9 +65,25 @@ public final class ModItems {
 
 
 
-    public static final DeferredItem<BlockItem> BANANA_COW_EGG_BLOCK_ITEM =
-            ITEMS.register("banana_cow_egg",
-                    () -> new BlockItem(ModBlocks.BANANA_COW_EGG_BLOCK.get(), new Item.Properties()));
+    public static final DeferredItem<Item> MUSAVACCA_FLOWER =
+            ITEMS.register("musavacca_flower",
+                    () -> new BlockItem(ModBlocks.MUSAVACCA_FLOWER.get(), new Item.Properties()));
+
+    // Stage-specific egg items (distinct textures)
+    public static final DeferredItem<Item> BANANA_COW_EGG_UNRIPE =
+            ITEMS.register("banana_cow_egg_unripe",
+                    () -> new BananaCowEggStageItem(ModBlocks.BANANA_COW_EGG.get(),
+                            new Item.Properties(), 0));
+
+    public static final DeferredItem<Item> BANANA_COW_EGG_RIPENING =
+            ITEMS.register("banana_cow_egg_ripening",
+                    () -> new BananaCowEggStageItem(ModBlocks.BANANA_COW_EGG.get(),
+                            new Item.Properties(), 1));
+
+    public static final DeferredItem<Item> BANANA_COW_EGG_RIPE =
+            ITEMS.register("banana_cow_egg_ripe",
+                    () -> new BananaCowEggStageItem(ModBlocks.BANANA_COW_EGG.get(),
+                            new Item.Properties(), 2));
 
 
     public static final DeferredItem<BlockItem> BANANA_PEARL_BLOCK_ITEM =

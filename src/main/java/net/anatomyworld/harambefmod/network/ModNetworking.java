@@ -37,7 +37,7 @@ public class ModNetworking {
                 (payload, ctx) -> ctx.enqueueWork(() -> handlePlaceFire(payload, ctx))
         );
 
-        // 2) SyncColorPayload → immediately syncs your chosen hex‐string into the server’s ItemStack
+
         reg.playToServer(
                 SyncColorPayload.TYPE,
                 SyncColorPayload.STREAM_CODEC,
@@ -52,7 +52,7 @@ public class ModNetworking {
                             : InteractionHand.OFF_HAND;
 
                     ItemStack stack = player.getItemInHand(hand);
-                    // write the new hex‐string
+
                     stack.set(
                             net.anatomyworld.harambefmod.component.ModDataComponents.FLAME_COLOR.get(),
                             payload.hex()
@@ -75,7 +75,7 @@ public class ModNetworking {
         // place block
         level.setBlock(pos, ModBlocks.PEARL_FIRE.get().defaultBlockState(), 11);
 
-        // set tile‐entity color
+
         if (level.getBlockEntity(pos) instanceof PearlFireBlockEntity be) {
             be.setColor(payload.color());
         }

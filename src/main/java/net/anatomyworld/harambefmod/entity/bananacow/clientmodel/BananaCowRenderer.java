@@ -8,11 +8,7 @@ import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Renderer for Banana Cow.
- * – Calves are rendered at 0.5× scale (here)
- * – “Big-head” baby look is handled inside {@link BananaCowModel}.
- */
+
 public final class BananaCowRenderer
         extends MobRenderer<BananaCow, BananaCowModel> {
 

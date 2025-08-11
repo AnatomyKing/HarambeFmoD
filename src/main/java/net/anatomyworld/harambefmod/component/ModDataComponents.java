@@ -1,4 +1,4 @@
-// src/main/java/net/anatomyworld/harambefd/component/ModDataComponents.java
+
 package net.anatomyworld.harambefmod.component;
 
 import com.mojang.serialization.Codec;
@@ -8,7 +8,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.DeferredRegister.DataComponents;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
-/** Defines our per‐ItemStack “flame_color” component as a hex‐string. */
+
 public final class ModDataComponents {
     public static final DataComponents DATA_COMPONENTS =
             DeferredRegister.createDataComponents(
