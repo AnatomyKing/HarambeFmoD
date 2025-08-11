@@ -2,7 +2,7 @@
   "variants": {
     "attached=false,age=0": { "model": "harambefmod:block/banana_cow_egg_stage0" },
     "attached=false,age=1": { "model": "harambefmod:block/banana_cow_egg_stage1" },
-    "attached=false,age=2": { "model": "harambefmod:block/banana_cow_egg_age2" },
+    "attached=false,age=2": { "model": "harambefmod:block/banana_cow_egg_stage2" },
 
     "attached=true,age=0":  { "model": "harambefmod:block/banana_cow_egg_stem_stage0" },
     "attached=true,age=1":  { "model": "harambefmod:block/banana_cow_egg_stem_stage1" },
