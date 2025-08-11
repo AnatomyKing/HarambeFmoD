@@ -31,7 +31,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class BananaCowEggBlock extends Block implements BonemealableBlock {
 
-    public static final IntegerProperty AGE = IntegerProperty.create("age", 0, 2); // 0=unripe,1=ripening,2=ripe
+    public static final IntegerProperty AGE = IntegerProperty.create("age", 0, 2); // 0,1,2
     public static final BooleanProperty ATTACHED = BooleanProperty.create("attached"); // oak above + flower below
 
     private static final VoxelShape SHAPE = box(2, 0, 2, 14, 14, 14);
@@ -56,8 +56,7 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
         return SHAPE;
     }
 
-    /* ---------- attachment & neighbors ---------- */
-
+    /* Keep ATTACHED up-to-date */
     @Override
     public void onPlace(@NotNull BlockState state, @NotNull Level level,
                         @NotNull BlockPos pos, @NotNull BlockState oldState, boolean isMoving) {
@@ -86,48 +85,33 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
         return up.is(BlockTags.OAK_LOGS) && down.is(ModBlocks.MUSAVACCA_FLOWER.get());
     }
 
-    /* ---------- random growth ---------- */
-
-    @Override
-    public boolean isRandomlyTicking(@NotNull BlockState state) {
-        return state.getValue(ATTACHED) && state.getValue(AGE) < 2;
+    /* Growth */
+    @Override public boolean isRandomlyTicking(@NotNull BlockState s) {
+        return s.getValue(ATTACHED) && s.getValue(AGE) < 2;
     }
-
-    @Override
-    public void randomTick(@NotNull BlockState state, @NotNull ServerLevel level,
-                           @NotNull BlockPos pos, @NotNull RandomSource random) {
-        if (!state.getValue(ATTACHED)) return;
-        int age = state.getValue(AGE);
-        if (age < 2 && random.nextInt(3) == 0) {
-            level.setBlock(pos, state.setValue(AGE, age + 1), Block.UPDATE_ALL);
+    @Override public void randomTick(@NotNull BlockState s, @NotNull ServerLevel lvl,
+                                     @NotNull BlockPos p, @NotNull RandomSource r) {
+        if (!s.getValue(ATTACHED)) return;
+        int age = s.getValue(AGE);
+        if (age < 2 && r.nextInt(3) == 0) {
+            lvl.setBlock(p, s.setValue(AGE, age + 1), Block.UPDATE_ALL);
         }
     }
 
-    /* ---------- bonemeal ---------- */
-
-    @Override
-    public boolean isValidBonemealTarget(@NotNull net.minecraft.world.level.LevelReader level,
-                                         @NotNull BlockPos pos, @NotNull BlockState state) {
-        return state.getValue(ATTACHED) && state.getValue(AGE) < 2;
+    /* Bonemeal */
+    @Override public boolean isValidBonemealTarget(@NotNull net.minecraft.world.level.LevelReader lvl,
+                                                   @NotNull BlockPos p, @NotNull BlockState s) {
+        return s.getValue(ATTACHED) && s.getValue(AGE) < 2;
+    }
+    @Override public boolean isBonemealSuccess(@NotNull Level l, @NotNull RandomSource r,
+                                               @NotNull BlockPos p, @NotNull BlockState s) { return true; }
+    @Override public void performBonemeal(@NotNull ServerLevel l, @NotNull RandomSource r,
+                                          @NotNull BlockPos p, @NotNull BlockState s) {
+        int age = s.getValue(AGE);
+        if (age < 2) l.setBlock(p, s.setValue(AGE, Math.min(2, age + 1)), Block.UPDATE_ALL);
     }
 
-    @Override
-    public boolean isBonemealSuccess(@NotNull Level level, @NotNull RandomSource random,
-                                     @NotNull BlockPos pos, @NotNull BlockState state) {
-        return true;
-    }
-
-    @Override
-    public void performBonemeal(@NotNull ServerLevel level, @NotNull RandomSource random,
-                                @NotNull BlockPos pos, @NotNull BlockState state) {
-        int age = state.getValue(AGE);
-        if (age < 2) {
-            level.setBlock(pos, state.setValue(AGE, Math.min(2, age + 1)), Block.UPDATE_ALL);
-        }
-    }
-
-    /* ---------- break logic ---------- */
-
+    /* Drops / Hatch */
     @Override
     protected void spawnAfterBreak(@NotNull BlockState state, @NotNull ServerLevel level,
                                    @NotNull BlockPos pos, @NotNull ItemStack tool, boolean dropXp) {
@@ -136,14 +120,13 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
         boolean attached = state.getValue(ATTACHED);
         int age = state.getValue(AGE);
 
-        // Always drop the flower (if present) so it can be moved
+        // Always give the flower back if it was attached
         if (attached && level.getBlockState(pos.below()).is(ModBlocks.MUSAVACCA_FLOWER.get())) {
             popResource(level, pos, new ItemStack(ModItems.MUSAVACCA_FLOWER.get()));
             level.removeBlock(pos.below(), false);
         }
 
         if (hasSilkTouch(level, tool)) {
-            // Drop the stage-specific egg item (distinct textures)
             Item stageItem = switch (age) {
                 case 0 -> ModItems.BANANA_COW_EGG_UNRIPE.get();
                 case 1 -> ModItems.BANANA_COW_EGG_RIPENING.get();
@@ -153,11 +136,7 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
             return;
         }
 
-        // No Silk: only ripe eggs hatch
-        if (age == 2) {
-            hatch(level, pos);
-        }
-        // age 0/1: nothing else (flower already dropped if attached)
+        if (age == 2) hatch(level, pos); // no egg drop
     }
 
     private static boolean hasSilkTouch(ServerLevel level, ItemStack tool) {
@@ -171,7 +150,7 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
     private static void hatch(ServerLevel level, BlockPos pos) {
         BananaCow cow = ModEntities.BANANA_COW.get().create(level);
         if (cow != null) {
-            cow.setAge(0); // adult
+            cow.setAge(0);
             cow.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5,
                     level.random.nextFloat() * 360f, 0f);
             level.addFreshEntity(cow);

@@ -1,11 +1,11 @@
 {
   "variants": {
-    "attached=false,age=0": { "model": "harambefmod:block/banana_cow_egg_age0" },
-    "attached=false,age=1": { "model": "harambefmod:block/banana_cow_egg_age1" },
+    "attached=false,age=0": { "model": "harambefmod:block/banana_cow_egg_stage0" },
+    "attached=false,age=1": { "model": "harambefmod:block/banana_cow_egg_stage1" },
     "attached=false,age=2": { "model": "harambefmod:block/banana_cow_egg_age2" },
 
-    "attached=true,age=0":  { "model": "harambefmod:block/banana_cow_egg_stem_age0" },
-    "attached=true,age=1":  { "model": "harambefmod:block/banana_cow_egg_stem_age1" },
-    "attached=true,age=2":  { "model": "harambefmod:block/banana_cow_egg_stem_age2" }
+    "attached=true,age=0":  { "model": "harambefmod:block/banana_cow_egg_stem_stage0" },
+    "attached=true,age=1":  { "model": "harambefmod:block/banana_cow_egg_stem_stage1" },
+    "attached=true,age=2":  { "model": "harambefmod:block/banana_cow_egg_stem_stage2" }
   }
 }

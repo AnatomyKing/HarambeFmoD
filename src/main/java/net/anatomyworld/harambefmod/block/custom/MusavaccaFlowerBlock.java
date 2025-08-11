@@ -19,7 +19,7 @@ public class MusavaccaFlowerBlock extends Block {
     private static final VoxelShape SHAPE = box(2, 0, 2, 14, 14, 14);
 
     public MusavaccaFlowerBlock(BlockBehaviour.Properties props) {
-        super(props.sound(SoundType.CROP));
+        super(props.sound(SoundType.CROP).randomTicks());
     }
 
     @Override
@@ -30,16 +30,22 @@ public class MusavaccaFlowerBlock extends Block {
         return SHAPE;
     }
 
+    /* Try immediately, then retry on changes/ticks */
     @Override
     public void onPlace(@NotNull BlockState state, @NotNull Level level,
                         @NotNull BlockPos pos, @NotNull BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
-        if (!level.isClientSide) level.scheduleTick(pos, this, 1);
+        if (!level.isClientSide) {
+            if (!tryConvertUnderOak((ServerLevel) level, pos)) {
+                level.scheduleTick(pos, this, 1);
+            }
+        }
     }
 
     @Override
     public void neighborChanged(@NotNull BlockState state, @NotNull Level level,
-                                @NotNull BlockPos pos, @NotNull Block neighbor, @NotNull BlockPos fromPos, boolean isMoving) {
+                                @NotNull BlockPos pos, @NotNull Block neighbor,
+                                @NotNull BlockPos fromPos, boolean isMoving) {
         super.neighborChanged(state, level, pos, neighbor, fromPos, isMoving);
         if (!level.isClientSide) level.scheduleTick(pos, this, 1);
     }
@@ -47,26 +53,43 @@ public class MusavaccaFlowerBlock extends Block {
     @Override
     public void tick(@NotNull BlockState state, @NotNull ServerLevel level,
                      @NotNull BlockPos pos, @NotNull RandomSource random) {
-        trySproutEgg(level, pos);
+        tryConvertUnderOak(level, pos);
     }
 
-    private void trySproutEgg(ServerLevel level, BlockPos flowerPos) {
-        BlockPos eggPos = flowerPos.above();       // egg grows above the flower
-        BlockPos logPos = eggPos.above();          // oak log ceiling
+    /**
+     * If placed directly under an OAK log and there is free space below,
+     * transform the current flower block into the ATTACHED age-0 egg,
+     * and move the flower one block DOWN.
+     *
+     * Layout after conversion:
+     *   pos.above()  = OAK_LOG
+     *   pos          = BANANA_COW_EGG (attached=true, age=0)
+     *   pos.below()  = MUSAVACCA_FLOWER
+     */
+    private boolean tryConvertUnderOak(ServerLevel level, BlockPos flowerPos) {
+        BlockPos logPos   = flowerPos.above();
+        BlockPos belowPos = flowerPos.below();
 
-        if (!level.getBlockState(eggPos).isAir()) return;
+        // Require oak log above and empty space below to move the flower down
+        if (!level.getBlockState(logPos).is(BlockTags.OAK_LOGS)) return false;
+        if (!level.getBlockState(belowPos).isAir()) return false;
 
-        // Only underneath OAK logs (log/wood/stripped variants are covered by the tag)
-        if (level.getBlockState(logPos).is(BlockTags.OAK_LOGS)) {
-            level.setBlock(eggPos, ModBlocks.BANANA_COW_EGG.get()
-                            .defaultBlockState()
-                            .setValue(BananaCowEggBlock.AGE, 0)
-                            .setValue(BananaCowEggBlock.ATTACHED, true),
-                    Block.UPDATE_ALL);
-        }
+        // Convert: put egg where the flower is…
+        level.setBlock(flowerPos,
+                ModBlocks.BANANA_COW_EGG.get().defaultBlockState()
+                        .setValue(BananaCowEggBlock.AGE, 0)
+                        .setValue(BananaCowEggBlock.ATTACHED, true),
+                Block.UPDATE_ALL);
+
+        // …and move the flower one block down.
+        level.setBlock(belowPos,
+                ModBlocks.MUSAVACCA_FLOWER.get().defaultBlockState(),
+                Block.UPDATE_ALL);
+
+        return true;
     }
 
-    /** If the flower is removed, also remove the egg above (egg controls its own drops). */
+    /** If the flower is removed later, also remove any egg above (no drops here). */
     @Override
     public void onRemove(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
                          @NotNull BlockState newState, boolean isMoving) {
