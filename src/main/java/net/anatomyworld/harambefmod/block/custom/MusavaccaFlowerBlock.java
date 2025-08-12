@@ -2,6 +2,7 @@ package net.anatomyworld.harambefmod.block.custom;
 
 import net.anatomyworld.harambefmod.block.ModBlocks;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
@@ -11,11 +12,10 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BonemealableBlock;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.core.Direction;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
@@ -25,8 +25,7 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
     private static final VoxelShape SHAPE = box(2, 0, 2, 14, 14, 14);
 
     public MusavaccaFlowerBlock(BlockBehaviour.Properties props) {
-        // keep .randomTicks() in your registry so randomTick runs
-        super(props.sound(SoundType.CROP));
+        super(props.sound(SoundType.CROP)); // keep .randomTicks() in registry
     }
 
     @Override
@@ -37,19 +36,21 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
         return SHAPE;
     }
 
-    /* ---- Ceiling-only survival & placement ---- */
+    /* ---- Ceiling-only survival & placement (accept egg OR sturdy ceiling) ---- */
 
     @Override
     public boolean canSurvive(@NotNull BlockState state, @NotNull LevelReader level, @NotNull BlockPos pos) {
         BlockPos above = pos.above();
-        // must have a sturdy ceiling above (any sturdy block); sprouting into egg still requires oak.
-        return level.getBlockState(above).isFaceSturdy(level, above, Direction.DOWN);
+        BlockState ceiling = level.getBlockState(above);
+        boolean sturdy = ceiling.isFaceSturdy(level, above, Direction.DOWN);
+        boolean eggCeiling = ceiling.is(ModBlocks.BANANA_COW_EGG.get());
+        return sturdy || eggCeiling;
     }
 
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext ctx) {
         BlockPos pos = ctx.getClickedPos();
-        BlockState s = this.defaultBlockState();
+        BlockState s = defaultBlockState();
         return canSurvive(s, ctx.getLevel(), pos) ? s : null;
     }
 
@@ -60,9 +61,8 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
                                            @NotNull LevelAccessor level,
                                            @NotNull BlockPos pos,
                                            @NotNull BlockPos neighborPos) {
-        // If support (ceiling) is gone, pop off
         if (!state.canSurvive(level, pos)) {
-            return Blocks.AIR.defaultBlockState();
+            return Blocks.AIR.defaultBlockState(); // pop off if unsupported
         }
         return super.updateShape(state, dir, neighborState, level, pos, neighborPos);
     }
@@ -72,23 +72,19 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
                                 @NotNull BlockPos pos, @NotNull Block neighbor, @NotNull BlockPos fromPos, boolean isMoving) {
         super.neighborChanged(state, level, pos, neighbor, fromPos, isMoving);
         if (!level.isClientSide && !state.canSurvive(level, pos)) {
-            // Destroy with drops if it loses its ceiling
-            level.destroyBlock(pos, true);
-            return;
+            level.destroyBlock(pos, true); // drop when support is lost
         }
     }
 
     /* ---------------- Random “growth” into an egg ---------------- */
 
     @Override
-    public boolean isRandomlyTicking(@NotNull BlockState state) {
-        return true; // we check conditions inside
-    }
+    public boolean isRandomlyTicking(@NotNull BlockState state) { return true; }
 
     @Override
     public void randomTick(@NotNull BlockState state, @NotNull ServerLevel level,
                            @NotNull BlockPos pos, @NotNull RandomSource random) {
-        if (random.nextInt(3) == 0) { // ~1/3 chance to try
+        if (random.nextInt(3) == 0) {
             tryConvertUnderOak(level, pos);
         }
     }
@@ -99,7 +95,7 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
     public boolean isValidBonemealTarget(@NotNull LevelReader level,
                                          @NotNull BlockPos pos,
                                          @NotNull BlockState state) {
-        // must be directly under oak log AND have air below to move the flower down
+        // Must be under oak and have air below to move the flower down on sprout
         return hasOakAbove(level, pos) && hasAirBelow(level, pos);
     }
 
@@ -130,7 +126,7 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
     }
 
     /**
-     * If directly under OAK log and there is air below:
+     * Under OAK log and air below:
      *   pos.above()  = OAK_LOG
      *   pos          = BANANA_COW_EGG (attached=true, age=0)
      *   pos.below()  = MUSAVACCA_FLOWER
@@ -153,22 +149,17 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
         );
     }
 
-    /** If the flower is removed, handle the egg above:
-     *  - If the egg is ripe (age=2), hatch a Banana Cow (as if the egg broke ripe+no silk).
-     *  - Otherwise (age 0/1), just remove the egg without drops.
-     */
+    /** If the flower is removed: hatch ripe egg above, else just remove it. */
     @Override
     public void onRemove(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
                          @NotNull BlockState newState, boolean isMoving) {
         if (!level.isClientSide && !state.is(newState.getBlock())) {
             BlockPos eggPos = pos.above();
             BlockState eggState = level.getBlockState(eggPos);
-            if (eggState.getBlock() instanceof BananaCowEggBlock egg) {
+            if (eggState.getBlock() instanceof BananaCowEggBlock) {
                 if (eggState.getValue(BananaCowEggBlock.AGE) == 2) {
-                    // Hatch as "attached" to use the lower spawn offset
                     BananaCowEggBlock.hatch((ServerLevel) level, eggPos, true);
                 }
-                // Remove egg without drops (we already did the hatch if needed)
                 level.removeBlock(eggPos, false);
             }
         }
