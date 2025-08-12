@@ -1,6 +1,7 @@
 package net.anatomyworld.harambefmod.block;
 
 import net.anatomyworld.harambefmod.HarambeCore;
+import net.anatomyworld.harambefmod.block.entity.BananaPortalBlockEntity;
 import net.anatomyworld.harambefmod.block.entity.PearlFireBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -17,6 +18,11 @@ public final class ModBlockEntities {
     public static final Supplier<BlockEntityType<PearlFireBlockEntity>> PEARL_FIRE_BLOCK_ENTITY =
             BLOCK_ENTITY_TYPES.register("pearl_fire",
                     () -> BlockEntityType.Builder.of(PearlFireBlockEntity::new, ModBlocks.PEARL_FIRE.get())
+                            .build(null));
+
+    public static final Supplier<BlockEntityType<BananaPortalBlockEntity>> BANANA_PORTAL_BE =
+            BLOCK_ENTITY_TYPES.register("banana_portal",
+                    () -> BlockEntityType.Builder.of(BananaPortalBlockEntity::new, ModBlocks.BANANA_PORTAL.get())
                             .build(null));
 
     /** Called from {@link net.anatomyworld.harambefmod.HarambeCore} */

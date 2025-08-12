@@ -1,4 +1,4 @@
-// src/main/java/net/anatomyworld/harambefd/network/ModNetworking.java
+//ModNetworking.java
 package net.anatomyworld.harambefmod.network;
 
 import net.anatomyworld.harambefmod.block.ModBlocks;

@@ -109,6 +109,11 @@ public final class HarambeCore {
                         ChunkRenderTypeSet.of(RenderType.cutout())
                 );
 
+                ItemBlockRenderTypes.setRenderLayer(
+                        ModBlocks.BANANA_PORTAL.get(),
+                        ChunkRenderTypeSet.of(RenderType.cutout())
+                );
+
                 // Register block color handler to tint each Pearl Fire with its unique color
                 BlockColors blockColors = Minecraft.getInstance().getBlockColors();
                 blockColors.register(
@@ -122,6 +127,18 @@ public final class HarambeCore {
                             return 0xFFFFFF;
                         },
                         ModBlocks.PEARL_FIRE.get()
+                );
+                blockColors.register(
+                        (state, level, pos, tintIndex) -> {
+                            if (tintIndex == 0 && level != null && pos != null) {
+                                var be = level.getBlockEntity(pos);
+                                if (be instanceof net.anatomyworld.harambefmod.block.entity.BananaPortalBlockEntity p) {
+                                    return p.getColor();
+                                }
+                            }
+                            return 0xFFFFFF;
+                        },
+                        ModBlocks.BANANA_PORTAL.get()
                 );
             });
         }

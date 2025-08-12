@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "harambefmod:block/banana_portal_ns"
+    },
+    "axis=z": {
+      "model": "harambefmod:block/banana_portal_ew"
+    }
+  }
+}

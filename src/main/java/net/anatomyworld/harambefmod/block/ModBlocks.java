@@ -1,10 +1,7 @@
 package net.anatomyworld.harambefmod.block;
 
 import net.anatomyworld.harambefmod.HarambeCore;
-import net.anatomyworld.harambefmod.block.custom.BananaCowEggBlock;
-import net.anatomyworld.harambefmod.block.custom.MusavaccaFlowerBlock;
-import net.anatomyworld.harambefmod.block.custom.PearlFireBlock;
-import net.anatomyworld.harambefmod.block.custom.StrippablePillarBlock;
+import net.anatomyworld.harambefmod.block.custom.*;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LeavesBlock;
@@ -89,7 +86,6 @@ public final class ModBlocks {
                             .strength(0.3F)
                             .sound(SoundType.HONEY_BLOCK)
                             .noOcclusion()
-                            .noCollission()
                             .randomTicks()));
 
     /** Musavacca Flower (ceiling plant). */
@@ -102,6 +98,9 @@ public final class ModBlocks {
                             .noOcclusion()
                             .noCollission()
                             .randomTicks()));
+
+    public static final DeferredBlock<BananaPortalBlock> BANANA_PORTAL =
+            BLOCKS.register("banana_portal", BananaPortalBlock::new);
 
 
     public static final DeferredBlock<RotatedPillarBlock> STRIPPED_MUSAVACCA_STEM =
@@ -123,7 +122,8 @@ public final class ModBlocks {
     // Blocks that should NOT get a default BlockItem (custom logic or none).
     private static final Set<DeferredHolder<Block, ? extends Block>> SKIP_BLOCK_ITEMS = Set.of(
             BANANA_COW_EGG,   // uses three stage items instead
-            PEARL_FIRE        // fire-like blocks usually don't have items
+            PEARL_FIRE,        // fire-like blocks usually don't have items
+            BANANA_PORTAL
     );
 
     // If you want specific Item.Properties for *all* BlockItems, prepare them here:

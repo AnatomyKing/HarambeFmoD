@@ -1,4 +1,4 @@
-// src/main/java/net/anatomyworld/harambefd/client/gui/FireColorSelectionScreen.java
+
 package net.anatomyworld.harambefmod.client.gui;
 
 import org.lwjgl.glfw.GLFW;
