@@ -27,7 +27,6 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class BananaCowEggBlock extends Block implements BonemealableBlock {
     public static final IntegerProperty AGE = IntegerProperty.create("age", 0, 2); // 0..2
@@ -45,8 +44,10 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
     }
 
     @Override
-    public @NotNull VoxelShape getShape(@NotNull BlockState state, @NotNull net.minecraft.world.level.BlockGetter level,
-                                        @NotNull BlockPos pos, @NotNull CollisionContext ctx) {
+    public @NotNull VoxelShape getShape(@NotNull BlockState state,
+                                        @NotNull net.minecraft.world.level.BlockGetter level,
+                                        @NotNull BlockPos pos,
+                                        @NotNull CollisionContext ctx) {
         return SHAPE;
     }
 
@@ -60,9 +61,12 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
     }
 
     @Override
-    public @NotNull BlockState updateShape(@NotNull BlockState state, @NotNull net.minecraft.core.Direction face,
-                                           @NotNull BlockState fromState, @NotNull LevelAccessor level,
-                                           @NotNull BlockPos pos, @NotNull BlockPos fromPos) {
+    public @NotNull BlockState updateShape(@NotNull BlockState state,
+                                           @NotNull net.minecraft.core.Direction face,
+                                           @NotNull BlockState fromState,
+                                           @NotNull LevelAccessor level,
+                                           @NotNull BlockPos pos,
+                                           @NotNull BlockPos fromPos) {
         if (!level.isClientSide()) {
             return state.setValue(ATTACHED, isAttached((Level) level, pos));
         }
@@ -89,9 +93,7 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
     @Override public boolean isValidBonemealTarget(@NotNull net.minecraft.world.level.LevelReader l, @NotNull BlockPos p, @NotNull BlockState s) {
         return s.getValue(ATTACHED) && s.getValue(AGE) < 2;
     }
-    @Override public boolean isBonemealSuccess(@NotNull Level l, @NotNull RandomSource r, @NotNull BlockPos p, @NotNull BlockState s) {
-        return true;
-    }
+    @Override public boolean isBonemealSuccess(@NotNull Level l, @NotNull RandomSource r, @NotNull BlockPos p, @NotNull BlockState s) { return true; }
     @Override public void performBonemeal(@NotNull ServerLevel l, @NotNull RandomSource r, @NotNull BlockPos p, @NotNull BlockState s) {
         int age = s.getValue(AGE);
         if (age < 2) l.setBlock(p, s.setValue(AGE, Math.min(2, age + 1)), Block.UPDATE_ALL);
@@ -106,8 +108,7 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
         boolean attached = state.getValue(ATTACHED);
         int age = state.getValue(AGE);
 
-        // Always remove the flower block BELOW without letting it drop itself,
-        // and return the flower item from the egg.
+        // If the egg was attached, remove the flower without drops and return the item from the egg itself.
         if (attached && level.getBlockState(pos.below()).is(ModBlocks.MUSAVACCA_FLOWER.get())) {
             level.removeBlock(pos.below(), false);
             popResource(level, pos, new ItemStack(ModItems.MUSAVACCA_FLOWER.get()));
@@ -125,7 +126,7 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
             return;
         }
 
-        // No Silk Touch: only hatch when ripe (age == 2). No egg item.
+        // No Silk Touch: hatch when ripe (age == 2) — attached or not.
         if (age == 2) {
             hatch(level, pos, attached);
         }
@@ -144,10 +145,9 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
 
     /** General hatch:
      * - If egg WAS attached: spawn slightly lower (flower removed) so head clears oak log.
-     * - If NOT attached: try in-place; if colliding, sidestep to a nearby 2-block air column;
-     *   final fallback is a small drop if there's air below.
+     * - If NOT attached: try in-place; if colliding, sidestep; final tiny drop if there’s air below.
      */
-    private static void hatch(ServerLevel level, BlockPos pos, boolean wasAttached) {
+    public static void hatch(ServerLevel level, BlockPos pos, boolean wasAttached) {
         BananaCow cow = ModEntities.BANANA_COW.get().create(level);
         if (cow == null) return;
 
@@ -157,24 +157,22 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
         float yaw = level.random.nextFloat() * 360F;
 
         if (wasAttached) {
-            // We know the flower below was removed → 2-block cavity; spawn a bit lower.
-            double y = pos.getY() - 0.40D - eps;
+            double y = pos.getY() - 0.40D - eps; // use the space freed by the flower
             cow.moveTo(x, y, z, yaw, 0.0F);
             if (!level.noCollision(cow)) {
-                // Edge-case fallback: spawn at egg floor
-                y = pos.getY() + eps;
+                y = pos.getY() + eps; // fallback to egg's block
                 cow.moveTo(x, y, z, yaw, 0.0F);
             }
             if (level.noCollision(cow)) level.addFreshEntity(cow);
             return;
         }
 
-        // Detached: try in-place first (egg block is now air)
+        // Detached: try in-place
         double y = pos.getY() + eps;
         cow.moveTo(x, y, z, yaw, 0.0F);
 
         if (!level.noCollision(cow)) {
-            // Try a nearby 2-high air with solid floor
+            // Try neighboring 2-high air with solid floor
             BlockPos candidate = findTwoHighAirNearby(level, pos);
             if (candidate != null) {
                 x = candidate.getX() + 0.5D;
@@ -184,16 +182,14 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
             }
         }
 
-        // Final tiny drop if still colliding and there is air below
         if (!level.noCollision(cow) && level.getBlockState(pos.below()).isAir()) {
-            y = pos.getY() - 0.30D;
+            y = pos.getY() - 0.30D; // gentle drop
             cow.moveTo(x, y, z, yaw, 0.0F);
         }
 
         if (level.noCollision(cow)) level.addFreshEntity(cow);
     }
 
-    @Nullable
     private static BlockPos findTwoHighAirNearby(ServerLevel level, BlockPos origin) {
         for (net.minecraft.core.Direction d : net.minecraft.core.Direction.Plane.HORIZONTAL) {
             BlockPos p = origin.relative(d);
