@@ -64,11 +64,6 @@ public final class ModItems {
                             new Item.Properties()));
 
 
-
-    public static final DeferredItem<Item> MUSAVACCA_FLOWER =
-            ITEMS.register("musavacca_flower",
-                    () -> new BlockItem(ModBlocks.MUSAVACCA_FLOWER.get(), new Item.Properties()));
-
     // Stage-specific egg items (distinct textures)
     public static final DeferredItem<Item> BANANA_COW_EGG_UNRIPE =
             ITEMS.register("banana_cow_egg_unripe",
@@ -86,10 +81,6 @@ public final class ModItems {
                             new Item.Properties(), 2));
 
 
-    public static final DeferredItem<BlockItem> BANANA_PEARL_BLOCK_ITEM =
-            ITEMS.register("banana_pearl_block",
-                    () -> new BlockItem(ModBlocks.BANANA_PEARL_BLOCK.get(),
-                            new Item.Properties()));
 
     public static void register(IEventBus bus) {
         ITEMS.register(bus);
