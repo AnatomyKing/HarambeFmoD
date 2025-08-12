@@ -21,6 +21,9 @@ public final class ModBlockLootSubProvider extends BlockLootSubProvider {
     protected void generate() {
         // Normal blocks
         dropSelf(ModBlocks.BANANA_PEARL_BLOCK.get());
+        dropSelf(ModBlocks.MUSAVACCA_PLANKS.get());
+        dropSelf(ModBlocks.MUSAVACCA_STEM.get());
+        dropSelf(ModBlocks.STRIPPED_MUSAVACCA_STEM.get());
         dropSelf(ModBlocks.MUSAVACCA_FLOWER.get());
 
         // Egg drops are fully controlled by BananaCowEggBlock.spawnAfterBreak (stage items + flower).

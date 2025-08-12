@@ -76,7 +76,7 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
         }
     }
 
-    /* ---------------- Random “growth” into an egg ---------------- */
+
 
     @Override
     public boolean isRandomlyTicking(@NotNull BlockState state) { return true; }

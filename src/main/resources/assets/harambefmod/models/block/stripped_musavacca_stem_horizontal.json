@@ -1,0 +1,8 @@
+{
+  "credit": "AnatomyKing(𝕏🐦@LuukMus,ᵈᶦˢᶜᵒʳᵈ@anatomyking)",
+  "parent": "block/cube_column_horizontal",
+  "textures": {
+    "end": "harambefmod:block/stripped_musavacca_stem_top",
+    "side": "harambefmod:block/stripped_musavacca_stem"
+  }
+}

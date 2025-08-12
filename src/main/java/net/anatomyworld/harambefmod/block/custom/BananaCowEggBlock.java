@@ -111,7 +111,7 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
         // If the egg was attached, remove the flower without drops and return the item from the egg itself.
         if (attached && level.getBlockState(pos.below()).is(ModBlocks.MUSAVACCA_FLOWER.get())) {
             level.removeBlock(pos.below(), false);
-            popResource(level, pos, new ItemStack(ModItems.MUSAVACCA_FLOWER.get()));
+            popResource(level, pos, new ItemStack(ModBlocks.MUSAVACCA_FLOWER.get().asItem()));
         }
 
         if (hasSilkTouch(level, tool)) {

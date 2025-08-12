@@ -4,8 +4,10 @@ import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.block.custom.BananaCowEggBlock;
 import net.anatomyworld.harambefmod.block.custom.MusavaccaFlowerBlock;
 import net.anatomyworld.harambefmod.block.custom.PearlFireBlock;
+import net.anatomyworld.harambefmod.block.custom.StrippablePillarBlock;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
@@ -41,6 +43,15 @@ public final class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .pushReaction(PushReaction.NORMAL)));
 
+    public static final DeferredBlock<Block> MUSAVACCA_PLANKS =
+            BLOCKS.register("musavacca_planks",
+                    () -> new Block(BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.COLOR_BROWN)
+                            .strength(1.5F, 6.0F)
+                            .sound(SoundType.AMETHYST)
+                            .requiresCorrectToolForDrops()
+                            .pushReaction(PushReaction.NORMAL)));
+
     /** Custom fire block that can have a random tint when ignited. */
     public static final DeferredBlock<PearlFireBlock> PEARL_FIRE =
             BLOCKS.register("pearl_fire", PearlFireBlock::new);
@@ -67,6 +78,21 @@ public final class ModBlocks {
                             .noCollission()
                             .randomTicks()));
 
+
+    public static final DeferredBlock<RotatedPillarBlock> STRIPPED_MUSAVACCA_STEM =
+            BLOCKS.register("stripped_musavacca_stem",
+                    () -> new RotatedPillarBlock(BlockBehaviour.Properties.of()
+                            .strength(2.0F)
+                            .sound(SoundType.STEM)));
+
+    public static final DeferredBlock<RotatedPillarBlock> MUSAVACCA_STEM =
+            BLOCKS.register("musavacca_stem",
+                    () -> new StrippablePillarBlock(
+                            BlockBehaviour.Properties.of()
+                                    .strength(2.0F)
+                                    .sound(SoundType.STEM),
+                            STRIPPED_MUSAVACCA_STEM));
+
     /* -------------------- Auto BlockItems -------------------- */
 
     // Blocks that should NOT get a default BlockItem (custom logic or none).
@@ -78,7 +104,7 @@ public final class ModBlocks {
     // If you want specific Item.Properties for *all* BlockItems, prepare them here:
     // private static final Item.Properties BLOCK_ITEM_PROPS = new Item.Properties();
 
-    /** Auto-create BlockItems for every block except those in SKIP_BLOCK_ITEMS. */
+
     static {
         BLOCKS.getEntries().forEach(entry -> {
             if (!SKIP_BLOCK_ITEMS.contains(entry)) {

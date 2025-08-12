@@ -1,0 +1,17 @@
+{
+  "credit": "AnatomyKing(𝕏🐦@LuukMus,ᵈᶦˢᶜᵒʳᵈ@anatomyking)",
+  "variants": {
+    "axis=x": {
+      "model": "harambefmod:block/stripped_musavacca_stem_horizontal",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y": {
+      "model": "harambefmod:block/stripped_musavacca_stem"
+    },
+    "axis=z": {
+      "model": "harambefmod:block/stripped_musavacca_stem_horizontal",
+      "x": 90
+    }
+  }
+}

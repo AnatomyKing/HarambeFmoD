@@ -57,7 +57,7 @@ public final class HarambeCore {
     }
 
     private void commonSetup(final FMLCommonSetupEvent e) {
-        // Common setup tasks (if any)
+
     }
 
     @EventBusSubscriber(modid = MOD_ID, value = Dist.CLIENT)

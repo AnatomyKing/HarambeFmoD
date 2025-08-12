@@ -1,7 +1,4 @@
-
 {
   "credit": "AnatomyKing(𝕏🐦@LuukMus,ᵈᶦˢᶜᵒʳᵈ@anatomyking)",
-  "variants": {
-    "": { "model": "harambefmod:block/musavacca_flower" }
-  }
+  "parent": "harambefmod:block/stripped_musavacca_stem"
 }

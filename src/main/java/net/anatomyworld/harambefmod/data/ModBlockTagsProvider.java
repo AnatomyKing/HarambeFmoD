@@ -32,10 +32,22 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
 
         tag(BlockTags.MINEABLE_WITH_AXE)
                 .add(ModBlocks.BANANA_COW_EGG.get());
+        tag(BlockTags.MINEABLE_WITH_AXE)
+                .add(ModBlocks.MUSAVACCA_STEM.get());
+        tag(BlockTags.MINEABLE_WITH_AXE)
+                .add(ModBlocks.MUSAVACCA_PLANKS.get());
+        tag(BlockTags.MINEABLE_WITH_AXE)
+                .add(ModBlocks.STRIPPED_MUSAVACCA_STEM.get());
 
         tag(BlockTags.MINEABLE_WITH_HOE)
                 .add(ModBlocks.MUSAVACCA_FLOWER.get());
 
+        tag(BlockTags.LOGS)
+                .add(ModBlocks.MUSAVACCA_STEM.get());
+        tag(BlockTags.LOGS_THAT_BURN)
+                .add(ModBlocks.MUSAVACCA_STEM.get());
+        tag(BlockTags.PLANKS)
+                .add(ModBlocks.MUSAVACCA_PLANKS.get());
 
     }
 }

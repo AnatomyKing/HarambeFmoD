@@ -1,4 +1,6 @@
 {
   "credit": "AnatomyKing(𝕏🐦@LuukMus,ᵈᶦˢᶜᵒʳᵈ@anatomyking)",
-  "parent": "item/template_spawn_egg"
+  "variants": {
+    "": { "model": "harambefmod:block/musavacca_planks" }
+  }
 }

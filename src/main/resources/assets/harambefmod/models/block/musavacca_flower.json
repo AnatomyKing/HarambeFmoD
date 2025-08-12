@@ -1,2 +1,7 @@
-{ "parent": "minecraft:block/cross",
-  "textures": { "cross": "harambefmod:block/musavacca_flower" } }
+{
+  "credit": "AnatomyKing(𝕏🐦@LuukMus,ᵈᶦˢᶜᵒʳᵈ@anatomyking)",
+  "parent": "block/cube_all",
+  "textures": {
+    "cross": "harambefmod:block/musavacca_flower"
+  }
+}
