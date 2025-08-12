@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:blasting",
+  "category": "misc",
+  "cookingtime": 150,
+  "experience": 0.7,
+  "ingredient": {
+    "item": "harambefmod:raw_anytomithium"
+  },
+  "result": {
+    "count": 1,
+    "id": "harambefmod:anytomithium_ingot"
+  }
+}
