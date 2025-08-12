@@ -99,6 +99,16 @@ public final class HarambeCore {
                         ChunkRenderTypeSet.of(RenderType.cutout())
                 );
 
+                ItemBlockRenderTypes.setRenderLayer(
+                        ModBlocks.MUSAVACCA_LEAVES.get(),
+                        ChunkRenderTypeSet.of(RenderType.cutout())
+                );
+
+                ItemBlockRenderTypes.setRenderLayer(
+                        ModBlocks.MUSAVACCA_LEAVES_CROWN.get(),
+                        ChunkRenderTypeSet.of(RenderType.cutout())
+                );
+
                 // Register block color handler to tint each Pearl Fire with its unique color
                 BlockColors blockColors = Minecraft.getInstance().getBlockColors();
                 blockColors.register(

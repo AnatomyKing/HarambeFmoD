@@ -1,10 +1,10 @@
 package net.anatomyworld.harambefmod.block.custom;
 
 import net.anatomyworld.harambefmod.block.ModBlocks;
+import net.anatomyworld.harambefmod.data.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
@@ -36,7 +36,7 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
         return SHAPE;
     }
 
-    /* ---- Ceiling-only survival & placement (accept egg OR sturdy ceiling) ---- */
+
 
     @Override
     public boolean canSurvive(@NotNull BlockState state, @NotNull LevelReader level, @NotNull BlockPos pos) {
@@ -85,7 +85,7 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
     public void randomTick(@NotNull BlockState state, @NotNull ServerLevel level,
                            @NotNull BlockPos pos, @NotNull RandomSource random) {
         if (random.nextInt(3) == 0) {
-            tryConvertUnderOak(level, pos);
+            tryConvertUnderGrowthSurface(level, pos);
         }
     }
 
@@ -95,8 +95,8 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
     public boolean isValidBonemealTarget(@NotNull LevelReader level,
                                          @NotNull BlockPos pos,
                                          @NotNull BlockState state) {
-        // Must be under oak and have air below to move the flower down on sprout
-        return hasOakAbove(level, pos) && hasAirBelow(level, pos);
+
+        return hasGrowthSurfaceAbove(level, pos) && hasAirBelow(level, pos);
     }
 
     @Override
@@ -112,13 +112,13 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
                                 @NotNull RandomSource random,
                                 @NotNull BlockPos pos,
                                 @NotNull BlockState state) {
-        tryConvertUnderOak(level, pos);
+        tryConvertUnderGrowthSurface(level, pos);
     }
 
     /* ---------------- Helpers ---------------- */
 
-    private static boolean hasOakAbove(LevelReader level, BlockPos flowerPos) {
-        return level.getBlockState(flowerPos.above()).is(BlockTags.OAK_LOGS);
+    private static boolean hasGrowthSurfaceAbove(LevelReader level, BlockPos flowerPos) {
+        return level.getBlockState(flowerPos.above()).is(ModTags.Blocks.BANANA_COW_GROWTH);
     }
 
     private static boolean hasAirBelow(LevelReader level, BlockPos flowerPos) {
@@ -126,13 +126,13 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
     }
 
     /**
-     * Under OAK log and air below:
-     *   pos.above()  = OAK_LOG
+     * If directly under any block in #harambefmod:banana_cow_growth and there is air below:
+     *   pos.above()  = growth surface (e.g., oak log OR musavacca stem)
      *   pos          = BANANA_COW_EGG (attached=true, age=0)
      *   pos.below()  = MUSAVACCA_FLOWER
      */
-    private void tryConvertUnderOak(ServerLevel level, BlockPos flowerPos) {
-        if (!hasOakAbove(level, flowerPos) || !hasAirBelow(level, flowerPos)) return;
+    private void tryConvertUnderGrowthSurface(ServerLevel level, BlockPos flowerPos) {
+        if (!hasGrowthSurfaceAbove(level, flowerPos) || !hasAirBelow(level, flowerPos)) return;
 
         level.setBlock(
                 flowerPos,

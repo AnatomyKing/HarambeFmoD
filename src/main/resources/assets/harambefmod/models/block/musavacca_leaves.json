@@ -4,8 +4,9 @@
 	"ambientocclusion": false,
 	"texture_size": [128, 128],
 	"textures": {
-		"1": "harambefmod:block/banana_tree_leaves_busy",
-		"5": "harambefmod:block/banana_tree_leaves"
+		"1": "harambefmod:block/musavacca_leaves_busy",
+		"5": "harambefmod:block/musavacca_leaves",
+		"particle": "harambefmod:block/musavacca_leaves"
 	},
 	"elements": [
 		{

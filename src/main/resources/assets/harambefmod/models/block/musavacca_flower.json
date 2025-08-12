@@ -1,6 +1,6 @@
 {
   "credit": "AnatomyKing(𝕏🐦@LuukMus,ᵈᶦˢᶜᵒʳᵈ@anatomyking)",
-  "parent": "block/cube_all",
+  "parent": "block/cross",
   "textures": {
     "cross": "harambefmod:block/musavacca_flower"
   }

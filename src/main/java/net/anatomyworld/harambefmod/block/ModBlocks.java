@@ -7,6 +7,7 @@ import net.anatomyworld.harambefmod.block.custom.PearlFireBlock;
 import net.anatomyworld.harambefmod.block.custom.StrippablePillarBlock;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -48,9 +49,33 @@ public final class ModBlocks {
                     () -> new Block(BlockBehaviour.Properties.of()
                             .mapColor(MapColor.COLOR_BROWN)
                             .strength(1.5F, 6.0F)
-                            .sound(SoundType.AMETHYST)
+                            .sound(SoundType.BAMBOO_WOOD)
                             .requiresCorrectToolForDrops()
                             .pushReaction(PushReaction.NORMAL)));
+
+    public static final DeferredBlock<LeavesBlock> MUSAVACCA_LEAVES =
+            BLOCKS.register("musavacca_leaves",
+                    () -> new LeavesBlock(BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.PLANT)
+                            .strength(0.2F)
+                            .randomTicks() //decay
+                            .sound(SoundType.GRASS)
+                            .noOcclusion()
+                            .isSuffocating((s,l,p) -> false)
+                            .isViewBlocking((s,l,p) -> false)
+                            .pushReaction(PushReaction.DESTROY)));
+
+    public static final DeferredBlock<LeavesBlock> MUSAVACCA_LEAVES_CROWN =
+            BLOCKS.register("musavacca_leaves_crown",
+                    () -> new LeavesBlock(BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.PLANT)
+                            .strength(0.2F)
+                            .randomTicks() //decay
+                            .sound(SoundType.GRASS)
+                            .noOcclusion()
+                            .isSuffocating((s,l,p) -> false)
+                            .isViewBlocking((s,l,p) -> false)
+                            .pushReaction(PushReaction.DESTROY)));
 
     /** Custom fire block that can have a random tint when ignited. */
     public static final DeferredBlock<PearlFireBlock> PEARL_FIRE =

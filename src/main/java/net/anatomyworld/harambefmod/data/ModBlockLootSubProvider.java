@@ -26,6 +26,21 @@ public final class ModBlockLootSubProvider extends BlockLootSubProvider {
         dropSelf(ModBlocks.STRIPPED_MUSAVACCA_STEM.get());
         dropSelf(ModBlocks.MUSAVACCA_FLOWER.get());
 
+
+        add(ModBlocks.MUSAVACCA_LEAVES.get(),
+                createSilkTouchOrShearsDispatchTable(
+                        ModBlocks.MUSAVACCA_LEAVES.get(),
+                        net.minecraft.world.level.storage.loot.entries.EmptyLootItem.emptyItem()
+                )
+        );
+
+        add(ModBlocks.MUSAVACCA_LEAVES_CROWN.get(),
+                createSilkTouchOrShearsDispatchTable(
+                        ModBlocks.MUSAVACCA_LEAVES_CROWN.get(),
+                        net.minecraft.world.level.storage.loot.entries.EmptyLootItem.emptyItem()
+                )
+        );
+
         // Egg drops are fully controlled by BananaCowEggBlock.spawnAfterBreak (stage items + flower).
         // Provide an EMPTY loot table to avoid double drops or wrong items.
         add(ModBlocks.BANANA_COW_EGG.get(), LootTable.lootTable());
