@@ -1,0 +1,31 @@
+{
+	"format_version": "1.21.6",
+	"credit": "Made with Blockbench",
+	"ambientocclusion": false,
+	"textures": {
+		"particle": "harambefmod:block/musavacca_plant",
+		"cross": "harambefmod:block/musavacca_plant"
+	},
+	"elements": [
+		{
+			"from": [0.8, -1, 8],
+			"to": [15.2, 15, 8],
+			"shade": false,
+			"rotation": {"angle": 45, "axis": "y", "origin": [8, 7, 8], "rescale": true},
+			"faces": {
+				"north": {"uv": [11.5, 2.25, 15.5, 6.25], "texture": "#cross"},
+				"south": {"uv": [11.5, 2.25, 15.5, 6.25], "texture": "#cross"}
+			}
+		},
+		{
+			"from": [8, -1, 0.8],
+			"to": [8, 15, 15.2],
+			"shade": false,
+			"rotation": {"angle": 45, "axis": "y", "origin": [8, 7, 8], "rescale": true},
+			"faces": {
+				"east": {"uv": [11.5, 2.25, 15.5, 6.25], "texture": "#cross"},
+				"west": {"uv": [11.5, 2.25, 15.5, 6.25], "texture": "#cross"}
+			}
+		}
+	]
+}

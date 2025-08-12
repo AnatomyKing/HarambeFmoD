@@ -4,8 +4,8 @@
 	"ambientocclusion": false,
 	"texture_size": [64, 64],
 	"textures": {
-		"0": "harambefmod:block/banana_tree_plant",
-		"particle": "harambefmod:block/banana_tree_plant"
+		"0": "harambefmod:block/musavacca_plant",
+		"particle": "harambefmod:block/musavacca_plant"
 	},
 	"elements": [
 		{
