@@ -2,6 +2,7 @@ package net.anatomyworld.harambefmod.block.custom;
 
 import com.mojang.serialization.MapCodec;
 import net.anatomyworld.harambefmod.block.entity.BananaPortalBlockEntity;
+import net.anatomyworld.harambefmod.world.BananaPortalShape;
 import net.anatomyworld.harambefmod.world.PortalLinkData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -123,12 +124,11 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         if (sourceAxis == Direction.Axis.X) {
             // right=+X, up=+Y
             lateral = dx;
-            vertical = dy;
         } else {
             // axis Z: right=+Z, up=+Y
             lateral = dz;
-            vertical = dy;
         }
+        vertical = dy;
 
         // Build target center from its anchor and apply the same offset
         BlockPos tgtAnchor = target.anchor;
@@ -164,14 +164,14 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
                                 @NotNull Block neighbor, @NotNull BlockPos fromPos, boolean isMoving) {
         if (level.isClientSide) return;
         ServerLevel server = (ServerLevel) level;
-        if (!net.anatomyworld.harambefmod.block.custom.BananaPortalShape.isInteriorStillFramed(server, pos)) {
+        if (!BananaPortalShape.isInteriorStillFramed(server, pos)) {
             PortalLinkData.get(server).removePortalAt(server, pos, true);
         }
     }
 
     /* Creative: breaking any interior block clears the whole interior. Survival cannot break this block. */
     @Override
-    public BlockState playerWillDestroy(@NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull Player player) {
+    public @NotNull BlockState playerWillDestroy(@NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull Player player) {
         if (!level.isClientSide && player.isCreative()) {
             PortalLinkData.get((ServerLevel) level).removePortalAt((ServerLevel) level, pos, true);
         }

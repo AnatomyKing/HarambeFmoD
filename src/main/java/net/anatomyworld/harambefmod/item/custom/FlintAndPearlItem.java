@@ -3,6 +3,7 @@ package net.anatomyworld.harambefmod.item.custom;
 import net.anatomyworld.harambefmod.block.ModBlocks;
 import net.anatomyworld.harambefmod.block.entity.PearlFireBlockEntity;
 import net.anatomyworld.harambefmod.network.PlaceFirePayload;
+import net.anatomyworld.harambefmod.world.BananaPortalShape;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.sounds.SoundEvents;
@@ -24,6 +25,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class FlintAndPearlItem extends FlintAndSteelItem {
     private static final String DEFAULT_COLOR = "#D5CD49";
@@ -165,37 +167,16 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
     private static boolean trySpawnBananaPortal(net.minecraft.server.level.ServerLevel server,
                                                 BlockPos firePos, int rgb, String hexUpper,
                                                 @org.jetbrains.annotations.Nullable Player player) {
-        var frameOpt = net.anatomyworld.harambefmod.block.custom.BananaPortalShape.find(server, firePos);
+        var frameOpt = BananaPortalShape.find(server, firePos);
         if (frameOpt.isEmpty()) return false;
 
         var frame = frameOpt.get();
 
         // 1) Build interior (sets AXIS, color, anchor)
-        net.anatomyworld.harambefmod.block.custom.BananaPortalShape.fill(server, frame, rgb);
+        BananaPortalShape.fill(server, frame, rgb);
 
-        // 2) Decide the portal FRONT based on the player's position relative to the portal plane
-        //    For axis X (plane perpendicular to X), normal is ±Z. For axis Z, normal is ±X.
-        net.minecraft.core.Direction front;
-        if (player != null) {
-            double px = player.getX();
-            double pz = player.getZ();
-            // Use portal center
-            var right = (frame.axis() == Direction.Axis.X) ? Direction.EAST : Direction.SOUTH;
-            BlockPos centerBlock = frame.anchor().relative(right, frame.width() / 2).above(frame.height() / 2);
-            double cx = centerBlock.getX() + 0.5;
-            double cz = centerBlock.getZ() + 0.5;
 
-            if (frame.axis() == Direction.Axis.X) {
-                // normal along Z
-                front = (pz >= cz) ? Direction.SOUTH : Direction.NORTH;
-            } else {
-                // axis Z → normal along X
-                front = (px >= cx) ? Direction.EAST : Direction.WEST;
-            }
-        } else {
-            // Fallback: default front is positive normal
-            front = (frame.axis() == Direction.Axis.X) ? Direction.SOUTH : Direction.EAST;
-        }
+        Direction front = getDirection(player, frame);
 
         // 3) Write FRONT to every BE in this interior
         var right = (frame.axis() == Direction.Axis.X) ? Direction.EAST : Direction.SOUTH;
@@ -246,6 +227,31 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
             });
         }
         return true;
+    }
+
+    private static @NotNull Direction getDirection(@Nullable Player player, BananaPortalShape.Frame frame) {
+        Direction front;
+        if (player != null) {
+            double px = player.getX();
+            double pz = player.getZ();
+            // Use portal center
+            var right = (frame.axis() == Direction.Axis.X) ? Direction.EAST : Direction.SOUTH;
+            BlockPos centerBlock = frame.anchor().relative(right, frame.width() / 2).above(frame.height() / 2);
+            double cx = centerBlock.getX() + 0.5;
+            double cz = centerBlock.getZ() + 0.5;
+
+            if (frame.axis() == Direction.Axis.X) {
+                // normal along Z
+                front = (pz >= cz) ? Direction.SOUTH : Direction.NORTH;
+            } else {
+                // axis Z → normal along X
+                front = (px >= cx) ? Direction.EAST : Direction.WEST;
+            }
+        } else {
+            // Fallback: default front is positive normal
+            front = (frame.axis() == Direction.Axis.X) ? Direction.SOUTH : Direction.EAST;
+        }
+        return front;
     }
 
     /* ---------------- Client-only helpers ---------------- */

@@ -1,6 +1,7 @@
-package net.anatomyworld.harambefmod.block.custom;
+package net.anatomyworld.harambefmod.world;
 
 import net.anatomyworld.harambefmod.block.ModBlocks;
+import net.anatomyworld.harambefmod.block.custom.BananaPortalBlock;
 import net.anatomyworld.harambefmod.block.entity.BananaPortalBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

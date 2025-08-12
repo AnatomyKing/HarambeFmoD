@@ -2,7 +2,7 @@ package net.anatomyworld.harambefmod.world;
 
 import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.block.ModBlocks;
-import net.anatomyworld.harambefmod.block.custom.BananaPortalShape;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
