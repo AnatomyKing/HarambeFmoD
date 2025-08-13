@@ -2,7 +2,6 @@ package net.anatomyworld.harambefmod.world;
 
 import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.block.ModBlocks;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -16,37 +15,26 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
-/**
- * Maps hex codes to either one pending endpoint or a linked pair.
- * Frees the code when any endpoint is destroyed.
- */
+/** Links a hex code to 1 pending endpoint or a linked pair. */
 public final class PortalLinkData extends SavedData {
 
-    /** One portal rectangle in one dimension. */
+    /** One rectangular portal endpoint in a dimension. */
     public static final class Endpoint {
         public final ResourceKey<Level> dim;
         public final BlockPos anchor;            // interior bottom-left
         public final Direction.Axis axis;
         public final int width, height;
         public final int color;                  // 0xRRGGBB
-        public final Direction front;            // front direction of this endpoint
+        public final Direction front;            // saved "front"
 
         public Endpoint(ResourceKey<Level> dim, BlockPos anchor, Direction.Axis axis,
                         int width, int height, int color, Direction front) {
             this.dim = dim; this.anchor = anchor; this.axis = axis;
             this.width = width; this.height = height; this.color = color; this.front = front;
-        }
-
-        public BlockPos centerBlock() {
-            var right = (axis == Direction.Axis.X) ? Direction.EAST : Direction.SOUTH;
-            return anchor.relative(right, width / 2).above(height / 2);
-        }
-
-        public net.minecraft.world.phys.Vec3 centerPos() {
-            BlockPos c = centerBlock();
-            return new net.minecraft.world.phys.Vec3(c.getX() + 0.5, c.getY() + 0.5, c.getZ() + 0.5);
         }
 
         public CompoundTag save() {
@@ -64,14 +52,13 @@ public final class PortalLinkData extends SavedData {
         }
 
         public static Endpoint load(CompoundTag t) {
-            ResourceKey<Level> dim = ResourceKey.create(
-                    Registries.DIMENSION, ResourceLocation.parse(t.getString("dim")));
+            ResourceKey<Level> dim = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(t.getString("dim")));
             BlockPos anchor = new BlockPos(t.getInt("ax"), t.getInt("ay"), t.getInt("az"));
             Direction.Axis axis = "x".equalsIgnoreCase(t.getString("axis")) ? Direction.Axis.X : Direction.Axis.Z;
             int w = t.getInt("w"), h = t.getInt("h"), c = t.getInt("color");
-            Direction front = Direction.byName(t.getString("front"));
-            if (front == null || front.getAxis() == Direction.Axis.Y) front = Direction.SOUTH;
-            return new Endpoint(dim, anchor, axis, w, h, c, front);
+            Direction fr = Direction.byName(t.getString("front"));
+            if (fr == null || fr.getAxis() == Direction.Axis.Y) fr = Direction.SOUTH;
+            return new Endpoint(dim, anchor, axis, w, h, c, fr);
         }
     }
 
@@ -98,9 +85,7 @@ public final class PortalLinkData extends SavedData {
     public static PortalLinkData get(ServerLevel level) {
         return level.getDataStorage().computeIfAbsent(
                 new SavedData.Factory<>(PortalLinkData::new, (tag, provider) -> {
-                    PortalLinkData d = new PortalLinkData();
-                    d.load(tag);
-                    return d;
+                    PortalLinkData d = new PortalLinkData(); d.load(tag); return d;
                 }),
                 HarambeCore.MOD_ID + "_portal_links"
         );
@@ -110,36 +95,25 @@ public final class PortalLinkData extends SavedData {
 
     private void load(CompoundTag tag) {
         links.clear();
-        for (String key : tag.getAllKeys()) {
-            links.put(key, Link.load(tag.getCompound(key)));
-        }
+        for (String key : tag.getAllKeys()) links.put(key, Link.load(tag.getCompound(key)));
     }
 
-    @Override
-    public @NotNull CompoundTag save(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider provider) {
+    @Override public @NotNull CompoundTag save(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider provider) {
         for (var e : links.entrySet()) tag.put(e.getKey(), e.getValue().save());
         return tag;
     }
 
-    /** Returns: 0 = created first (pending), 1 = created and linked to other, -1 = rejected (already used by two endpoints). */
+    /** 0 = first endpoint (pending), 1 = linked, -1 = code already used by two endpoints. */
     public int registerOrLink(ServerLevel level, BananaPortalShape.Frame f, String hexUpper, int rgb, Direction front) {
         Link l = links.get(hexUpper);
         Endpoint ep = new Endpoint(level.dimension(), f.anchor(), f.axis(), f.width(), f.height(), rgb, front);
 
-        if (l == null) { // first endpoint
-            links.put(hexUpper, new Link(ep));
-            setDirty();
-            return 0;
-        }
-        if (!l.linked()) {
-            l.b = ep;
-            setDirty();
-            return 1;
-        }
+        if (l == null) { links.put(hexUpper, new Link(ep)); setDirty(); return 0; }
+        if (!l.linked()) { l.b = ep; setDirty(); return 1; }
         return -1;
     }
 
-    /** Find "other side" for an interior position; empty if not linked. */
+    /** Find the other side for any interior position. */
     public Optional<Endpoint> findOtherEndpointForPosition(ServerLevel level, BlockPos interior) {
         for (var e : links.values()) {
             if (!e.linked()) continue;
@@ -158,11 +132,9 @@ public final class PortalLinkData extends SavedData {
                 && p.getZ() >= Math.min(ep.anchor.getZ(), end.getZ()) && p.getZ() <= Math.max(ep.anchor.getZ(), end.getZ());
     }
 
-    /** Remove entire portal group if 'interior' belongs to it. If `clearBlocks` true, also clear interior to air. */
+    /** Remove this endpoint’s interior; keep the other side pending if it existed. */
     public void removePortalAt(ServerLevel level, BlockPos interior, boolean clearBlocks) {
-        String hitKey = null;
-        boolean hitWasA = false;
-        Link hit = null;
+        String hitKey = null; boolean hitWasA = false; Link hit = null;
 
         for (var e : links.entrySet()) {
             var l = e.getValue();
@@ -174,7 +146,6 @@ public final class PortalLinkData extends SavedData {
         Endpoint ep = hitWasA ? hit.a : hit.b;
         if (clearBlocks) clearInterior(level, ep);
 
-        // If there was a pair, keep the other endpoint pending; else free the code completely.
         if (hit.linked()) {
             Endpoint keep = hitWasA ? hit.b : hit.a;
             links.put(hitKey, new Link(keep));

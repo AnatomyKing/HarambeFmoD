@@ -32,7 +32,6 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
 
     public FlintAndPearlItem(Properties props) { super(props); }
 
-    /* ---------------- Right-click AIR → open colour picker (client) ---------------- */
     @Override
     public @NotNull InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         if (level.isClientSide) {
@@ -43,22 +42,16 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
         return super.use(level, player, hand);
     }
 
-    /* ---------------- Right-click ENTITY → ignite creepers ---------------- */
     @Override
-    public @NotNull InteractionResult interactLivingEntity(ItemStack stack, Player player,
-                                                           @NotNull LivingEntity target, InteractionHand hand) {
+    public @NotNull InteractionResult interactLivingEntity(ItemStack stack, Player player, @NotNull LivingEntity target, InteractionHand hand) {
         if (!player.level().isClientSide && target instanceof Creeper creeper) {
             creeper.ignite();
-            stack.hurtAndBreak(1, player,
-                    hand == InteractionHand.MAIN_HAND
-                            ? net.minecraft.world.entity.EquipmentSlot.MAINHAND
-                            : net.minecraft.world.entity.EquipmentSlot.OFFHAND);
+            stack.hurtAndBreak(1, player, hand == InteractionHand.MAIN_HAND ? net.minecraft.world.entity.EquipmentSlot.MAINHAND : net.minecraft.world.entity.EquipmentSlot.OFFHAND);
             return InteractionResult.SUCCESS;
         }
         return InteractionResult.PASS;
     }
 
-    /* ---------------- Right-click BLOCK ---------------- */
     @Override
     public @NotNull InteractionResult useOn(@NotNull UseOnContext ctx) {
         Level     level   = ctx.getLevel();
@@ -68,117 +61,87 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
         BlockState state  = level.getBlockState(clicked);
         ItemStack stack   = ctx.getItemInHand();
 
-        /* -------- client: just predictive fire when vanilla won’t handle it -------- */
         if (level.isClientSide) {
             if (shouldPlacePearlFireClient(state, level, firePos, face)) {
-                String hex = stack.getOrDefault(
-                        net.anatomyworld.harambefmod.component.ModDataComponents.FLAME_COLOR.get(), DEFAULT_COLOR);
+                String hex = stack.getOrDefault(net.anatomyworld.harambefmod.component.ModDataComponents.FLAME_COLOR.get(), DEFAULT_COLOR);
                 int rgb = Integer.parseInt(hex.replace("#", ""), 16);
 
-                PacketDistributor.sendToServer(new PlaceFirePayload(
-                        firePos, rgb,
-                        ctx.getHand() == InteractionHand.MAIN_HAND,
-                        (byte) face.ordinal()));
-
+                PacketDistributor.sendToServer(new PlaceFirePayload(firePos, rgb, ctx.getHand() == InteractionHand.MAIN_HAND, (byte) face.ordinal()));
                 ClientPredictor.place(level, firePos, rgb);
                 return InteractionResult.SUCCESS;
             }
             return InteractionResult.PASS;
         }
 
-        /* -------- server: try Banana portal FIRST, then vanilla behaviors -------- */
+        // Try Banana portal first
         {
-            String hex = stack.getOrDefault(
-                    net.anatomyworld.harambefmod.component.ModDataComponents.FLAME_COLOR.get(), DEFAULT_COLOR);
+            String hex = stack.getOrDefault(net.anatomyworld.harambefmod.component.ModDataComponents.FLAME_COLOR.get(), DEFAULT_COLOR);
             int rgb = Integer.parseInt(hex.replace("#", ""), 16);
-            if (trySpawnBananaPortal((net.minecraft.server.level.ServerLevel) level,
-                    firePos, rgb, hex.toUpperCase(), ctx.getPlayer())) {
+            if (trySpawnBananaPortal((net.minecraft.server.level.ServerLevel) level, firePos, rgb, hex.toUpperCase(), ctx.getPlayer())) {
                 finishUse(level, firePos, stack, ctx);
                 return InteractionResult.sidedSuccess(false);
             }
         }
 
-        // TNT
+        // TNT / lights
         if (state.getBlock() instanceof TntBlock) {
             state.onCaughtFire(level, clicked, face, ctx.getPlayer());
             level.setBlock(clicked, Blocks.AIR.defaultBlockState(), 11);
             finishUse(level, clicked, stack, ctx);
             return InteractionResult.sidedSuccess(false);
         }
-
-        // Candles & campfires
         if (CampfireBlock.canLight(state) || CandleBlock.canLight(state) || CandleCakeBlock.canLight(state)) {
             level.setBlock(clicked, state.setValue(BlockStateProperties.LIT, true), 11);
             finishUse(level, clicked, stack, ctx);
             return InteractionResult.sidedSuccess(false);
         }
 
-        // Vanilla Nether portal (if they built obsidian)
+        // Vanilla nether portal
         if (trySpawnNetherPortal(level, firePos)) {
             finishUse(level, firePos, stack, ctx);
             return InteractionResult.sidedSuccess(false);
         }
 
-        // Otherwise, PlaceFirePayload will put down the Pearl Fire.
         return InteractionResult.PASS;
     }
 
-    /* ---------------- Helpers ---------------- */
-    private static void finishUse(Level lvl, BlockPos pos, ItemStack stack, UseOnContext ctx) {
-        playUseSound(lvl, pos);
-        damage(stack, ctx);
-    }
-
     private static boolean shouldPlacePearlFireClient(BlockState clickedState, Level level, BlockPos firePos, Direction face) {
-        // If vanilla would do something, skip our predictive fire
         if (clickedState.getBlock() instanceof TntBlock) return false;
         if (CampfireBlock.canLight(clickedState) || CandleBlock.canLight(clickedState) || CandleCakeBlock.canLight(clickedState)) return false;
         if (PortalShape.findEmptyPortalShape(level, firePos, Direction.Axis.X).isPresent()
                 || PortalShape.findEmptyPortalShape(level, firePos, Direction.Axis.Z).isPresent()) return false;
-
         return BaseFireBlock.canBePlacedAt(level, firePos, face);
     }
 
     private static boolean trySpawnNetherPortal(Level lvl, BlockPos pos) {
-        return PortalShape.findEmptyPortalShape(lvl, pos, Direction.Axis.X)
-                .map(shape -> { shape.createPortalBlocks(); return true; })
-                .orElseGet(() ->
-                        PortalShape.findEmptyPortalShape(lvl, pos, Direction.Axis.Z)
-                                .map(shape -> { shape.createPortalBlocks(); return true; })
-                                .orElse(false));
+        return PortalShape.findEmptyPortalShape(lvl, pos, Direction.Axis.X).map(shape -> { shape.createPortalBlocks(); return true; })
+                .orElseGet(() -> PortalShape.findEmptyPortalShape(lvl, pos, Direction.Axis.Z)
+                        .map(shape -> { shape.createPortalBlocks(); return true; }).orElse(false));
     }
 
-    private static void playUseSound(Level lvl, BlockPos pos) {
-        lvl.playSound(null, pos, SoundEvents.FLINTANDSTEEL_USE,
-                net.minecraft.sounds.SoundSource.BLOCKS,
-                1.0F, lvl.getRandom().nextFloat() * 0.4F + 0.8F);
-    }
-
-    private static void damage(ItemStack stack, UseOnContext ctx) {
+    private static void finishUse(Level lvl, BlockPos pos, ItemStack stack, UseOnContext ctx) {
+        lvl.playSound(null, pos, SoundEvents.FLINTANDSTEEL_USE, net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, lvl.getRandom().nextFloat() * 0.4F + 0.8F);
         Player user = ctx.getPlayer();
         if (user != null) {
-            var slot = ctx.getHand() == InteractionHand.MAIN_HAND
-                    ? net.minecraft.world.entity.EquipmentSlot.MAINHAND
-                    : net.minecraft.world.entity.EquipmentSlot.OFFHAND;
+            var slot = ctx.getHand() == InteractionHand.MAIN_HAND ? net.minecraft.world.entity.EquipmentSlot.MAINHAND : net.minecraft.world.entity.EquipmentSlot.OFFHAND;
             stack.hurtAndBreak(1, user, slot);
         } else stack.shrink(1);
     }
 
     private static boolean trySpawnBananaPortal(net.minecraft.server.level.ServerLevel server,
                                                 BlockPos firePos, int rgb, String hexUpper,
-                                                @org.jetbrains.annotations.Nullable Player player) {
+                                                @Nullable Player player) {
         var frameOpt = BananaPortalShape.find(server, firePos);
         if (frameOpt.isEmpty()) return false;
-
         var frame = frameOpt.get();
 
-        // 1) Build interior (sets AXIS, color, anchor)
+        // Fill interior (sets AXIS/color/anchor)
         BananaPortalShape.fill(server, frame, rgb);
 
+        // Decide & store FRONT at light time (restricted to the portal's valid normals)
+        Direction front = pickFront(player, frame);
 
-        Direction front = getDirection(player, frame);
-
-        // 3) Write FRONT to every BE in this interior
+        // Write FRONT to every BE in this interior
         var right = (frame.axis() == Direction.Axis.X) ? Direction.EAST : Direction.SOUTH;
         for (int y = 0; y < frame.height(); y++) {
             for (int x = 0; x < frame.width(); x++) {
@@ -190,19 +153,14 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
             }
         }
 
-        // 4) Register/link using the stored FRONT
+        // Register/link with FRONT
         var data = net.anatomyworld.harambefmod.world.PortalLinkData.get(server);
         int res = data.registerOrLink(server, frame, hexUpper, rgb, front);
         if (res < 0) {
-            // code already used by two portals → reject and undo the fill we just placed
-            net.anatomyworld.harambefmod.world.PortalLinkData.Endpoint dummy =
-                    new net.anatomyworld.harambefmod.world.PortalLinkData.Endpoint(
-                            server.dimension(), frame.anchor(), frame.axis(), frame.width(), frame.height(), rgb, front);
-            // Clear the blocks we placed
-            var r = (frame.axis() == Direction.Axis.X) ? Direction.EAST : Direction.SOUTH;
+            // Undo fill if code already fully used
             for (int y = 0; y < frame.height(); y++) {
                 for (int x = 0; x < frame.width(); x++) {
-                    BlockPos ip = frame.anchor().relative(r, x).above(y);
+                    BlockPos ip = frame.anchor().relative(right, x).above(y);
                     if (server.getBlockState(ip).is(ModBlocks.BANANA_PORTAL.get())) {
                         server.setBlock(ip, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
                     }
@@ -229,32 +187,20 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
         return true;
     }
 
-    private static @NotNull Direction getDirection(@Nullable Player player, BananaPortalShape.Frame frame) {
-        Direction front;
-        if (player != null) {
-            double px = player.getX();
-            double pz = player.getZ();
-            // Use portal center
-            var right = (frame.axis() == Direction.Axis.X) ? Direction.EAST : Direction.SOUTH;
-            BlockPos centerBlock = frame.anchor().relative(right, frame.width() / 2).above(frame.height() / 2);
-            double cx = centerBlock.getX() + 0.5;
-            double cz = centerBlock.getZ() + 0.5;
+    private static Direction pickFront(@Nullable Player player, BananaPortalShape.Frame frame) {
+        // Valid normals depend on axis
+        if (player == null) return frame.axis() == Direction.Axis.X ? Direction.SOUTH : Direction.EAST;
 
-            if (frame.axis() == Direction.Axis.X) {
-                // normal along Z
-                front = (pz >= cz) ? Direction.SOUTH : Direction.NORTH;
-            } else {
-                // axis Z → normal along X
-                front = (px >= cx) ? Direction.EAST : Direction.WEST;
-            }
+        Direction look = player.getDirection(); // nearest horizontal cardinal
+        if (frame.axis() == Direction.Axis.X) {
+            // choose NORTH/SOUTH
+            return (look == Direction.NORTH || look == Direction.SOUTH) ? look : (player.getZ() >= (frame.anchor().getZ() + frame.width()/2.0) ? Direction.SOUTH : Direction.NORTH);
         } else {
-            // Fallback: default front is positive normal
-            front = (frame.axis() == Direction.Axis.X) ? Direction.SOUTH : Direction.EAST;
+            // axis Z: choose EAST/WEST
+            return (look == Direction.EAST || look == Direction.WEST) ? look : (player.getX() >= (frame.anchor().getX() + frame.width()/2.0) ? Direction.EAST : Direction.WEST);
         }
-        return front;
     }
 
-    /* ---------------- Client-only helpers ---------------- */
     @OnlyIn(Dist.CLIENT)
     private static final class ScreenOpener {
         private ScreenOpener() {}
