@@ -3,7 +3,7 @@
 	"credit": "AnatomyKing(𝕏🐦@LuukMus,ᵈᶦˢᶜᵒʳᵈ@anatomyking)",
 	"textures": {
 		"particle": "harambefmod:block/banana_portal",
-		"portal": "harambefmod:block/banana_portal3 hei"
+		"portal": "harambefmod:block/banana_portal"
 	},
 	"elements": [
 		{
