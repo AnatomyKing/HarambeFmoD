@@ -29,7 +29,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** Re-entry gated portal with look/velocity basis transforms and momentum-friendly teleport. */
+/** Re-entry gated portal with look/velocity basis transforms and movement-safe teleport (Survival-friendly). */
 public final class BananaPortalBlock extends Block implements EntityBlock {
     public static final MapCodec<BananaPortalBlock> CODEC = BlockBehaviour.simpleCodec(p -> new BananaPortalBlock());
     @Override public @NotNull MapCodec<? extends Block> codec() { return CODEC; }
@@ -45,7 +45,7 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
     private static final String TAG_ANY_TICK  = "harambefmod:any_portal_t"; // last tick seen inside ANY portal
     private static final String TAG_IN_ANCHOR = "harambefmod:in_anchor";    // last anchor (optional)
 
-    private static final long   COOLDOWN_TICKS = 10L;          // short, Nether-like feel
+    private static final long   COOLDOWN_TICKS = 10L;          // short, nether-like feel
     private static final double EJECT          = 0.03125 * 4;  // 2 px outward
 
     // Tunables for “flow-through” feel
@@ -86,7 +86,6 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         boolean enteredFromOutside = (lastAny < (now - 1));
         tag.putLong(TAG_ANY_TICK, now);
         tag.putLong(TAG_IN_ANCHOR, thisAnchor);
-
         if (!enteredFromOutside) return;
         if (tag.getLong(TAG_CD_UNTIL) > now) return;
 
@@ -107,7 +106,7 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         Vec3 rDst = up.cross(nDstOut).normalize();
         if (rDst.lengthSqr() < 1e-8) rDst = new Vec3(1, 0, 0);
 
-        // --- Momentum handling ---
+        // --- Momentum handling (compute vOut but DON'T apply yet) ---
         Vec3 vIn  = entity.getDeltaMovement();
         double vr = vIn.dot(rSrc), vu = vIn.dot(up), vf = vIn.dot(nSrc);
         double vfOut = Math.abs(vf);
@@ -145,33 +144,62 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
 
         // Snapshot motion flags to preserve feel across teleport
         boolean wasSprinting = (entity instanceof LivingEntity le2) && le2.isSprinting();
-        boolean wasElytra    = (entity instanceof LivingEntity le3) && le3.isFallFlying(); // on LivingEntity
+        boolean wasElytra    = (entity instanceof LivingEntity le3) && le3.isFallFlying(); // players only can resume later
 
-        // --- Teleport, then re-apply velocity and flags ---
-        if (entity instanceof ServerPlayer sp) {
-            sp.setDeltaMovement(vOut);
-            sp.teleportTo(server, outPos.x, outPos.y, outPos.z, yawOut, pitchOut);
-            sp.setDeltaMovement(vOut);           // reapply after teleport (important)
-            sp.setYBodyRot(yawOut);
-            sp.setYHeadRot(yawOut);
-            sp.setXRot(pitchOut);
-            sp.setSprinting(wasSprinting);
-            if (wasElytra) sp.startFallFlying(); // ✅ only players have startFallFlying()
-        } else {
-            entity.setDeltaMovement(vOut);
-            entity.moveTo(outPos.x, outPos.y, outPos.z, yawOut, pitchOut);
-            entity.setDeltaMovement(vOut);
-            if (entity instanceof LivingEntity le) {
-                le.setYBodyRot(yawOut);
-                le.setYHeadRot(yawOut);
-                le.setSprinting(wasSprinting);
-                // ❌ no startFallFlying() here — non-players don't have it in 1.21.x
-            }
-        }
-
-        // Cooldown; lingering inside won't retrigger until you actually leave
+        // --- Arm cooldown & mark which portal we're "in" now (destination) BEFORE we defer ---
         tag.putLong(TAG_CD_UNTIL, now + COOLDOWN_TICKS);
         tag.putLong(TAG_IN_ANCHOR, tgtAnchor.asLong());
+
+        // Clear fall damage accumulation just-in-case
+        entity.resetFallDistance();
+
+        // === MOVEMENT-SAFE TELEPORT: defer by 1 tick, then re-apply velocity the tick after ===
+        final Vec3  vOutFinal    = vOut;
+        final float yawFinal     = yawOut;
+        final float pitchFinal   = pitchOut;
+        final boolean sprintFlag = wasSprinting;
+        final boolean elytraFlag = wasElytra;
+
+        // 1) Next tick: do the actual teleport using the connection handshake (prevents "moved wrongly").
+        server.getServer().execute(() -> {
+            if (entity.isRemoved()) return;
+
+            if (entity instanceof ServerPlayer sp) {
+                // Use the connection's teleport to engage the proper server<->client teleport ack
+                sp.connection.teleport(outPos.x, outPos.y, outPos.z, yawFinal, pitchFinal);
+                sp.resetFallDistance();
+                sp.setSprinting(sprintFlag);
+                if (elytraFlag) sp.startFallFlying(); // only valid for players
+
+                sp.setYBodyRot(yawFinal);
+                sp.setYHeadRot(yawFinal);
+                sp.setXRot(pitchFinal);
+            } else {
+                // Non-players: normal moveTo is fine
+                entity.moveTo(outPos.x, outPos.y, outPos.z, yawFinal, pitchFinal);
+                entity.resetFallDistance();
+                if (entity instanceof LivingEntity le) {
+                    le.setSprinting(sprintFlag);
+                    le.setYBodyRot(yawFinal);
+                    le.setYHeadRot(yawFinal);
+                }
+            }
+
+            // 2) One more tick later: re-apply velocity AFTER the client has acknowledged the teleport.
+            server.getServer().execute(() -> {
+                if (entity.isRemoved()) return;
+
+                entity.setDeltaMovement(vOutFinal);
+
+                if (entity instanceof ServerPlayer sp2) {
+                    sp2.setYBodyRot(yawFinal);
+                    sp2.setYHeadRot(yawFinal);
+                } else if (entity instanceof LivingEntity le4) {
+                    le4.setYBodyRot(yawFinal);
+                    le4.setYHeadRot(yawFinal);
+                }
+            });
+        });
     }
 
     @Override
@@ -203,3 +231,4 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         };
     }
 }
+
