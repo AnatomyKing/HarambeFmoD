@@ -128,62 +128,88 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
         } else stack.shrink(1);
     }
 
-    private static boolean trySpawnBananaPortal(net.minecraft.server.level.ServerLevel server,
-                                                BlockPos firePos, int rgb, String hexUpper,
-                                                @Nullable Player player) {
-        var frameOpt = BananaPortalShape.find(server, firePos);
+    private static boolean trySpawnBananaPortal(
+            net.minecraft.server.level.ServerLevel server,
+            BlockPos firePos, int rgb, String hexUpper,
+            @Nullable Player player
+    ) {
+        var frameOpt = net.anatomyworld.harambefmod.world.BananaPortalShape.find(server, firePos);
         if (frameOpt.isEmpty()) return false;
         var frame = frameOpt.get();
 
-        // Fill interior (sets AXIS/color/anchor)
-        BananaPortalShape.fill(server, frame, rgb);
+        // --- 1) PRE-TINT (S->C) BEFORE ANY PANES ARE PLACED ---
+        // Choose a center-ish interior position for the broadcast radius.
+        Direction right = (frame.axis() == Direction.Axis.X) ? Direction.EAST : Direction.SOUTH;
+        BlockPos center = frame.anchor()
+                .relative(right, (frame.width()  - 1) / 2)
+                .above((frame.height() - 1) / 2);
 
-        // Decide & store FRONT at light time (restricted to the portal's valid normals)
-        Direction front = pickFront(player, frame);
+        net.anatomyworld.harambefmod.network.ModNetworking.sendPortalTintToNearby(
+                server,
+                center,
+                new net.anatomyworld.harambefmod.network.SyncPortalTintPayload(
+                        frame.anchor(),      // interior bottom-left (anchor)
+                        frame.axis(),        // axis
+                        frame.width(),       // width
+                        frame.height(),      // height
+                        rgb                  // tint
+                )
+        );
 
-        // Write FRONT to every BE in this interior
-        var right = (frame.axis() == Direction.Axis.X) ? Direction.EAST : Direction.SOUTH;
-        for (int y = 0; y < frame.height(); y++) {
-            for (int x = 0; x < frame.width(); x++) {
-                BlockPos ip = frame.anchor().relative(right, x).above(y);
-                var be = server.getBlockEntity(ip);
-                if (be instanceof net.anatomyworld.harambefmod.block.entity.BananaPortalBlockEntity pbe) {
-                    pbe.setFront(front);
-                }
-            }
-        }
+        // --- 2) DEFERRAL BY ONE TICK ---
+        // Let the client apply the tint cache FIRST, then place panes next tick.
+        server.getServer().execute(() -> {
+            // 2a) Fill interior (sets AXIS, color, anchor on each BE)
+            net.anatomyworld.harambefmod.world.BananaPortalShape.fill(server, frame, rgb);
 
-        // Register/link with FRONT
-        var data = net.anatomyworld.harambefmod.world.PortalLinkData.get(server);
-        int res = data.registerOrLink(server, frame, hexUpper, rgb, front);
-        if (res < 0) {
-            // Undo fill if code already fully used
+            // 2b) Decide & store FRONT at light time (restricted to valid normals)
+            Direction front = pickFront(player, frame);
+
+            // 2c) Write FRONT to every BE in this interior
             for (int y = 0; y < frame.height(); y++) {
                 for (int x = 0; x < frame.width(); x++) {
                     BlockPos ip = frame.anchor().relative(right, x).above(y);
-                    if (server.getBlockState(ip).is(ModBlocks.BANANA_PORTAL.get())) {
-                        server.setBlock(ip, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+                    var be = server.getBlockEntity(ip);
+                    if (be instanceof net.anatomyworld.harambefmod.block.entity.BananaPortalBlockEntity pbe) {
+                        pbe.setFront(front);
                     }
                 }
             }
-            server.players().forEach(p -> {
-                if (p.distanceToSqr(firePos.getX()+0.5, firePos.getY()+0.5, firePos.getZ()+0.5) < 16*16)
-                    p.displayClientMessage(net.minecraft.network.chat.Component.literal("That code is already linked."), true);
-            });
-            return false;
-        }
 
-        if (res == 0) {
-            server.players().forEach(p -> {
-                if (p.distanceToSqr(firePos.getX()+0.5, firePos.getY()+0.5, firePos.getZ()+0.5) < 16*16)
-                    p.displayClientMessage(net.minecraft.network.chat.Component.literal("Portal set to code " + hexUpper + ". Light another frame with the same code to link."), true);
-            });
-        } else {
-            server.players().forEach(p -> {
-                if (p.distanceToSqr(firePos.getX()+0.5, firePos.getY()+0.5, firePos.getZ()+0.5) < 16*16)
-                    p.displayClientMessage(net.minecraft.network.chat.Component.literal("Linked portals for " + hexUpper + "!"), true);
-            });
-        }
+            // 2d) Register/link with FRONT
+            var data = net.anatomyworld.harambefmod.world.PortalLinkData.get(server);
+            int res = data.registerOrLink(server, frame, hexUpper, rgb, front);
+
+            if (res < 0) {
+                // Undo fill if code already fully used
+                for (int y = 0; y < frame.height(); y++) {
+                    for (int x = 0; x < frame.width(); x++) {
+                        BlockPos ip = frame.anchor().relative(right, x).above(y);
+                        if (server.getBlockState(ip).is(net.anatomyworld.harambefmod.block.ModBlocks.BANANA_PORTAL.get())) {
+                            server.setBlock(ip, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+                        }
+                    }
+                }
+                server.players().forEach(p -> {
+                    if (p.distanceToSqr(firePos.getX() + 0.5, firePos.getY() + 0.5, firePos.getZ() + 0.5) < 16 * 16)
+                        p.displayClientMessage(net.minecraft.network.chat.Component.literal("That code is already linked."), true);
+                });
+                return; // done
+            }
+
+            if (res == 0) {
+                server.players().forEach(p -> {
+                    if (p.distanceToSqr(firePos.getX() + 0.5, firePos.getY() + 0.5, firePos.getZ() + 0.5) < 16 * 16)
+                        p.displayClientMessage(net.minecraft.network.chat.Component.literal("Portal set to code " + hexUpper + ". Light another frame with the same code to link."), true);
+                });
+            } else {
+                server.players().forEach(p -> {
+                    if (p.distanceToSqr(firePos.getX() + 0.5, firePos.getY() + 0.5, firePos.getZ() + 0.5) < 16 * 16)
+                        p.displayClientMessage(net.minecraft.network.chat.Component.literal("Linked portals for " + hexUpper + "!"), true);
+                });
+            }
+        });
+
         return true;
     }
 

@@ -130,15 +130,21 @@ public final class HarambeCore {
                 );
                 blockColors.register(
                         (state, level, pos, tintIndex) -> {
-                            if (tintIndex == 0 && level != null && pos != null) {
-                                var be = level.getBlockEntity(pos);
-                                if (be instanceof net.anatomyworld.harambefmod.block.entity.BananaPortalBlockEntity p) {
-                                    return p.getColor();
-                                }
+                            if (tintIndex != 0 || level == null || pos == null) return 0xFFFFFF;
+
+                            // 1) If we pre-cached a tint for this position, use it
+                            int cached = net.anatomyworld.harambefmod.client.portal.BananaPortalTintCache.get(pos);
+                            if (cached != -1) return cached;
+
+                            // 2) Fallback to the BE's color when it’s available
+                            var be = level.getBlockEntity(pos);
+                            if (be instanceof net.anatomyworld.harambefmod.block.entity.BananaPortalBlockEntity p) {
+                                return p.getColor();
                             }
                             return 0xFFFFFF;
                         },
-                        ModBlocks.BANANA_PORTAL.get()
+                        net.anatomyworld.harambefmod.block.ModBlocks.BANANA_PORTAL.get()
+
                 );
             });
         }
