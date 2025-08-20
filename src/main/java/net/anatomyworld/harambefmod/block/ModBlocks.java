@@ -117,13 +117,36 @@ public final class ModBlocks {
                                     .sound(SoundType.STEM),
                             STRIPPED_MUSAVACCA_STEM));
 
+    public static final DeferredBlock<MusavaccaPlantCropBlock> MUSAVACCA_PLANT =
+            BLOCKS.register("musavacca_plant",
+                    () -> new MusavaccaPlantCropBlock(BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.PLANT)
+                            .noCollission()
+                            .instabreak()
+                            .randomTicks()
+                            .sound(SoundType.CROP)
+                            .pushReaction(PushReaction.DESTROY)));
+
+    public static final DeferredBlock<MusavaccaPlantSaplingBlock> MUSAVACCA_SAPLING =
+            BLOCKS.registerBlock(
+                    "musavacca_sapling",
+                    MusavaccaPlantSaplingBlock::new,
+                    BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.PLANT)
+                            .noCollission()
+                            .instabreak()
+                            .randomTicks()
+                            .sound(SoundType.GRASS)
+            );
     /* -------------------- Auto BlockItems -------------------- */
 
     // Blocks that should NOT get a default BlockItem (custom logic or none).
     private static final Set<DeferredHolder<Block, ? extends Block>> SKIP_BLOCK_ITEMS = Set.of(
             BANANA_COW_EGG,   // uses three stage items instead
             PEARL_FIRE,        // fire-like blocks usually don't have items
-            BANANA_PORTAL
+            BANANA_PORTAL,
+            MUSAVACCA_PLANT
+
     );
 
     // If you want specific Item.Properties for *all* BlockItems, prepare them here:

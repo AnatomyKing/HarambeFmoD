@@ -33,6 +33,8 @@ import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import org.slf4j.Logger;
 
+import java.util.stream.Stream;
+
 @Mod(HarambeCore.MOD_ID)
 public final class HarambeCore {
     public static final String MOD_ID = "harambefmod";
@@ -83,36 +85,19 @@ public final class HarambeCore {
                 );
 
 
-                // Set cutout render layer for pearl fire (allows transparency)
-                ItemBlockRenderTypes.setRenderLayer(
+
+                final ChunkRenderTypeSet CUTOUT = ChunkRenderTypeSet.of(RenderType.cutout());
+
+                Stream.of(
                         ModBlocks.PEARL_FIRE.get(),
-                        ChunkRenderTypeSet.of(RenderType.cutout())
-                );
-
-                ItemBlockRenderTypes.setRenderLayer(
                         ModBlocks.MUSAVACCA_FLOWER.get(),
-                        ChunkRenderTypeSet.of(RenderType.cutout())
-                );
-
-                ItemBlockRenderTypes.setRenderLayer(
                         ModBlocks.BANANA_COW_EGG.get(),
-                        ChunkRenderTypeSet.of(RenderType.cutout())
-                );
-
-                ItemBlockRenderTypes.setRenderLayer(
                         ModBlocks.MUSAVACCA_LEAVES.get(),
-                        ChunkRenderTypeSet.of(RenderType.cutout())
-                );
-
-                ItemBlockRenderTypes.setRenderLayer(
                         ModBlocks.MUSAVACCA_LEAVES_CROWN.get(),
-                        ChunkRenderTypeSet.of(RenderType.cutout())
-                );
-
-                ItemBlockRenderTypes.setRenderLayer(
                         ModBlocks.BANANA_PORTAL.get(),
-                        ChunkRenderTypeSet.of(RenderType.cutout())
-                );
+                        ModBlocks.MUSAVACCA_PLANT.get(),
+                        ModBlocks.MUSAVACCA_SAPLING.get()
+                ).forEach(b -> ItemBlockRenderTypes.setRenderLayer(b, CUTOUT));
 
                 // Register block color handler to tint each Pearl Fire with its unique color
                 BlockColors blockColors = Minecraft.getInstance().getBlockColors();

@@ -3,8 +3,8 @@
 	"credit": "AnatomyKing(𝕏🐦@LuukMus,ᵈᶦˢᶜᵒʳᵈ@anatomyking)",
 	"ambientocclusion": false,
 	"textures": {
-		"particle": "harambefmod:block/banana_tree_plant",
-		"cross": "harambefmod:block/banana_tree_plant"
+		"particle": "harambefmod:block/musavacca_plant",
+		"cross": "harambefmod:block/musavacca_plant"
 	},
 	"elements": [
 		{

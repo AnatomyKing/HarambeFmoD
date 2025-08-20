@@ -8,6 +8,7 @@ import net.anatomyworld.harambefmod.item.custom.FlintAndPearlItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.food.Foods;
+import net.minecraft.world.item.ItemNameBlockItem;
 import net.minecraft.world.item.Rarity;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.DeferredSpawnEggItem;
@@ -79,6 +80,11 @@ public final class ModItems {
             ITEMS.register("banana_cow_egg_ripe",
                     () -> new BananaCowEggStageItem(ModBlocks.BANANA_COW_EGG.get(),
                             new Item.Properties(), 2));
+
+    public static final DeferredItem<Item> MUSAVACCA_SPROUT =
+            ITEMS.register("musavacca_sprout",
+                    () -> new ItemNameBlockItem(ModBlocks.MUSAVACCA_PLANT.get(),
+                            new Item.Properties()));
 
 
 

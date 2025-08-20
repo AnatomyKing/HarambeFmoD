@@ -62,5 +62,10 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
         tag(ModTags.Blocks.BANANA_COW_GROWTH)
                 .add(   ModBlocks.MUSAVACCA_STEM.get(),
                         ModBlocks.STRIPPED_MUSAVACCA_STEM.get());
+
+        tag(BlockTags.CROPS).add(ModBlocks.MUSAVACCA_PLANT.get());
+
+
+        tag(BlockTags.SAPLINGS).add(ModBlocks.MUSAVACCA_SAPLING.get());
     }
 }

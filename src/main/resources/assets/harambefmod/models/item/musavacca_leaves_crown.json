@@ -1,4 +1,10 @@
 {
-  "credit": "AnatomyKing(𝕏🐦@LuukMus,ᵈᶦˢᶜᵒʳᵈ@anatomyking)",
-  "parent": "harambefmod:block/musavacca_leaves_crown"
+	"format_version": "1.21.6",
+	"credit": "AnatomyKing(𝕏🐦@LuukMus,ᵈᶦˢᶜᵒʳᵈ@anatomyking)",
+	"parent": "harambefmod:block/musavacca_leaves_crown",
+	"display": {
+		"gui": {
+			"translation": [0, -3, 0]
+		}
+	}
 }
