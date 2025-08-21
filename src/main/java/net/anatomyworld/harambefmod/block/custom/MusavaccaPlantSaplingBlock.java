@@ -74,7 +74,7 @@ public class MusavaccaPlantSaplingBlock extends BushBlock implements Bonemealabl
         for (int[] p : y2) if (!ok.test(p)) return false;
         int[][] y3 = {{1,3,2},{3,3,2},{2,3,1},{2,3,3},{1,3,1},{1,3,3},{3,3,1},{3,3,3}};
         for (int[] p : y3) if (!ok.test(p)) return false;
-        int[][] y4 = {{0,4,2},{4,4,2},{1,4,1},{1,4,3},{3,4,1},{3,4,3},{1,4,2},{3,4,2},{2,4,1},{2,4,3},{2,4,2}};
+        int[][] y4 = {{0,4,2},{4,4,2},{2,4,0},{2,4,4},{1,4,1},{1,4,3},{3,4,1},{3,4,3},{1,4,2},{3,4,2},{2,4,1},{2,4,3},{2,4,2}};
         for (int[] p : y4) if (!ok.test(p)) return false;
         int[][] y5 = {{1,5,2},{2,5,1},{2,5,3},{3,5,2},{2,5,2}};
         for (int[] p : y5) if (!ok.test(p)) return false;

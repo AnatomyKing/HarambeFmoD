@@ -16,6 +16,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
@@ -36,15 +37,13 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
         return SHAPE;
     }
 
-
-
+    /* Ceiling-only survival: either a sturdy ceiling OR the egg (so the flower under an attached egg doesn't instantly pop). */
     @Override
     public boolean canSurvive(@NotNull BlockState state, @NotNull LevelReader level, @NotNull BlockPos pos) {
         BlockPos above = pos.above();
         BlockState ceiling = level.getBlockState(above);
-        boolean sturdy = ceiling.isFaceSturdy(level, above, Direction.DOWN);
-        boolean eggCeiling = ceiling.is(ModBlocks.BANANA_COW_EGG.get());
-        return sturdy || eggCeiling;
+        return ceiling.isFaceSturdy(level, above, Direction.DOWN)
+                || ceiling.is(ModBlocks.BANANA_COW_EGG.get());
     }
 
     @Override
@@ -54,6 +53,7 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
         return canSurvive(s, ctx.getLevel(), pos) ? s : null;
     }
 
+    /* Vanilla pop-off: returning AIR here triggers onRemove. */
     @Override
     public @NotNull BlockState updateShape(@NotNull BlockState state,
                                            @NotNull Direction dir,
@@ -62,21 +62,10 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
                                            @NotNull BlockPos pos,
                                            @NotNull BlockPos neighborPos) {
         if (!state.canSurvive(level, pos)) {
-            return Blocks.AIR.defaultBlockState(); // pop off if unsupported
+            return Blocks.AIR.defaultBlockState();
         }
         return super.updateShape(state, dir, neighborState, level, pos, neighborPos);
     }
-
-    @Override
-    public void neighborChanged(@NotNull BlockState state, @NotNull Level level,
-                                @NotNull BlockPos pos, @NotNull Block neighbor, @NotNull BlockPos fromPos, boolean isMoving) {
-        super.neighborChanged(state, level, pos, neighbor, fromPos, isMoving);
-        if (!level.isClientSide && !state.canSurvive(level, pos)) {
-            level.destroyBlock(pos, true); // drop when support is lost
-        }
-    }
-
-
 
     @Override
     public boolean isRandomlyTicking(@NotNull BlockState state) { return true; }
@@ -89,13 +78,12 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
         }
     }
 
-    /* ---------------- Bonemeal API ---------------- */
+    /* -------- Bonemeal -------- */
 
     @Override
     public boolean isValidBonemealTarget(@NotNull LevelReader level,
                                          @NotNull BlockPos pos,
                                          @NotNull BlockState state) {
-
         return hasGrowthSurfaceAbove(level, pos) && hasAirBelow(level, pos);
     }
 
@@ -115,7 +103,7 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
         tryConvertUnderGrowthSurface(level, pos);
     }
 
-    /* ---------------- Helpers ---------------- */
+    /* -------- Helpers -------- */
 
     private static boolean hasGrowthSurfaceAbove(LevelReader level, BlockPos flowerPos) {
         return level.getBlockState(flowerPos.above()).is(ModTags.Blocks.BANANA_COW_GROWTH);
@@ -127,7 +115,7 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
 
     /**
      * If directly under any block in #harambefmod:banana_cow_growth and there is air below:
-     *   pos.above()  = growth surface (e.g., oak log OR musavacca stem)
+     *   pos.above()  = growth surface
      *   pos          = BANANA_COW_EGG (attached=true, age=0)
      *   pos.below()  = MUSAVACCA_FLOWER
      */
@@ -149,18 +137,29 @@ public class MusavaccaFlowerBlock extends Block implements BonemealableBlock {
         );
     }
 
-    /** If the flower is removed: hatch ripe egg above, else just remove it. */
+    /**
+     * If THIS flower is removed:
+     * - emulate egg "break" (FX + air),
+     * - hatch if age=2.
+     */
     @Override
     public void onRemove(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
                          @NotNull BlockState newState, boolean isMoving) {
         if (!level.isClientSide && !state.is(newState.getBlock())) {
             BlockPos eggPos = pos.above();
             BlockState eggState = level.getBlockState(eggPos);
+
             if (eggState.getBlock() instanceof BananaCowEggBlock) {
-                if (eggState.getValue(BananaCowEggBlock.AGE) == 2) {
-                    BananaCowEggBlock.hatch((ServerLevel) level, eggPos, true);
+                // break FX (particles+sound)
+                level.levelEvent(2001, eggPos, Block.getId(eggState)); // vanilla destroy effect
+                // free the space like a real break
+                level.setBlock(eggPos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+
+                int age = eggState.getValue(BananaCowEggBlock.AGE);
+                if (age == 2 && level instanceof ServerLevel sl) {
+                    BananaCowEggBlock.hatch(sl, eggPos, true); // attached-style spawn
                 }
-                level.removeBlock(eggPos, false);
+                level.gameEvent(null, GameEvent.BLOCK_DESTROY, eggPos);
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);
