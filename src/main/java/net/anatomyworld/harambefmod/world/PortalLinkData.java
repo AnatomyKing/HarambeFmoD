@@ -1,10 +1,10 @@
 package net.anatomyworld.harambefmod.world;
 
+import com.mojang.serialization.Codec;
 import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.block.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -21,6 +22,29 @@ import java.util.Optional;
 
 /** Links a hex code to 1 pending endpoint or a linked pair. */
 public final class PortalLinkData extends SavedData {
+
+    /* ---------- SavedDataType & Codec (1.21.8) ---------- */
+
+    /** Encode to a CompoundTag, decode back to PortalLinkData. */
+    public static final Codec<PortalLinkData> CODEC = CompoundTag.CODEC.xmap(
+            tag -> {
+                PortalLinkData d = new PortalLinkData();
+                d.loadFromTag(tag);
+                return d;
+            },
+            d -> d.saveToTag(new CompoundTag())
+    );
+
+    /** World save id + how to construct & serialize. */
+    public static final SavedDataType<PortalLinkData> TYPE =
+            new SavedDataType<>(HarambeCore.MOD_ID + "_portal_links", PortalLinkData::new, CODEC);
+
+    /** Grab or create for this ServerLevel. */
+    public static PortalLinkData get(ServerLevel level) {
+        return level.getDataStorage().computeIfAbsent(TYPE);
+    }
+
+    /* ---------- Model ---------- */
 
     /** One rectangular portal endpoint in a dimension. */
     public static final class Endpoint {
@@ -43,7 +67,7 @@ public final class PortalLinkData extends SavedData {
             t.putInt("ax", anchor.getX());
             t.putInt("ay", anchor.getY());
             t.putInt("az", anchor.getZ());
-            t.putString("axis", axis.getName());
+            t.putString("axis", axis.getName()); // "x" or "z"
             t.putInt("w", width);
             t.putInt("h", height);
             t.putInt("color", color);
@@ -52,12 +76,25 @@ public final class PortalLinkData extends SavedData {
         }
 
         public static Endpoint load(CompoundTag t) {
-            ResourceKey<Level> dim = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(t.getString("dim")));
-            BlockPos anchor = new BlockPos(t.getInt("ax"), t.getInt("ay"), t.getInt("az"));
-            Direction.Axis axis = "x".equalsIgnoreCase(t.getString("axis")) ? Direction.Axis.X : Direction.Axis.Z;
-            int w = t.getInt("w"), h = t.getInt("h"), c = t.getInt("color");
-            Direction fr = Direction.byName(t.getString("front"));
+            String dimStr = t.getStringOr("dim", "minecraft:overworld");
+            ResourceKey<Level> dim = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(dimStr));
+
+            int ax = t.getIntOr("ax", 0);
+            int ay = t.getIntOr("ay", 0);
+            int az = t.getIntOr("az", 0);
+            BlockPos anchor = new BlockPos(ax, ay, az);
+
+            String axisStr = t.getStringOr("axis", "x");
+            Direction.Axis axis = "x".equalsIgnoreCase(axisStr) ? Direction.Axis.X : Direction.Axis.Z;
+
+            int w = t.getIntOr("w", 1);
+            int h = t.getIntOr("h", 1);
+            int c = t.getIntOr("color", 0xFFFFFF);
+
+            String frStr = t.getStringOr("front", "south");
+            Direction fr = Direction.byName(frStr);
             if (fr == null || fr.getAxis() == Direction.Axis.Y) fr = Direction.SOUTH;
+
             return new Endpoint(dim, anchor, axis, w, h, c, fr);
         }
     }
@@ -65,43 +102,44 @@ public final class PortalLinkData extends SavedData {
     private static final class Link {
         Endpoint a;
         Endpoint b; // null until linked
+
         Link(Endpoint a) { this.a = a; }
         boolean linked() { return b != null; }
+
         CompoundTag save() {
             CompoundTag t = new CompoundTag();
             t.put("a", a.save());
             if (b != null) t.put("b", b.save());
             return t;
         }
+
         static Link load(CompoundTag t) {
-            Link l = new Link(Endpoint.load(t.getCompound("a")));
-            if (t.contains("b")) l.b = Endpoint.load(t.getCompound("b"));
+            // 'a' must exist; 'b' is optional
+            Link l = new Link(Endpoint.load(t.getCompoundOrEmpty("a")));
+            t.getCompound("b").ifPresent(bTag -> l.b = Endpoint.load(bTag));
             return l;
         }
     }
 
     private final Map<String, Link> links = new HashMap<>();
 
-    public static PortalLinkData get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(
-                new SavedData.Factory<>(PortalLinkData::new, (tag, provider) -> {
-                    PortalLinkData d = new PortalLinkData(); d.load(tag); return d;
-                }),
-                HarambeCore.MOD_ID + "_portal_links"
-        );
-    }
-
     public PortalLinkData() {}
 
-    private void load(CompoundTag tag) {
+    /* ---------- Persistence helpers ---------- */
+
+    private void loadFromTag(CompoundTag tag) {
         links.clear();
-        for (String key : tag.getAllKeys()) links.put(key, Link.load(tag.getCompound(key)));
+        for (String key : tag.keySet()) {
+            tag.getCompound(key).ifPresent(sub -> links.put(key, Link.load(sub)));
+        }
     }
 
-    @Override public @NotNull CompoundTag save(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider provider) {
-        for (var e : links.entrySet()) tag.put(e.getKey(), e.getValue().save());
-        return tag;
+    private CompoundTag saveToTag(CompoundTag out) {
+        for (var e : links.entrySet()) out.put(e.getKey(), e.getValue().save());
+        return out;
     }
+
+    /* ---------- API ---------- */
 
     /** 0 = first endpoint (pending), 1 = linked, -1 = code already used by two endpoints. */
     public int registerOrLink(ServerLevel level, BananaPortalShape.Frame f, String hexUpper, int rgb, Direction front) {
@@ -156,7 +194,7 @@ public final class PortalLinkData extends SavedData {
     }
 
     private static void clearInterior(ServerLevel level, Endpoint ep) {
-        var right = (ep.axis == Direction.Axis.X) ? Direction.EAST : Direction.SOUTH;
+        Direction right = (ep.axis == Direction.Axis.X) ? Direction.EAST : Direction.SOUTH;
         for (int y = 0; y < ep.height; y++) {
             for (int x = 0; x < ep.width; x++) {
                 BlockPos ip = ep.anchor.relative(right, x).above(y);
@@ -166,4 +204,6 @@ public final class PortalLinkData extends SavedData {
             }
         }
     }
+
+    /* Note: We don't need to override SavedData#save(...) here because we serialize via TYPE's Codec. */
 }

@@ -1,6 +1,7 @@
 
 package net.anatomyworld.harambefmod.client.gui;
 
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.lwjgl.glfw.GLFW;
 import net.anatomyworld.harambefmod.component.ModDataComponents;
 import net.minecraft.client.gui.GuiGraphics;
@@ -65,8 +66,7 @@ public class FireColorSelectionScreen extends Screen {
         stack.set(ModDataComponents.FLAME_COLOR.get(), "#" + in.toUpperCase());
 
         /* <-- add this – instantly tells the server about the new hex string */
-        net.neoforged.neoforge.network.PacketDistributor
-                .sendToServer(new net.anatomyworld.harambefmod.network.SyncColorPayload(
+        ClientPacketDistributor.sendToServer(new net.anatomyworld.harambefmod.network.SyncColorPayload(
                         "#" + in.toUpperCase()
                 ));
 

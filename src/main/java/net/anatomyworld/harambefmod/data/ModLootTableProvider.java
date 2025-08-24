@@ -10,10 +10,9 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 public final class ModLootTableProvider extends LootTableProvider {
-
     public ModLootTableProvider(PackOutput out, CompletableFuture<HolderLookup.Provider> lookup) {
         super(out,
-                Set.of(), // no required vanilla tables
+                Set.of(),
                 List.of(new SubProviderEntry(ModBlockLootSubProvider::new, LootContextParamSets.BLOCK)),
                 lookup);
     }

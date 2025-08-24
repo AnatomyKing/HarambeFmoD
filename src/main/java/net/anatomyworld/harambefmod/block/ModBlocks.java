@@ -2,11 +2,9 @@ package net.anatomyworld.harambefmod.block;
 
 import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.block.custom.*;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.LeavesBlock;
-import net.minecraft.world.level.block.RotatedPillarBlock;
-import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
@@ -50,29 +48,37 @@ public final class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .pushReaction(PushReaction.NORMAL)));
 
-    public static final DeferredBlock<LeavesBlock> MUSAVACCA_LEAVES =
+    public static final DeferredBlock<UntintedParticleLeavesBlock> MUSAVACCA_LEAVES =
             BLOCKS.register("musavacca_leaves",
-                    () -> new LeavesBlock(BlockBehaviour.Properties.of()
-                            .mapColor(MapColor.PLANT)
-                            .strength(0.2F)
-                            .randomTicks() //decay
-                            .sound(SoundType.GRASS)
-                            .noOcclusion()
-                            .isSuffocating((s,l,p) -> false)
-                            .isViewBlocking((s,l,p) -> false)
-                            .pushReaction(PushReaction.DESTROY)));
+                    () -> new UntintedParticleLeavesBlock(
+                            0.0F, // particle chance = none
+                            ParticleTypes.ASH, // unused because chance = 0
+                            BlockBehaviour.Properties.of()
+                                    .mapColor(MapColor.PLANT)
+                                    .strength(0.2F)
+                                    .randomTicks() // keeps decay behaviour
+                                    .sound(SoundType.GRASS)
+                                    .noOcclusion()
+                                    .isSuffocating((s,l,p) -> false)
+                                    .isViewBlocking((s,l,p) -> false)
+                                    .pushReaction(PushReaction.DESTROY)
+                    ));
 
-    public static final DeferredBlock<LeavesBlock> MUSAVACCA_LEAVES_CROWN =
+    public static final DeferredBlock<UntintedParticleLeavesBlock> MUSAVACCA_LEAVES_CROWN =
             BLOCKS.register("musavacca_leaves_crown",
-                    () -> new LeavesBlock(BlockBehaviour.Properties.of()
-                            .mapColor(MapColor.PLANT)
-                            .strength(0.2F)
-                            .randomTicks() //decay
-                            .sound(SoundType.GRASS)
-                            .noOcclusion()
-                            .isSuffocating((s,l,p) -> false)
-                            .isViewBlocking((s,l,p) -> false)
-                            .pushReaction(PushReaction.DESTROY)));
+                    () -> new UntintedParticleLeavesBlock(
+                            0.0F,
+                            ParticleTypes.ASH,
+                            BlockBehaviour.Properties.of()
+                                    .mapColor(MapColor.PLANT)
+                                    .strength(0.2F)
+                                    .randomTicks()
+                                    .sound(SoundType.GRASS)
+                                    .noOcclusion()
+                                    .isSuffocating((s,l,p) -> false)
+                                    .isViewBlocking((s,l,p) -> false)
+                                    .pushReaction(PushReaction.DESTROY)
+                    ));
 
     /** Custom fire block that can have a random tint when ignited. */
     public static final DeferredBlock<PearlFireBlock> PEARL_FIRE =

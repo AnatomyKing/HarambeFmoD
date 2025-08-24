@@ -1,29 +1,28 @@
 package net.anatomyworld.harambefmod.data;
 
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.anatomyworld.harambefmod.HarambeCore;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
-/** Registers every server-side data provider (runData). */
+@EventBusSubscriber(modid = HarambeCore.MOD_ID, value = Dist.CLIENT)
 public final class ModDataGenerators {
 
-    public static void gatherData(final GatherDataEvent e) {
+    /** Register *all* data providers (runs with --client datagen). */
+    @SubscribeEvent
+    public static void gatherData(final GatherDataEvent.Client event) {
+        // Recipes (Runner pattern in 1.21.x)
+        event.createProvider(ModRecipeProvider.Runner::new);
 
-        var gen     = e.getGenerator();
-        var lookup  = e.getLookupProvider();
-        ExistingFileHelper helper = e.getExistingFileHelper();
-        var out     = gen.getPackOutput();
+        // Block tags (constructor: (PackOutput, CompletableFuture<HolderLookup.Provider>))
+        event.createProvider(ModBlockTagsProvider::new);
 
-        /* ---- recipes ---- */
-        gen.addProvider(e.includeServer(),
-                new ModRecipeProvider(out, lookup));
+        // Loot tables (constructor: (PackOutput, CompletableFuture<HolderLookup.Provider>))
+        event.createProvider(ModLootTableProvider::new);
 
-        /* ---- block-tags ---- */
-        gen.addProvider(e.includeServer(),
-                new ModBlockTagsProvider(out, lookup, helper));
-
-
-        gen.addProvider(e.includeServer(),
-                new ModLootTableProvider(out, lookup));   //  <<– new
+        // If you add item tags later and they depend on block tags:
+        // event.createBlockAndItemTags(ModBlockTagsProvider::new, ModItemTagsProvider::new);
     }
 
     private ModDataGenerators() {}
