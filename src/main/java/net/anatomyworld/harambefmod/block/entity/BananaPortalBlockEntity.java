@@ -5,19 +5,21 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.Packet;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.jetbrains.annotations.NotNull;
 
 /** Stores tint color, anchor, and this portal group's front direction. */
 public final class BananaPortalBlockEntity extends BlockEntity {
-    private int color = 0xFFFFFF; // 0xRRGGBB
+    private int color = 0xFFFFFF;          // 0xRRGGBB
     private BlockPos anchor = BlockPos.ZERO; // interior bottom-left
-    private Direction front = Direction.SOUTH; // portal "front"
+    private Direction front = Direction.SOUTH; // portal "front" (must be horizontal)
 
     public BananaPortalBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.BANANA_PORTAL_BE.get(), pos, state);
@@ -41,8 +43,9 @@ public final class BananaPortalBlockEntity extends BlockEntity {
 
     public Direction getFront() { return front; }
     public void setFront(Direction d) {
-        if (d.getAxis() == Direction.Axis.Y) return;
-        this.front = d; setChanged();
+        if (d.getAxis() == Direction.Axis.Y) return; // ignore vertical directions
+        this.front = d;
+        setChanged();
         if (level != null && !level.isClientSide) {
             var s = getBlockState();
             level.sendBlockUpdated(worldPosition, s, s, Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
@@ -51,23 +54,31 @@ public final class BananaPortalBlockEntity extends BlockEntity {
 
     // ---------- NBT (save/load) ----------
 
+    // 1.21.8: uses ValueOutput
     @Override
-    protected void saveAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider provider) {
-        super.saveAdditional(tag, provider);
-        tag.putInt("Color", color);
-        tag.putInt("AX", anchor.getX());
-        tag.putInt("AY", anchor.getY());
-        tag.putInt("AZ", anchor.getZ());
-        tag.putString("Front", front.getName());
+    protected void saveAdditional(@NotNull ValueOutput out) {
+        out.putInt("Color", color);
+        out.putInt("AX", anchor.getX());
+        out.putInt("AY", anchor.getY());
+        out.putInt("AZ", anchor.getZ());
+        out.putString("Front", front.getName());
     }
 
+    // 1.21.8: uses ValueInput + Optional-style accessors
     @Override
-    protected void loadAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider provider) {
-        super.loadAdditional(tag, provider);
-        if (tag.contains("Color")) color = tag.getInt("Color");
-        anchor = new BlockPos(tag.getInt("AX"), tag.getInt("AY"), tag.getInt("AZ"));
-        Direction f = Direction.byName(tag.getString("Front"));
-        if (f != null && f.getAxis() != Direction.Axis.Y) front = f;
+    protected void loadAdditional(@NotNull ValueInput in) {
+        color = in.getIntOr("Color", color);
+
+        int ax = in.getIntOr("AX", anchor.getX());
+        int ay = in.getIntOr("AY", anchor.getY());
+        int az = in.getIntOr("AZ", anchor.getZ());
+        anchor = new BlockPos(ax, ay, az);
+
+        String frontName = in.getStringOr("Front", front.getName());
+        Direction f = Direction.byName(frontName);
+        if (f != null && f.getAxis() != Direction.Axis.Y) {
+            front = f;
+        }
     }
 
     // ---------- Networking sync (chunk load + block updates) ----------
