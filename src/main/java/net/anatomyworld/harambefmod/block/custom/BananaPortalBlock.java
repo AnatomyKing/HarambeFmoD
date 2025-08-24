@@ -7,10 +7,13 @@ import net.anatomyworld.harambefmod.world.BananaPortalShape;
 import net.anatomyworld.harambefmod.world.PortalLinkData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.InsideBlockEffectApplier;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
@@ -21,9 +24,11 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -34,7 +39,7 @@ import org.jetbrains.annotations.Nullable;
 /** Re-entry gated portal with ultra-smooth, survival-safe teleport. */
 public final class BananaPortalBlock extends Block implements EntityBlock {
     public static final MapCodec<BananaPortalBlock> CODEC = BlockBehaviour.simpleCodec(p -> new BananaPortalBlock());
-    @Override public @NotNull MapCodec<? extends Block> codec() { return CODEC; }
+    @Override protected @NotNull MapCodec<? extends Block> codec() { return CODEC; }
 
     /** X = portal plane ⟂ X (normal ±Z). Z = portal plane ⟂ Z (normal ±X). */
     public static final EnumProperty<Direction.Axis> AXIS = BlockStateProperties.HORIZONTAL_AXIS;
@@ -42,7 +47,7 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
     private static final VoxelShape SHAPE_X = Block.box(0, 0, 7, 16, 16, 9); // normal along Z
     private static final VoxelShape SHAPE_Z = Block.box(7, 0, 0, 9, 16, 16); // normal along X
 
-    // Per-entity tags
+    // Per-entity tags (persist across ticks)
     private static final String TAG_CD_UNTIL  = "harambefmod:portal_cd";    // long tick until re-entry allowed
     private static final String TAG_ANY_TICK  = "harambefmod:any_portal_t"; // last tick seen inside ANY portal
     private static final String TAG_IN_ANCHOR = "harambefmod:in_anchor";    // last anchor (optional)
@@ -54,7 +59,7 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
     private static final double MIN_OUT_WALK   = 0.04;  // tiny nudge when walking
     private static final double MIN_OUT_SPRINT = 0.12;  // gentle nudge when sprinting
 
-    // Safety pads (a bit larger now)
+    // Safety pads
     private static final double WALL_PAD  = 0.125; // 2/16 block lateral clearance to frame faces
     private static final double CEIL_PAD  = 0.125; // 2/16 block headroom under the top span
     private static final double NEAR_EPS  = 0.02;
@@ -76,11 +81,23 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
     }
 
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) { b.add(AXIS); }
-    @Override public @Nullable BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) { return new BananaPortalBlockEntity(pos, state); }
-    @Override public @NotNull VoxelShape getShape(@NotNull BlockState s, @NotNull BlockGetter g, @NotNull BlockPos p, @NotNull CollisionContext c) { return s.getValue(AXIS) == Direction.Axis.X ? SHAPE_X : SHAPE_Z; }
 
+    @Override public @Nullable BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
+        return new BananaPortalBlockEntity(pos, state);
+    }
+
+    // 1.21.x getShape uses BlockGetter
+    @Override public @NotNull VoxelShape getShape(@NotNull BlockState s, @NotNull BlockGetter g, @NotNull BlockPos p, @NotNull CollisionContext c) {
+        return s.getValue(AXIS) == Direction.Axis.X ? SHAPE_X : SHAPE_Z;
+    }
+
+    // 1.21.x: signature now includes InsideBlockEffectApplier (5 params), override is protected
     @Override
-    public void entityInside(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Entity entity) {
+    protected void entityInside(@NotNull BlockState state,
+                                @NotNull Level level,
+                                @NotNull BlockPos pos,
+                                @NotNull Entity entity,
+                                @NotNull InsideBlockEffectApplier effectApplier) {
         if (level.isClientSide) return;
         ServerLevel server = (ServerLevel) level;
 
@@ -90,22 +107,23 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         long now        = server.getGameTime();
         long thisAnchor = portalBE.getAnchor().asLong();
 
-        var tag      = entity.getPersistentData();
-        long lastAny = tag.getLong(TAG_ANY_TICK);
+        // NBT in 1.21.8: use ...Or helpers instead of Optional<Long>
+        CompoundTag tag = entity.getPersistentData();
+        long lastAny = tag.getLongOr(TAG_ANY_TICK, 0L);
 
         // Re-entry gate: must have been OUT of ALL portals for >= 1 full tick
         boolean enteredFromOutside = (lastAny < (now - 1));
         tag.putLong(TAG_ANY_TICK, now);
         tag.putLong(TAG_IN_ANCHOR, thisAnchor);
         if (!enteredFromOutside) return;
-        if (tag.getLong(TAG_CD_UNTIL) > now) return;
+        if (tag.getLongOr(TAG_CD_UNTIL, 0L) > now) return;
 
         // Linked endpoint
         var data = PortalLinkData.get(server);
         var targetOpt = data.findOtherEndpointForPosition(server, pos);
         if (targetOpt.isEmpty()) return;
         var target = targetOpt.get();
-        if (server.dimension() != target.dim) return; // same-dimension only
+        if (!server.dimension().equals(target.dim)) return; // same-dimension only
 
         // Bases
         Vec3 nSrc    = dirToUnit(portalBE.getFront());
@@ -147,9 +165,9 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         double v = Mth.clamp(Vs / srcAvailV, 0.0, 1.0);
 
         // Rescale to destination ideal offsets
-        double LdIdeal = u * (dstW - 1.0);
+        double LdIdeal   = u * (dstW - 1.0);
         double dstAvailV = Math.max(0.0, dstH - entity.getBbHeight());
-        double VdIdeal = v * dstAvailV;
+        double VdIdeal   = v * dstAvailV;
 
         // Safe lateral window, based on hitbox width
         double halfW = entity.getBbWidth() / 2.0;
@@ -196,9 +214,10 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         boolean wasSprinting = (entity instanceof LivingEntity le2) && le2.isSprinting();
         boolean wasElytra    = (entity instanceof LivingEntity le3) && le3.isFallFlying();
 
-        // ====== NEW: ensure the initial exit position is collision-free ======
+        // Ensure the initial exit position is collision-free
         outPos = findSafeExit(server, entity, outPos, nDstOut, tgtAnchor, rDst, dstW, dstH);
 
+        // Gate re-entry briefly
         tag.putLong(TAG_CD_UNTIL, now + COOLDOWN_TICKS);
         tag.putLong(TAG_IN_ANCHOR, tgtAnchor.asLong());
         entity.resetFallDistance();
@@ -209,7 +228,7 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         final boolean sprintFlag = wasSprinting;
         final boolean elytraFlag = wasElytra;
 
-        // === Ultra-smooth handoff: teleport now, then ease vel+rot over a couple of ticks ===
+        // === Ultra-smooth handoff: teleport now, then ease vel+rot for a couple ticks ===
         Vec3 finalOutPos = outPos;
         runNextTick(server, () -> {
             if (entity.isRemoved()) return;
@@ -222,7 +241,9 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
                 sp.setYHeadRot(yawTarget);
                 sp.setXRot(pitchTarget);
             } else {
-                entity.moveTo(finalOutPos.x, finalOutPos.y, finalOutPos.z, yawTarget, pitchTarget);
+                entity.teleportTo(finalOutPos.x, finalOutPos.y, finalOutPos.z);
+                entity.setYRot(yawTarget);
+                entity.setXRot(pitchTarget);
                 entity.resetFallDistance();
                 if (entity instanceof LivingEntity le) {
                     le.setSprinting(sprintFlag);
@@ -258,7 +279,8 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
                         sp.setYHeadRot(easedYaw);
                         sp.setXRot(easedPitch);
                     } else {
-                        entity.moveTo(entity.getX(), entity.getY(), entity.getZ(), easedYaw, easedPitch);
+                        entity.setYRot(easedYaw);
+                        entity.setXRot(easedPitch);
                         lv.setYBodyRot(easedYaw);
                         lv.setYHeadRot(easedYaw);
                     }
@@ -277,9 +299,14 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         });
     }
 
+    // 1.21.x: Orientation-based signature
     @Override
-    public void neighborChanged(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
-                                @NotNull Block neighbor, @NotNull BlockPos fromPos, boolean isMoving) {
+    protected void neighborChanged(@NotNull BlockState state,
+                                   @NotNull Level level,
+                                   @NotNull BlockPos pos,
+                                   @NotNull Block neighbor,
+                                   @NotNull Orientation orientation,
+                                   boolean isMoving) {
         if (level.isClientSide) return;
         ServerLevel server = (ServerLevel) level;
         if (!BananaPortalShape.isInteriorStillFramed(server, pos)) {
@@ -288,12 +315,14 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
     }
 
     @Override
-    public @NotNull BlockState playerWillDestroy(@NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull Player player) {
+    public @NotNull BlockState playerWillDestroy(@NotNull Level level,
+                                                 @NotNull BlockPos pos,
+                                                 @NotNull BlockState state,
+                                                 @NotNull Player player) {
         if (!level.isClientSide && player.isCreative()) {
             PortalLinkData.get((ServerLevel) level).removePortalAt((ServerLevel) level, pos, true);
         }
-        super.playerWillDestroy(level, pos, state, player);
-        return state;
+        return super.playerWillDestroy(level, pos, state, player);
     }
 
     // --- helpers ---
@@ -361,12 +390,12 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         if (e instanceof ServerPlayer sp) {
             sp.connection.teleport(corrected.x, corrected.y, corrected.z, sp.getYHeadRot(), sp.getXRot());
         } else {
-            e.moveTo(corrected.x, corrected.y, corrected.z, e.getYRot(), e.getXRot());
+            e.teleportTo(corrected.x, corrected.y, corrected.z);
         }
         e.resetFallDistance();
     }
 
-    // ====== NEW: robust exit position finder ======
+    // ====== robust exit position finder ======
 
     /**
      * Search along the outward normal for a position where the entity's AABB doesn't collide.
@@ -391,7 +420,6 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         }
 
         // Everything blocked – fall back to staying just inside the portal skin on the destination side.
-        // Keep clamped within the lane (left/right/top) so we don't nick the frame.
         double halfW = e.getBbWidth() / 2.0;
         double minLd = (halfW + WALL_PAD) - 0.5;
         double maxLd = (dstW - 1.0) - ((halfW + WALL_PAD) - 0.5);

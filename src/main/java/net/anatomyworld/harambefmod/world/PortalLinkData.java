@@ -124,7 +124,7 @@ public final class PortalLinkData extends SavedData {
     }
 
     private static boolean belongsTo(ServerLevel level, BlockPos p, Endpoint ep) {
-        if (level.dimension() != ep.dim) return false;
+        if (!level.dimension().equals(ep.dim)) return false;
         Direction right = (ep.axis == Direction.Axis.X) ? Direction.EAST : Direction.SOUTH;
         BlockPos end = ep.anchor.relative(right, ep.width - 1).above(ep.height - 1);
         return p.getX() >= Math.min(ep.anchor.getX(), end.getX()) && p.getX() <= Math.max(ep.anchor.getX(), end.getX())

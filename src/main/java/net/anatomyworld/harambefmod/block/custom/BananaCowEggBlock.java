@@ -6,6 +6,7 @@ import net.anatomyworld.harambefmod.entity.ModEntities;
 import net.anatomyworld.harambefmod.entity.bananacow.BananaCow;
 import net.anatomyworld.harambefmod.item.ModItems;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
@@ -14,9 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraft.world.level.GameRules;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.Blocks;
@@ -37,7 +36,9 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
 
     public BananaCowEggBlock(BlockBehaviour.Properties props) {
         super(props);
-        this.registerDefaultState(this.stateDefinition.any().setValue(AGE, 0).setValue(ATTACHED, false));
+        this.registerDefaultState(this.stateDefinition.any()
+                .setValue(AGE, 0)
+                .setValue(ATTACHED, false));
     }
 
     @Override
@@ -45,11 +46,12 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
         b.add(AGE, ATTACHED);
     }
 
+    // 1.21.x signature: BlockGetter (not LevelReader)
     @Override
-    public @NotNull VoxelShape getShape(@NotNull BlockState state,
-                                        @NotNull net.minecraft.world.level.BlockGetter level,
-                                        @NotNull BlockPos pos,
-                                        @NotNull CollisionContext ctx) {
+    protected @NotNull VoxelShape getShape(@NotNull BlockState state,
+                                           @NotNull net.minecraft.world.level.BlockGetter level,
+                                           @NotNull BlockPos pos,
+                                           @NotNull CollisionContext ctx) {
         return SHAPE;
     }
 
@@ -63,16 +65,46 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
         }
     }
 
-    /* IMPORTANT: no side-effects here; just keep ATTACHED in sync. */
     @Override
-    public @NotNull BlockState updateShape(@NotNull BlockState state,
-                                           @NotNull net.minecraft.core.Direction face,
-                                           @NotNull BlockState fromState,
-                                           @NotNull LevelAccessor level,
-                                           @NotNull BlockPos pos,
-                                           @NotNull BlockPos fromPos) {
-        if (level instanceof Level L) {
-            return state.setValue(ATTACHED, isAttached(L, pos));
+    protected @NotNull BlockState updateShape(@NotNull BlockState state,
+                                              @NotNull LevelReader level,
+                                              @NotNull ScheduledTickAccess scheduled,
+                                              @NotNull BlockPos pos,
+                                              @NotNull Direction face,
+                                              @NotNull BlockPos fromPos,
+                                              @NotNull BlockState fromState,
+                                              @NotNull RandomSource random) {
+        // Mirror the old neighborChanged: when the TOP support goes away, "break" and possibly hatch
+        if (face == Direction.UP && level instanceof Level l && !l.isClientSide) {
+            boolean wasAttached = state.getValue(ATTACHED);
+            boolean lostTop = !fromState.is(ModTags.Blocks.BANANA_COW_GROWTH);
+            if (wasAttached && lostTop) {
+                l.levelEvent(2001, pos, Block.getId(state)); // vanilla break FX
+                l.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+
+                // remove + drop the flower under it (if present)
+                BlockPos flowerPos = pos.below();
+                BlockState flowerState = l.getBlockState(flowerPos);
+                if (flowerState.is(ModBlocks.MUSAVACCA_FLOWER.get())) {
+                    l.removeBlock(flowerPos, false);
+                    if (l instanceof ServerLevel sl) {
+                        popResource(sl, pos, new ItemStack(ModBlocks.MUSAVACCA_FLOWER.get()));
+                    }
+                }
+
+                // hatch if ripe
+                if (state.getValue(AGE) == 2 && l instanceof ServerLevel sl) {
+                    hatch(sl, pos, true);
+                }
+
+                l.gameEvent(null, GameEvent.BLOCK_DESTROY, pos);
+                return state; // return value is ignored because we already replaced the block
+            }
+        }
+
+        // Keep ATTACHED in sync for any other neighbor update
+        if (level instanceof Level l2) {
+            return state.setValue(ATTACHED, isAttached(l2, pos));
         }
         return state;
     }
@@ -83,58 +115,8 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
         return up.is(ModTags.Blocks.BANANA_COW_GROWTH) && down.is(ModBlocks.MUSAVACCA_FLOWER.get());
     }
 
-    /* -------- NEW: act like a break when the TOP growth block is removed -------- */
-    @Override
-    public void neighborChanged(@NotNull BlockState state,
-                                @NotNull Level level,
-                                @NotNull BlockPos pos,
-                                @NotNull Block neighborBlock,
-                                @NotNull BlockPos fromPos,
-                                boolean isMoving) {
-        if (level.isClientSide) return;
-        if (!state.is(this)) return;
+    /* Act like a break when the TOP growth block is removed. */
 
-        // ONLY handle the top neighbor change here (flower path is handled by MusavaccaFlowerBlock#onRemove)
-        if (fromPos.equals(pos.above())) {
-            boolean wasAttached = state.getValue(ATTACHED);
-            BlockState upNow = level.getBlockState(pos.above());
-            boolean lostTop = !upNow.is(ModTags.Blocks.BANANA_COW_GROWTH);
-
-            if (wasAttached && lostTop) {
-                // 0) play vanilla destroy FX for the egg
-                level.levelEvent(2001, pos, Block.getId(state)); // particles + sound
-
-                // 1) free the space first, like a real break
-                level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-
-                // 2) if attached and the flower is still there, remove it and RETURN one flower item
-                BlockPos flowerPos = pos.below();
-                BlockState flowerState = level.getBlockState(flowerPos);
-                if (flowerState.is(ModBlocks.MUSAVACCA_FLOWER.get())) {
-                    level.removeBlock(flowerPos, false);
-                    if (level instanceof ServerLevel sl) {
-                        popResource(sl, pos, new ItemStack(ModBlocks.MUSAVACCA_FLOWER.get()));
-                    }
-                }
-
-                // 3) hatch if ripe (no silk touch context here)
-                int age = state.getValue(AGE);
-                if (age == 2 && level instanceof ServerLevel sl) {
-                    hatch(sl, pos, true); // was attached
-                }
-
-                // 4) notify listeners/sculk
-                level.gameEvent(null, GameEvent.BLOCK_DESTROY, pos);
-                return;
-            }
-        }
-
-        // keep ATTACHED flag in sync for any other neighbor change
-        boolean nowAttached = isAttached(level, pos);
-        if (nowAttached != state.getValue(ATTACHED)) {
-            level.setBlock(pos, state.setValue(ATTACHED, nowAttached), Block.UPDATE_CLIENTS);
-        }
-    }
 
     /* random growth while attached */
     @Override public boolean isRandomlyTicking(@NotNull BlockState s) { return s.getValue(ATTACHED) && s.getValue(AGE) < 2; }
@@ -165,7 +147,7 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
         boolean attached = state.getValue(ATTACHED);
         int age = state.getValue(AGE);
 
-        // If attached, remove the flower block below and return the flower item from the egg.
+        // If attached, remove the flower block below and return the flower item.
         if (attached && level.getBlockState(pos.below()).is(ModBlocks.MUSAVACCA_FLOWER.get())) {
             level.removeBlock(pos.below(), false);
             popResource(level, pos, new ItemStack(ModBlocks.MUSAVACCA_FLOWER.get()));
@@ -189,62 +171,70 @@ public class BananaCowEggBlock extends Block implements BonemealableBlock {
         super.spawnAfterBreak(state, level, pos, tool, dropXp);
     }
 
-    /* 1.21+ Silk Touch check */
+    /** 1.21+ enchantments live on the stack data; use Holder-based helper. */
     private static boolean hasSilkTouch(ServerLevel level, ItemStack tool) {
         if (tool.isEmpty()) return false;
         Holder<Enchantment> silk = level.registryAccess()
-                .registryOrThrow(Registries.ENCHANTMENT)
-                .getHolderOrThrow(Enchantments.SILK_TOUCH);
-        return EnchantmentHelper.getItemEnchantmentLevel(silk, tool) > 0;
+                .lookupOrThrow(Registries.ENCHANTMENT)
+                .getOrThrow(Enchantments.SILK_TOUCH);
+        return EnchantmentHelper.getTagEnchantmentLevel(silk, tool) > 0;
     }
 
-    /** General hatch with collision-friendly placement (attached-first policy). */
+    /** Hatch a Banana Cow with simple collision-friendly placement. */
     public static void hatch(ServerLevel level, BlockPos pos, boolean wasAttached) {
-        BananaCow cow = ModEntities.BANANA_COW.get().create(level);
-        if (cow == null) return;
+        // Using direct ctor avoids "create(Level)" mismatches across mappings.
+        BananaCow cow = new BananaCow(ModEntities.BANANA_COW.get(), level);
 
         final double eps = 0.01D;
-        double x = pos.getX() + 0.5D;
-        double z = pos.getZ() + 0.5D;
-        float yaw = level.random.nextFloat() * 360F;
+        final double x = pos.getX() + 0.5D;
+        final double z = pos.getZ() + 0.5D;
+        final float yaw = level.random.nextFloat() * 360F;
 
         boolean belowAir = level.getBlockState(pos.below()).isAir();
 
-        // 1) Primary: "space below" (attached eggs free the flower space). For non-attached, use it too if air below.
+        // 1) Prefer spawning slightly below if attached (the flower space just got freed), or if air below.
         if (wasAttached || belowAir) {
             double yBelow = pos.getY() - 0.40D - eps;
-            cow.moveTo(x, yBelow, z, yaw, 0.0F);
+            cow.setPos(x, yBelow, z);
+            cow.setYBodyRot(yaw);
+            cow.setYHeadRot(yaw);
             if (level.noCollision(cow)) {
                 level.addFreshEntity(cow);
                 return;
             }
         }
 
-        // 2) Fallback: in-place (slightly above the egg)
+        // 2) Fallback: same spot, slightly above.
         double yHere = pos.getY() + eps;
-        cow.moveTo(x, yHere, z, yaw, 0.0F);
+        cow.setPos(x, yHere, z);
+        cow.setYBodyRot(yaw);
+        cow.setYHeadRot(yaw);
         if (level.noCollision(cow)) {
             level.addFreshEntity(cow);
             return;
         }
 
-        // 3) Fallback: nearby two-high air with support
+        // 3) Fallback: nearby two-high air with solid support.
         BlockPos candidate = findTwoHighAirNearby(level, pos);
         if (candidate != null) {
             double xN = candidate.getX() + 0.5D;
             double yN = candidate.getY() + eps;
             double zN = candidate.getZ() + 0.5D;
-            cow.moveTo(xN, yN, zN, yaw, 0.0F);
+            cow.setPos(xN, yN, zN);
+            cow.setYBodyRot(yaw);
+            cow.setYHeadRot(yaw);
             if (level.noCollision(cow)) {
                 level.addFreshEntity(cow);
                 return;
             }
         }
 
-        // 4) Last resort: one block down if air
+        // 4) Last resort: one block down if possible.
         if (belowAir) {
             double yDown = pos.getY() - 0.30D;
-            cow.moveTo(x, yDown, z, yaw, 0.0F);
+            cow.setPos(x, yDown, z);
+            cow.setYBodyRot(yaw);
+            cow.setYHeadRot(yaw);
             if (level.noCollision(cow)) {
                 level.addFreshEntity(cow);
             }

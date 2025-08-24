@@ -1,6 +1,5 @@
 package net.anatomyworld.harambefmod.entity.bananacow.clientmodel;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.entity.bananacow.BananaCow;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -8,41 +7,39 @@ import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
-
 public final class BananaCowRenderer
-        extends MobRenderer<BananaCow, BananaCowModel> {
+        extends MobRenderer<BananaCow, BananaCowModel.State, BananaCowModel> {
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(
-                    HarambeCore.MOD_ID, "textures/entity/banana_cow.png");
+            ResourceLocation.fromNamespaceAndPath(HarambeCore.MOD_ID, "textures/entity/banana_cow.png");
 
-    /** shadow radius for an adult */
-    private static final float ADULT_SHADOW = 0.7F;
+    private static final float SHADOW = 0.7F;
 
     public BananaCowRenderer(EntityRendererProvider.Context ctx) {
-        super(ctx,
-                new BananaCowModel(ctx.bakeLayer(BananaCowModel.LAYER_LOCATION)),
-                ADULT_SHADOW);
-    }
-
-    /* ------------------------------------------------------------------ */
-    /* Shrink entire model + shadow for calves                            */
-    /* ------------------------------------------------------------------ */
-    @Override
-    protected void scale(@NotNull BananaCow cow,
-                         @NotNull PoseStack ps,
-                         float partialTick) {
-
-        if (cow.isBaby()) {
-            ps.scale(0.5F, 0.5F, 0.5F);           // half-size body
-            this.shadowRadius = ADULT_SHADOW * 0.5F;
-        } else {
-            this.shadowRadius = ADULT_SHADOW;
-        }
+        super(ctx, new BananaCowModel(ctx.bakeLayer(BananaCowModel.LAYER_LOCATION)), SHADOW);
     }
 
     @Override
-    public @NotNull ResourceLocation getTextureLocation(@NotNull BananaCow entity) {
+    public @NotNull BananaCowModel.State createRenderState() {
+        return new BananaCowModel.State();
+    }
+
+    @Override
+    public void extractRenderState(@NotNull BananaCow entity,
+                                   @NotNull BananaCowModel.State state,
+                                   float partialTick) {
+        super.extractRenderState(entity, state, partialTick);
+
+        // readable values for the model (no Yarn field names used)
+        state.headYawDeg       = entity.getYHeadRot() - entity.getYRot();
+        state.headPitchDeg     = entity.getXRot();
+        state.limbSwing        = entity.walkAnimation.position();
+        state.limbSwingAmount  = entity.walkAnimation.speed();
+        state.ageTicks         = entity.tickCount + partialTick;
+    }
+
+    @Override
+    public @NotNull ResourceLocation getTextureLocation(@NotNull BananaCowModel.State state) {
         return TEXTURE;
     }
 }

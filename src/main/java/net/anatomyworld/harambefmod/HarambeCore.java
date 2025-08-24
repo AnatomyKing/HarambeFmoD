@@ -12,14 +12,7 @@ import net.anatomyworld.harambefmod.entity.bananacow.clientmodel.BananaCowRender
 import net.anatomyworld.harambefmod.item.ModCreativeTabs;
 import net.anatomyworld.harambefmod.item.ModItems;
 import net.anatomyworld.harambefmod.network.ModNetworking;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.color.block.BlockColors;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -27,13 +20,10 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import org.slf4j.Logger;
-
-import java.util.stream.Stream;
 
 @Mod(HarambeCore.MOD_ID)
 public final class HarambeCore {
@@ -41,97 +31,66 @@ public final class HarambeCore {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public HarambeCore(IEventBus modBus, ModContainer container) {
-        // Register all mod content
         ModEntities.register(modBus);
         ModItems.register(modBus);
         ModDataComponents.DATA_COMPONENTS.register(modBus);
         ModBlocks.register(modBus);
         ModBlockEntities.register(modBus);
         ModCreativeTabs.register(modBus);
-        ModNetworking.register(modBus);  // **Register custom network payloads**
+        ModNetworking.register(modBus);
 
-        // Common setup event
         modBus.addListener(this::commonSetup);
 
-        // Config registration, data generation omitted for brevity...
         container.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
         modBus.addListener(ModDataGenerators::gatherData);
     }
 
     private void commonSetup(final FMLCommonSetupEvent e) {
-
+        // common setup as needed
     }
 
     @EventBusSubscriber(modid = MOD_ID, value = Dist.CLIENT)
     public static final class ClientEvents {
+
         @SubscribeEvent
-        public static void layerDefs(EntityRenderersEvent.RegisterLayerDefinitions e) {
-            // BananaCow model registration...
+        public static void registerLayerDefs(EntityRenderersEvent.RegisterLayerDefinitions e) {
             e.registerLayerDefinition(
                     BananaCowModel.LAYER_LOCATION,
                     BananaCowModel::createBodyLayer
-
             );
-
         }
 
         @SubscribeEvent
-        public static void clientSetup(FMLClientSetupEvent e) {
-            e.enqueueWork(() -> {
-                // Register entity renderers
-                net.minecraft.client.renderer.entity.EntityRenderers.register(
-                        ModEntities.BANANA_COW.get(),
-                        BananaCowRenderer::new
-                );
+        public static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers e) {
+            e.registerEntityRenderer(ModEntities.BANANA_COW.get(), BananaCowRenderer::new);
+        }
 
+        @SubscribeEvent
+        public static void registerBlockColors(RegisterColorHandlersEvent.Block e) {
+            // Pearl Fire tint from its BE (expects faces with tintindex 0)
+            e.register((state, level, pos, tintIndex) -> {
+                if (tintIndex == 0 && level != null && pos != null) {
+                    BlockEntity be = level.getBlockEntity(pos);
+                    if (be instanceof PearlFireBlockEntity pearlFire) {
+                        return pearlFire.getColor(); // ARGB/RGB int
+                    }
+                }
+                return 0xFFFFFFFF;
+            }, ModBlocks.PEARL_FIRE.get());
 
+            // Banana Portal tint (cache → BE → default), faces use tintindex 0
+            e.register((state, level, pos, tintIndex) -> {
+                if (tintIndex != 0 || level == null || pos == null) return 0xFFFFFFFF;
 
-                final ChunkRenderTypeSet CUTOUT = ChunkRenderTypeSet.of(RenderType.cutout());
+                int cached = net.anatomyworld.harambefmod.client.portal.BananaPortalTintCache.get(pos);
+                if (cached != -1) return cached;
 
-                Stream.of(
-                        ModBlocks.PEARL_FIRE.get(),
-                        ModBlocks.MUSAVACCA_FLOWER.get(),
-                        ModBlocks.BANANA_COW_EGG.get(),
-                        ModBlocks.MUSAVACCA_LEAVES.get(),
-                        ModBlocks.MUSAVACCA_LEAVES_CROWN.get(),
-                        ModBlocks.BANANA_PORTAL.get(),
-                        ModBlocks.MUSAVACCA_PLANT.get(),
-                        ModBlocks.MUSAVACCA_SAPLING.get()
-                ).forEach(b -> ItemBlockRenderTypes.setRenderLayer(b, CUTOUT));
-
-                // Register block color handler to tint each Pearl Fire with its unique color
-                BlockColors blockColors = Minecraft.getInstance().getBlockColors();
-                blockColors.register(
-                        (BlockState state, BlockAndTintGetter level, BlockPos pos, int tintIndex) -> {
-                            if (tintIndex == 0 && level != null && pos != null) {
-                                BlockEntity be = level.getBlockEntity(pos);
-                                if (be instanceof PearlFireBlockEntity pearlFire) {
-                                    return pearlFire.getColor();
-                                }
-                            }
-                            return 0xFFFFFF;
-                        },
-                        ModBlocks.PEARL_FIRE.get()
-                );
-                blockColors.register(
-                        (state, level, pos, tintIndex) -> {
-                            if (tintIndex != 0 || level == null || pos == null) return 0xFFFFFF;
-
-                            // 1) If we pre-cached a tint for this position, use it
-                            int cached = net.anatomyworld.harambefmod.client.portal.BananaPortalTintCache.get(pos);
-                            if (cached != -1) return cached;
-
-                            // 2) Fallback to the BE's color when it’s available
-                            var be = level.getBlockEntity(pos);
-                            if (be instanceof net.anatomyworld.harambefmod.block.entity.BananaPortalBlockEntity p) {
-                                return p.getColor();
-                            }
-                            return 0xFFFFFF;
-                        },
-                        net.anatomyworld.harambefmod.block.ModBlocks.BANANA_PORTAL.get()
-
-                );
-            });
+                BlockEntity be = level.getBlockEntity(pos);
+                if (be instanceof net.anatomyworld.harambefmod.block.entity.BananaPortalBlockEntity p) {
+                    return p.getColor();
+                }
+                return 0xFFFFFFFF;
+            }, ModBlocks.BANANA_PORTAL.get());
         }
     }
 }
