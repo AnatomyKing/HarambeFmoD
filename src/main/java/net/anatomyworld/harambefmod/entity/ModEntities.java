@@ -6,29 +6,33 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
-import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
+
+import java.util.function.Supplier;
 
 public final class ModEntities {
 
-    // NeoForge 1.21.6+ convenience helper for entities
-    public static final DeferredRegister.Entities ENTITIES =
+    // Entity-specific helper (adds nice sugar like registerEntityType)
+    public static final DeferredRegister.Entities ENTITY_TYPES =
             DeferredRegister.createEntities(HarambeCore.MOD_ID);
 
-    public static final DeferredHolder<EntityType<?>, EntityType<BananaCow>> BANANA_COW =
-            ENTITIES.registerEntityType(
+    // Register the Banana Cow entity
+    public static final Supplier<EntityType<BananaCow>> BANANA_COW =
+            ENTITY_TYPES.registerEntityType(
                     "banana_cow",
                     BananaCow::new,
                     MobCategory.CREATURE,
                     b -> b.sized(0.9F, 1.4F)
             );
 
-    private static void onEntityAttributeEvent(EntityAttributeCreationEvent e) {
+    public static void register(IEventBus modBus) {
+        ENTITY_TYPES.register(modBus);
+        modBus.addListener(ModEntities::onAttributes);
+    }
+
+    private static void onAttributes(final EntityAttributeCreationEvent e) {
         e.put(BANANA_COW.get(), BananaCow.createAttributes().build());
     }
 
-    public static void register(IEventBus bus) {
-        ENTITIES.register(bus);
-        bus.addListener(ModEntities::onEntityAttributeEvent);
-    }
+    private ModEntities() {}
 }

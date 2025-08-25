@@ -11,7 +11,6 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import java.util.Set;
 import java.util.function.Supplier;
 
-/** Registers all Block Entity types for the mod. */
 public final class ModBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES =
             DeferredRegister.create(BuiltInRegistries.BLOCK_ENTITY_TYPE, HarambeCore.MOD_ID);
@@ -21,20 +20,15 @@ public final class ModBlockEntities {
                     () -> new BlockEntityType<>(
                             PearlFireBlockEntity::new,
                             Set.of(ModBlocks.PEARL_FIRE.get()),
-                            false // onlyOpCanSetNbt
-                    )
-            );
+                            false));
 
     public static final Supplier<BlockEntityType<BananaPortalBlockEntity>> BANANA_PORTAL_BE =
             BLOCK_ENTITY_TYPES.register("banana_portal",
                     () -> new BlockEntityType<>(
                             BananaPortalBlockEntity::new,
                             Set.of(ModBlocks.BANANA_PORTAL.get()),
-                            false
-                    )
-            );
+                            false));
 
-    /** Called from {@link net.anatomyworld.harambefmod.HarambeCore} */
     public static void register(IEventBus modBus) {
         BLOCK_ENTITY_TYPES.register(modBus);
     }

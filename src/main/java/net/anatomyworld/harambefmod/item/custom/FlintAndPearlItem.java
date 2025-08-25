@@ -7,6 +7,7 @@ import net.anatomyworld.harambefmod.world.BananaPortalShape;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -16,14 +17,20 @@ import net.minecraft.world.item.FlintAndSteelItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.BaseFireBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CampfireBlock;
+import net.minecraft.world.level.block.CandleBlock;
+import net.minecraft.world.level.block.CandleCakeBlock;
+import net.minecraft.world.level.block.TntBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.portal.PortalShape;
 import net.minecraft.world.phys.HitResult;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.loading.FMLEnvironment;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,27 +41,25 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
         super(props);
     }
 
-    // 1.21.8: Item#use now returns InteractionResult (not InteractionResultHolder)
+    // 1.21.8: Item#use returns InteractionResult
     @Override
     public @NotNull InteractionResult use(Level level, Player player, InteractionHand hand) {
-        if (level.isClientSide) {
+        if (level.isClientSide && FMLEnvironment.dist == Dist.CLIENT) {
             ItemStack held = player.getItemInHand(hand);
             ScreenOpener.openIfLookingAtAir(held);
-            // Report success client-side; server will do nothing here
             return InteractionResult.SUCCESS;
         }
-        // Delegate to base (plays swing/usage logic as appropriate)
         return super.use(level, player, hand);
     }
 
-    // Signature unchanged in 1.21.8: returns InteractionResult
     @Override
     public @NotNull InteractionResult interactLivingEntity(ItemStack stack, Player player, @NotNull LivingEntity target, InteractionHand hand) {
         if (!player.level().isClientSide && target instanceof Creeper creeper) {
             creeper.ignite();
-            stack.hurtAndBreak(1, player, hand == InteractionHand.MAIN_HAND
-                    ? net.minecraft.world.entity.EquipmentSlot.MAINHAND
-                    : net.minecraft.world.entity.EquipmentSlot.OFFHAND);
+            stack.hurtAndBreak(1, player,
+                    hand == InteractionHand.MAIN_HAND
+                            ? net.minecraft.world.entity.EquipmentSlot.MAINHAND
+                            : net.minecraft.world.entity.EquipmentSlot.OFFHAND);
             return InteractionResult.SUCCESS;
         }
         return InteractionResult.PASS;
@@ -70,12 +75,16 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
         BlockState state  = level.getBlockState(clicked);
         ItemStack stack   = ctx.getItemInHand();
 
-        if (level.isClientSide) {
+        // ----- CLIENT -----
+        if (level.isClientSide && FMLEnvironment.dist == Dist.CLIENT) {
             if (shouldPlacePearlFireClient(state, level, firePos, face)) {
-                String hex = stack.getOrDefault(net.anatomyworld.harambefmod.component.ModDataComponents.FLAME_COLOR.get(), DEFAULT_COLOR);
+                String hex = stack.getOrDefault(
+                        net.anatomyworld.harambefmod.component.ModDataComponents.FLAME_COLOR.get(),
+                        DEFAULT_COLOR
+                );
                 int rgb = Integer.parseInt(hex.replace("#", ""), 16);
 
-                // 1.21.8 NeoForge: client->server send via ClientPacketDistributor
+                // Client -> server
                 ClientPacketDistributor.sendToServer(new PlaceFirePayload(
                         firePos, rgb, ctx.getHand() == InteractionHand.MAIN_HAND, (byte) face.ordinal()
                 ));
@@ -86,18 +95,18 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
             return InteractionResult.PASS;
         }
 
-        // Try Banana portal first (server)
-        {
-            String hex = stack.getOrDefault(net.anatomyworld.harambefmod.component.ModDataComponents.FLAME_COLOR.get(), DEFAULT_COLOR);
-            int rgb = Integer.parseInt(hex.replace("#", ""), 16);
+        // ----- SERVER -----
+        String hex = stack.getOrDefault(
+                net.anatomyworld.harambefmod.component.ModDataComponents.FLAME_COLOR.get(),
+                DEFAULT_COLOR
+        );
+        int rgb = Integer.parseInt(hex.replace("#", ""), 16);
 
-            if (trySpawnBananaPortal((net.minecraft.server.level.ServerLevel) level, firePos, rgb, hex.toUpperCase(), ctx.getPlayer())) {
-                finishUse(level, firePos, stack, ctx);
-                return InteractionResult.SUCCESS; // action performed
-            }
+        if (trySpawnBananaPortal((net.minecraft.server.level.ServerLevel) level, firePos, rgb, hex.toUpperCase(), ctx.getPlayer())) {
+            finishUse(level, firePos, stack, ctx);
+            return InteractionResult.SUCCESS;
         }
 
-        // TNT / lights
         if (state.getBlock() instanceof TntBlock) {
             state.onCaughtFire(level, clicked, face, ctx.getPlayer());
             level.setBlock(clicked, Blocks.AIR.defaultBlockState(), 11);
@@ -110,7 +119,6 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
             return InteractionResult.SUCCESS;
         }
 
-        // Vanilla nether portal
         if (trySpawnNetherPortal(level, firePos)) {
             finishUse(level, firePos, stack, ctx);
             return InteractionResult.SUCCESS;
@@ -123,7 +131,7 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
         if (clickedState.getBlock() instanceof TntBlock) return false;
         if (CampfireBlock.canLight(clickedState) || CandleBlock.canLight(clickedState) || CandleCakeBlock.canLight(clickedState)) return false;
 
-        // If a vanilla nether portal could spawn here, do not place our custom fire client-predictively
+        // If a vanilla nether portal could spawn here, don’t client-predict
         if (PortalShape.findEmptyPortalShape(level, firePos, Direction.Axis.X).isPresent()
                 || PortalShape.findEmptyPortalShape(level, firePos, Direction.Axis.Z).isPresent()) return false;
 
@@ -131,7 +139,6 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
     }
 
     private static boolean trySpawnNetherPortal(Level lvl, BlockPos pos) {
-        // 1.21.8: createPortalBlocks now requires a LevelAccessor parameter
         return PortalShape.findEmptyPortalShape(lvl, pos, Direction.Axis.X)
                 .map(shape -> { shape.createPortalBlocks(lvl); return true; })
                 .orElseGet(() -> PortalShape.findEmptyPortalShape(lvl, pos, Direction.Axis.Z)
@@ -140,7 +147,7 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
     }
 
     private static void finishUse(Level lvl, BlockPos pos, ItemStack stack, UseOnContext ctx) {
-        lvl.playSound(null, pos, SoundEvents.FLINTANDSTEEL_USE, net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, lvl.getRandom().nextFloat() * 0.4F + 0.8F);
+        lvl.playSound(null, pos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F, lvl.getRandom().nextFloat() * 0.4F + 0.8F);
         Player user = ctx.getPlayer();
         if (user != null) {
             var slot = ctx.getHand() == InteractionHand.MAIN_HAND
@@ -161,7 +168,6 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
         if (frameOpt.isEmpty()) return false;
         var frame = frameOpt.get();
 
-        // Choose a center-ish interior position for a small broadcast radius (visual pre-tint)
         Direction right = (frame.axis() == Direction.Axis.X) ? Direction.EAST : Direction.SOUTH;
         BlockPos center = frame.anchor()
                 .relative(right, (frame.width()  - 1) / 2)
@@ -179,15 +185,12 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
                 )
         );
 
-        // Defer the actual fill to the next tick
         server.getServer().execute(() -> {
             // Fill interior & set color/axis/anchor on each BE
             BananaPortalShape.fill(server, frame, rgb);
 
-            // Decide & store FRONT at light time (restricted to valid normals)
             Direction front = pickFront(player, frame);
 
-            // Write FRONT to every BE in this interior
             for (int y = 0; y < frame.height(); y++) {
                 for (int x = 0; x < frame.width(); x++) {
                     BlockPos ip = frame.anchor().relative(right, x).above(y);
@@ -198,12 +201,10 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
                 }
             }
 
-            // Register or link with the chosen code
             var data = net.anatomyworld.harambefmod.world.PortalLinkData.get(server);
             int res = data.registerOrLink(server, frame, hexUpper, rgb, front);
 
             if (res < 0) {
-                // Undo fill if code already fully used
                 for (int y = 0; y < frame.height(); y++) {
                     for (int x = 0; x < frame.width(); x++) {
                         BlockPos ip = frame.anchor().relative(right, x).above(y);
@@ -252,7 +253,7 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
+    // ---------- CLIENT-ONLY HELPERS (kept inside this file, never referenced on server) ----------
     private static final class ScreenOpener {
         private ScreenOpener() {}
         static void openIfLookingAtAir(ItemStack stack) {
@@ -263,7 +264,6 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     private static final class ClientPredictor {
         private ClientPredictor() {}
         static void place(Level lvl, BlockPos pos, int rgb) {

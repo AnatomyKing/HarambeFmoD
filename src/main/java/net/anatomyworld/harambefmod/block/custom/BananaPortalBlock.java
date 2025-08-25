@@ -38,14 +38,13 @@ import org.jetbrains.annotations.Nullable;
 
 /** Re-entry gated portal with ultra-smooth, survival-safe teleport. */
 public final class BananaPortalBlock extends Block implements EntityBlock {
-    public static final MapCodec<BananaPortalBlock> CODEC = BlockBehaviour.simpleCodec(p -> new BananaPortalBlock());
+    public static final MapCodec<BananaPortalBlock> CODEC = BlockBehaviour.simpleCodec(BananaPortalBlock::new);
     @Override protected @NotNull MapCodec<? extends Block> codec() { return CODEC; }
 
-    /** X = portal plane ⟂ X (normal ±Z). Z = portal plane ⟂ Z (normal ±X). */
     public static final EnumProperty<Direction.Axis> AXIS = BlockStateProperties.HORIZONTAL_AXIS;
 
-    private static final VoxelShape SHAPE_X = Block.box(0, 0, 7, 16, 16, 9); // normal along Z
-    private static final VoxelShape SHAPE_Z = Block.box(7, 0, 0, 9, 16, 16); // normal along X
+    private static final VoxelShape SHAPE_X = Block.box(0, 0, 7, 16, 16, 9);
+    private static final VoxelShape SHAPE_Z = Block.box(7, 0, 0, 9, 16, 16);
 
     // Per-entity tags (persist across ticks)
     private static final String TAG_CD_UNTIL  = "harambefmod:portal_cd";    // long tick until re-entry allowed
@@ -68,15 +67,13 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
     private static final int SMOOTH_STEPS = 3;
     private static final double[] SMOOTH_FACTORS = { 0.60, 0.85, 1.00 };
 
-    public BananaPortalBlock() {
-        super(BlockBehaviour.Properties.of()
-                .noOcclusion()
+    public BananaPortalBlock(BlockBehaviour.Properties props) {
+        super(props.noOcclusion()
                 .noCollission()
                 .strength(-1.0F, 3_600_000.0F)
                 .lightLevel(s -> 11)
                 .sound(SoundType.GLASS)
-                .noLootTable()
-        );
+                .noLootTable());
         this.registerDefaultState(this.stateDefinition.any().setValue(AXIS, Direction.Axis.X));
     }
 
@@ -86,7 +83,6 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         return new BananaPortalBlockEntity(pos, state);
     }
 
-    // 1.21.x getShape uses BlockGetter
     @Override public @NotNull VoxelShape getShape(@NotNull BlockState s, @NotNull BlockGetter g, @NotNull BlockPos p, @NotNull CollisionContext c) {
         return s.getValue(AXIS) == Direction.Axis.X ? SHAPE_X : SHAPE_Z;
     }

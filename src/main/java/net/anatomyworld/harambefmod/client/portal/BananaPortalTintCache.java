@@ -7,17 +7,15 @@ import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 /**
  * Client-side cache used to pre-tint Banana Portal panes as soon as the server
  * broadcasts SyncPortalTintPayload. This avoids the brief white pane at the
  * ignition spot before BEs sync.
  *
- * Keys are pos.asLong() -> rgb. Block color handler reads from this cache first.
+ * IMPORTANT: Keep usages on the physical client only (client packet handlers,
+ * color handlers, screens, etc.).
  */
-@OnlyIn(Dist.CLIENT)
 public final class BananaPortalTintCache {
     private static final Long2IntOpenHashMap CACHE = new Long2IntOpenHashMap();
 
@@ -28,15 +26,12 @@ public final class BananaPortalTintCache {
         return CACHE.getOrDefault(pos.asLong(), -1);
     }
 
-    /** Clears all cache (optional helper if you ever need it). */
+    /** Clears all cache. */
     public static void clearAll() {
         CACHE.clear();
     }
 
-    /**
-     * Fill the whole interior with the given rgb tint and invalidate the renderer
-     * so the color takes effect immediately on the client.
-     */
+    /** Fill a rect region with the given rgb and nudge the chunk renderer. */
     public static void fill(BlockPos anchor, Direction.Axis axis, int width, int height, int rgb) {
         Direction right = (axis == Direction.Axis.X) ? Direction.EAST : Direction.SOUTH;
 
@@ -49,7 +44,7 @@ public final class BananaPortalTintCache {
         }
     }
 
-    /** Remove a rect from the cache (e.g., on portal clear) and invalidate. */
+    /** Remove a rect from the cache and nudge rendering. */
     public static void clearRect(BlockPos anchor, Direction.Axis axis, int width, int height) {
         Direction right = (axis == Direction.Axis.X) ? Direction.EAST : Direction.SOUTH;
 
@@ -62,13 +57,7 @@ public final class BananaPortalTintCache {
         }
     }
 
-    /**
-     * IMPORTANT FIX: use the 5-arg LevelRenderer#blockChanged(...) signature
-     * (BlockGetter, BlockPos, oldState, newState, flags).
-     *
-     * Passing the current state for both old/new is fine; we just want to nudge
-     * the chunk renderer. A common flags value is 3.
-     */
+    /** Tell the chunk renderer that the block changed so tint updates immediately. */
     private static void invalidatePane(BlockPos pos) {
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
@@ -77,7 +66,7 @@ public final class BananaPortalTintCache {
         LevelRenderer renderer = mc.levelRenderer;
         BlockState state = level.getBlockState(pos);
 
-        // 5-arg method call (this is what fixes your compile error):
+        // 1.21.x 5-arg variant: (BlockGetter, BlockPos, oldState, newState, flags)
         renderer.blockChanged(level, pos, state, state, 3);
     }
 }
