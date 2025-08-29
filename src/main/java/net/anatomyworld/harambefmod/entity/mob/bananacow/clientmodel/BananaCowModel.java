@@ -1,4 +1,4 @@
-package net.anatomyworld.harambefmod.entity.bananacow.clientmodel;
+package net.anatomyworld.harambefmod.entity.mob.bananacow.clientmodel;
 
 import net.anatomyworld.harambefmod.HarambeCore;
 import net.minecraft.client.model.EntityModel;

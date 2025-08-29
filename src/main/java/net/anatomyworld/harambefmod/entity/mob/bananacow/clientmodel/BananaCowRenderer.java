@@ -1,7 +1,7 @@
-package net.anatomyworld.harambefmod.entity.bananacow.clientmodel;
+package net.anatomyworld.harambefmod.entity.mob.bananacow.clientmodel;
 
 import net.anatomyworld.harambefmod.HarambeCore;
-import net.anatomyworld.harambefmod.entity.bananacow.BananaCow;
+import net.anatomyworld.harambefmod.entity.mob.bananacow.BananaCow;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.resources.ResourceLocation;
@@ -11,7 +11,7 @@ public final class BananaCowRenderer
         extends MobRenderer<BananaCow, BananaCowModel.State, BananaCowModel> {
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(HarambeCore.MOD_ID, "textures/entity/banana_cow.png");
+            ResourceLocation.fromNamespaceAndPath(HarambeCore.MOD_ID, "textures/entity/cow/banana_cow.png");
 
     private static final float SHADOW = 0.7F;
 

@@ -3,7 +3,7 @@ package net.anatomyworld.harambefmod.block.custom;
 import net.anatomyworld.harambefmod.block.ModBlocks;
 import net.anatomyworld.harambefmod.data.ModTags;
 import net.anatomyworld.harambefmod.entity.ModEntities;
-import net.anatomyworld.harambefmod.entity.bananacow.BananaCow;
+import net.anatomyworld.harambefmod.entity.mob.bananacow.BananaCow;
 import net.anatomyworld.harambefmod.item.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

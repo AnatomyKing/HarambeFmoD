@@ -3,6 +3,7 @@ package net.anatomyworld.harambefmod.item;
 import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.block.ModBlocks;
 import net.anatomyworld.harambefmod.entity.ModEntities;
+import net.anatomyworld.harambefmod.item.boat.MusavaccaBoatItem;
 import net.anatomyworld.harambefmod.item.custom.BananaCowEggStageItem;
 import net.anatomyworld.harambefmod.item.custom.FlintAndPearlItem;
 import net.minecraft.world.food.Foods;
@@ -35,6 +36,10 @@ public final class ModItems {
     public static final DeferredItem<Item> FLINT_AND_PEARL =
             ITEMS.registerItem("flint_and_pearl",
                     props -> new FlintAndPearlItem(props.durability(128).rarity(Rarity.COMMON)));
+
+    public static final DeferredItem<Item> MUSAVACCA_BOAT_ITEM =
+            ITEMS.registerItem("musavacca_boat",
+                    props -> new MusavaccaBoatItem(props.stacksTo(1)));
 
     // 1.21.8: use SpawnEggItem directly + registerItem so Item.Properties has id
     public static final DeferredItem<SpawnEggItem> BANANA_COW_SPAWN_EGG =

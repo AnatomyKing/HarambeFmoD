@@ -8,8 +8,10 @@ import net.anatomyworld.harambefmod.client.render.HarambeRenderLayers;
 import net.anatomyworld.harambefmod.component.ModDataComponents;
 import net.anatomyworld.harambefmod.data.ModDataGenerators;
 import net.anatomyworld.harambefmod.entity.ModEntities;
-import net.anatomyworld.harambefmod.entity.bananacow.clientmodel.BananaCowModel;
-import net.anatomyworld.harambefmod.entity.bananacow.clientmodel.BananaCowRenderer;
+import net.anatomyworld.harambefmod.entity.boat.musavacca.clientmodel.MusavaccaBoatModel;
+import net.anatomyworld.harambefmod.entity.boat.musavacca.clientmodel.MusavaccaBoatRenderer;
+import net.anatomyworld.harambefmod.entity.mob.bananacow.clientmodel.BananaCowModel;
+import net.anatomyworld.harambefmod.entity.mob.bananacow.clientmodel.BananaCowRenderer;
 import net.anatomyworld.harambefmod.item.ModCreativeTabs;
 import net.anatomyworld.harambefmod.item.ModItems;
 import net.anatomyworld.harambefmod.network.ModNetworking;
@@ -37,8 +39,8 @@ public final class HarambeCore {
 
     public HarambeCore(IEventBus modBus, ModContainer container) {
         // Registries
-        ModEntities.register(modBus);
         ModItems.register(modBus);
+        ModEntities.register(modBus);
         ModDataComponents.DATA_COMPONENTS.register(modBus);
         ModBlocks.register(modBus);
         ModBlockEntities.register(modBus);
@@ -65,15 +67,27 @@ public final class HarambeCore {
 
     public static final class ClientEvents {
         public static void layerDefs(EntityRenderersEvent.RegisterLayerDefinitions e) {
+            // Banana Cow model
             e.registerLayerDefinition(BananaCowModel.LAYER_LOCATION, BananaCowModel::createBodyLayer);
+
+            // Musavacca Boat model
+            e.registerLayerDefinition(MusavaccaBoatModel.LAYER, MusavaccaBoatModel::createBodyLayer);
         }
 
         public static void clientSetup(FMLClientSetupEvent e) {
             e.enqueueWork(() -> {
                 // entity renderer
-                net.minecraft.client.renderer.entity.EntityRenderers.register(
-                        ModEntities.BANANA_COW.get(), BananaCowRenderer::new
-                );
+                e.enqueueWork(() -> {
+                    // Banana Cow renderer
+                    net.minecraft.client.renderer.entity.EntityRenderers.register(
+                            ModEntities.BANANA_COW.get(), BananaCowRenderer::new
+                    );
+
+                    // Musavacca Boat renderer
+                    net.minecraft.client.renderer.entity.EntityRenderers.register(
+                            ModEntities.MUSAVACCA_BOAT.get(), MusavaccaBoatRenderer::new
+                    );
+                });
 
                 // colors
                 BlockColors colors = Minecraft.getInstance().getBlockColors();

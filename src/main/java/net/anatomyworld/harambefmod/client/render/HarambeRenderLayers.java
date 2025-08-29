@@ -33,11 +33,11 @@ public final class HarambeRenderLayers {
             ModBlocks.MUSAVACCA_LEAVES_CROWN.get(),
             ModBlocks.MUSAVACCA_PLANT.get(),
             ModBlocks.MUSAVACCA_SAPLING.get(),
-            ModBlocks.BANANA_COW_EGG.get()
+            ModBlocks.BANANA_COW_EGG.get(),
+            ModBlocks.PEARL_FIRE.get()
     );
 
     private static final Set<Block> TRANSLUCENT_BLOCKS = Sets.newHashSet(
-            ModBlocks.PEARL_FIRE.get(),
             ModBlocks.BANANA_PORTAL.get()
     );
 

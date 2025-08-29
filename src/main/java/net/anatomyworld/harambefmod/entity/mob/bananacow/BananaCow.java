@@ -1,4 +1,4 @@
-package net.anatomyworld.harambefmod.entity.bananacow;
+package net.anatomyworld.harambefmod.entity.mob.bananacow;
 
 import net.anatomyworld.harambefmod.item.ModItems;
 import net.minecraft.server.level.ServerLevel;
