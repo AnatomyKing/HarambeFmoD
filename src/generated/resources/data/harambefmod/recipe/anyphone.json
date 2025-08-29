@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "c": "minecraft:compass",
+    "g": "minecraft:light_blue_stained_glass_pane",
+    "r": "minecraft:repeater",
+    "x": "harambefmod:anytomithium_ingot"
+  },
+  "pattern": [
+    "xcx",
+    "xgx",
+    "xrx"
+  ],
+  "result": {
+    "count": 1,
+    "id": "harambefmod:anyphone"
+  }
+}
