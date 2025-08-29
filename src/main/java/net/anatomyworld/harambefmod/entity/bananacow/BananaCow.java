@@ -18,12 +18,13 @@ public class BananaCow extends Cow {
         super(type, level);
     }
 
-    /** Attributes for Banana Cow */
+    /** Attributes for Banana Cow (1.21.x): MUST include TEMPT_RANGE or TemptGoal will crash. */
     public static @NotNull AttributeSupplier.Builder createAttributes() {
         return Cow.createLivingAttributes()
                 .add(Attributes.MAX_HEALTH, 10.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.25D)
-                .add(Attributes.FOLLOW_RANGE, 16.0D);
+                .add(Attributes.FOLLOW_RANGE, 16.0D)
+                .add(Attributes.TEMPT_RANGE, 10.0D);
     }
 
     /* =========================  NO BREEDING  ========================= */

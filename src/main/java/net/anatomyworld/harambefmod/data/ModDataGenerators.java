@@ -1,27 +1,27 @@
 package net.anatomyworld.harambefmod.data;
 
-import net.anatomyworld.harambefmod.HarambeCore;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
-@EventBusSubscriber(modid = HarambeCore.MOD_ID, value = Dist.CLIENT)
 public final class ModDataGenerators {
 
-    /** Register *all* data providers (runs with --client datagen). */
-    @SubscribeEvent
+    /**
+     * Register ALL providers for the "clientData" run here (NeoForge 1.21.6–1.21.8 style).
+     * IMPORTANT: This method must be registered exactly once (see HarambeCore constructor).
+     */
     public static void gatherData(final GatherDataEvent.Client event) {
+        // If you ever split client/server providers, you can also use GatherDataEvent.Server.
+        // The MDK defaults to putting everything in Client. :contentReference[oaicite:1]{index=1}
+
         // Recipes (Runner pattern in 1.21.x)
         event.createProvider(ModRecipeProvider.Runner::new);
 
-        // Block tags (constructor: (PackOutput, CompletableFuture<HolderLookup.Provider>))
+        // Block tags
         event.createProvider(ModBlockTagsProvider::new);
 
-        // Loot tables (constructor: (PackOutput, CompletableFuture<HolderLookup.Provider>))
+        // Loot tables
         event.createProvider(ModLootTableProvider::new);
 
-        // If you add item tags later and they depend on block tags:
+        // If/when you add item tags that depend on block tags, use:
         // event.createBlockAndItemTags(ModBlockTagsProvider::new, ModItemTagsProvider::new);
     }
 

@@ -1,4 +1,3 @@
-
 package net.anatomyworld.harambefmod.client.gui;
 
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
@@ -62,14 +61,16 @@ public class FireColorSelectionScreen extends Screen {
             return;
         }
 
-        /* store locally so the player sees the colour right away */
-        stack.set(ModDataComponents.FLAME_COLOR.get(), "#" + in.toUpperCase());
+        // store locally so the player sees the colour right away
+        String hex = "#" + in.toUpperCase();
+        stack.set(ModDataComponents.FLAME_COLOR.get(), hex);
 
-        /* <-- add this – instantly tells the server about the new hex string */
-        ClientPacketDistributor.sendToServer(new net.anatomyworld.harambefmod.network.SyncColorPayload(
-                        "#" + in.toUpperCase()
-                ));
+        // tell the server immediately
+        ClientPacketDistributor.sendToServer(
+                new net.anatomyworld.harambefmod.network.SyncColorPayload(hex)
+        );
 
+        // close
         net.minecraft.client.Minecraft.getInstance().setScreen(null);
     }
 
@@ -84,13 +85,26 @@ public class FireColorSelectionScreen extends Screen {
 
     @Override public boolean isPauseScreen() { return false; }
 
+    // ---- Background stratum: schedule blur ONCE here. ----
     @Override
-    public void render(GuiGraphics gg, int mx, int my, float pt) {
-        renderBackground(gg, mx, my, pt);
-        gg.drawCenteredString(font, "Enter Default Flame Color:", width/2, height/2 - 30, 0xFFFFFF);
-        super.render(gg, mx, my, pt);
+    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        // This is the only allowed blur call this frame:
+        g.blurBeforeThisStratum();
+        // Optional dim so foreground text/widgets pop:
+        g.fillGradient(0, 0, this.width, this.height, 0x80000000, 0x80000000);
+    }
+
+    // ---- Content stratum: DO NOT call renderBackground() or blur here. ----
+    @Override
+    public void render(GuiGraphics g, int mx, int my, float pt) {
+        // draw your UI (no extra blur)
+        g.drawCenteredString(this.font, "Enter Default Flame Color:", this.width / 2, this.height / 2 - 30, 0xFFFFFF);
+
+        // widgets + tooltips
+        super.render(g, mx, my, pt);
+
         if (errorMessage != null) {
-            gg.drawCenteredString(font, errorMessage, width/2, height/2 + 40, 0xFF5555);
+            g.drawCenteredString(this.font, errorMessage, this.width / 2, this.height / 2 + 40, 0xFF5555);
         }
     }
 }
