@@ -15,7 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
 
-/** Boat model (1.21.x RenderState) — smooth start + natural water-rest paddles. */
+/** Boat model (1.21.x RenderState) — no-startup-spike paddles + phase continuity + natural idle dip. */
 public class MusavaccaBoatModel extends EntityModel<BoatRenderState> {
     public static final ModelLayerLocation LAYER =
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(HarambeCore.MOD_ID, "musavacca_boat"), "main");
@@ -36,26 +36,32 @@ public class MusavaccaBoatModel extends EntityModel<BoatRenderState> {
     private static final float BB_BASE_Y = 0.8362F;  // yaw  (left = +, right = -)
     private static final float BB_BASE_Z = 2.8434F;  // roll (left = +, right = -)
 
-    /** Extra "rest in water" tweak: dip the blade a bit more at idle (radians, positive = more downward pitch). */
+    /** Extra "rest in water" tweak. */
     public static float REST_WATER_DIP = 0.20F; // ~11.5°
 
     /** Stroke amplitudes (additive around the rest pose). */
-    public static float YAW_AMP   = 0.40F; // side swing (~23°)
-    public static float PITCH_AMP = 0.55F; // feather (~31.5°)
+    public static float YAW_AMP   = 0.40F;
+    public static float PITCH_AMP = 0.55F;
 
     /** If sweep looks inward, flip to -1. */
     public static float YAW_SIDE_SIGN = 1.0F;
 
-    /** Easing toward stroke when rowing starts/stops. Higher = snappier. */
-    public static float BLEND_RESPONSIVENESS = 0.18F; // per-frame approach factor
+    /** Blend responsiveness (amplitude only). Keep modest for zero “kick”. */
+    public static float RESP_ACTIVE = 0.16F;
+    public static float RESP_IDLE   = 0.10F;
 
     private final ModelPart root;
     private final ModelPart paddleRight;
     private final ModelPart paddleLeft;
 
-    // tiny state to smooth start/stop; model instances are shared, but this is fine in practice
-    private float prevLeftPhase  = 0f, prevRightPhase = 0f;
-    private float leftBlend      = 0f, rightBlend     = 0f;
+    // Continuous unwrapped phases we render from (so we can resume smoothly after idle)
+    private float phaseL = 0f, phaseR = 0f;
+    // Last raw angles seen from the render state (as-delivered, radians, wrapped)
+    private float prevRawL = Float.NaN, prevRawR = Float.NaN;
+    // Last active flags (to detect start/stop)
+    private boolean wasActiveL = false, wasActiveR = false;
+    // 0..1 amplitude blends (0 = idle at rest pose, 1 = full stroke)
+    private float blendL = 0f, blendR = 0f;
 
     public MusavaccaBoatModel(ModelPart bakedRoot) {
         super(bakedRoot);
@@ -68,7 +74,6 @@ public class MusavaccaBoatModel extends EntityModel<BoatRenderState> {
         MeshDefinition mesh = new MeshDefinition();
         PartDefinition part = mesh.getRoot();
 
-        // One place to tweak height + facing
         PartDefinition root = part.addOrReplaceChild(
                 "root",
                 CubeListBuilder.create(),
@@ -112,16 +117,14 @@ public class MusavaccaBoatModel extends EntityModel<BoatRenderState> {
                         .addBox(-4.0F, -9.5F, -6.5F, 12.0F, 17.0F, 13.0F),
                 PartPose.offsetAndRotation(-2.0F, 0.3827F, -0.9239F, -1.1781F, 0.0F, 0.0F));
 
-        // Paddles positioned outward/downward; rest rotations come from your Blockbench export.
+        // Paddles (rest rotations from Blockbench)
         root.addOrReplaceChild("paddle_right",
                 CubeListBuilder.create().texOffs(82, 73).mirror()
                         .addBox(-1.0F, 0.0F, -5.0F, 2.0F, 2.0F, 18.0F).mirror(false)
                         .texOffs(82, 73).mirror()
                         .addBox(0.001F, -3.0F, 8.0F, 1.0F, 6.0F, 7.0F).mirror(false),
                 PartPose.offsetAndRotation(
-                        -12.25F - PADDLE_OUT_EXTRA,
-                        -13.0F + PADDLE_DROP_EXTRA,
-                        -3.0F,
+                        -12.25F - PADDLE_OUT_EXTRA, -13.0F + PADDLE_DROP_EXTRA, -3.0F,
                         BB_BASE_X, -BB_BASE_Y, -BB_BASE_Z));
 
         root.addOrReplaceChild("paddle_left",
@@ -130,12 +133,10 @@ public class MusavaccaBoatModel extends EntityModel<BoatRenderState> {
                         .texOffs(82, 73)
                         .addBox(-1.001F, -3.0F, 8.0F, 1.0F, 6.0F, 7.0F),
                 PartPose.offsetAndRotation(
-                        12.25F + PADDLE_OUT_EXTRA,
-                        -13.0F + PADDLE_DROP_EXTRA,
-                        -3.0F,
+                        12.25F + PADDLE_OUT_EXTRA, -13.0F + PADDLE_DROP_EXTRA, -3.0F,
                         BB_BASE_X,  BB_BASE_Y,  BB_BASE_Z));
 
-        // Optional seat markers (outside the rotated root)
+        // Optional seat markers
         part.addOrReplaceChild("seat_driver",      CubeListBuilder.create(), PartPose.offset(0.0F, 9.0F, -17.0F));
         part.addOrReplaceChild("seat_passenger_1", CubeListBuilder.create(), PartPose.offset(0.0F, 9.0F,   0.0F));
         part.addOrReplaceChild("seat_passenger_2", CubeListBuilder.create(), PartPose.offset(0.0F, 9.0F,  17.0F));
@@ -145,33 +146,53 @@ public class MusavaccaBoatModel extends EntityModel<BoatRenderState> {
 
     @Override
     public void setupAnim(@NotNull BoatRenderState s) {
-        // Treat <=1 as normalized, else radians (covers different mappings).
-        final float lPhase = (s.rowingTimeLeft  <= 1.0F ? s.rowingTimeLeft  * (float)(Math.PI * 2.0) : s.rowingTimeLeft);
-        final float rPhase = (s.rowingTimeRight <= 1.0F ? s.rowingTimeRight * (float)(Math.PI * 2.0) : s.rowingTimeRight);
+        // 1) Raw values from state are already radians (0 when idle).
+        final float lRaw = s.rowingTimeLeft;
+        final float rRaw = s.rowingTimeRight;
 
-        // Are paddles advancing this frame? (used to ramp blend smoothly)
-        boolean lMoving = Math.abs(wrap(lPhase - prevLeftPhase))  > 0.002f;
-        boolean rMoving = Math.abs(wrap(rPhase - prevRightPhase)) > 0.002f;
+        final boolean lActive = Math.abs(lRaw) > 1e-6f;
+        final boolean rActive = Math.abs(rRaw) > 1e-6f;
 
-        leftBlend  = approach(leftBlend,  lMoving ? 1f : 0f, BLEND_RESPONSIVENESS);
-        rightBlend = approach(rightBlend, rMoving ? 1f : 0f, BLEND_RESPONSIVENESS);
+        // 2) Unwrap angle across 2π to keep phase continuous between frames.
+        if (lActive) {
+            if (!wasActiveL || Float.isNaN(prevRawL)) {
+                // align to the nearest wrap of the new raw angle (no phase pop on resume)
+                phaseL = nearestWrapped(phaseL, lRaw);
+            } else {
+                phaseL += wrap(lRaw - prevRawL);
+            }
+            prevRawL = lRaw;
+        }
+        if (rActive) {
+            if (!wasActiveR || Float.isNaN(prevRawR)) {
+                phaseR = nearestWrapped(phaseR, rRaw);
+            } else {
+                phaseR += wrap(rRaw - prevRawR);
+            }
+            prevRawR = rRaw;
+        }
+        wasActiveL = lActive;
+        wasActiveR = rActive;
 
-        // Left paddle
-        applyPaddle(paddleLeft,  true,  lPhase, leftBlend);
-        // Right paddle
-        applyPaddle(paddleRight, false, rPhase, rightBlend);
+        // 3) Pure amplitude blend with gentle easing (no “start kick”).
+        blendL = approach(blendL, lActive ? 1f : 0f, lActive ? RESP_ACTIVE : RESP_IDLE);
+        blendR = approach(blendR, rActive ? 1f : 0f, rActive ? RESP_ACTIVE : RESP_IDLE);
 
-        prevLeftPhase  = lPhase;
-        prevRightPhase = rPhase;
+        final float tL = easeInOutCubic(blendL);
+        final float tR = easeInOutCubic(blendR);
+
+        // 4) Apply to parts
+        applyPaddle(paddleLeft,  true,  phaseL, tL);
+        applyPaddle(paddleRight, false, phaseR, tR);
     }
 
-    private static void applyPaddle(ModelPart p, boolean isLeft, float phase, float blend01) {
+    private static void applyPaddle(ModelPart p, boolean isLeft, float phase, float amp01) {
         final float side = isLeft ? 1f : -1f;
 
-        // Base = Blockbench rest, dipped slightly into water (more natural idle)
-        float baseY =  side * BB_BASE_Y;                 // yaw
-        float baseZ =  side * BB_BASE_Z;                 // roll (blade twist)
-        float baseX =  BB_BASE_X + REST_WATER_DIP;       // pitch (dip)
+        // Base = Blockbench rest, dipped slightly into water (natural idle)
+        float baseY =  side * BB_BASE_Y;           // yaw
+        float baseZ =  side * BB_BASE_Z;           // roll (blade twist)
+        float baseX =  BB_BASE_X + REST_WATER_DIP; // pitch (dip)
 
         // Stroke deltas (around rest)
         float yawDelta   = YAW_AMP   * Mth.sin(phase) * side * YAW_SIDE_SIGN;
@@ -182,14 +203,13 @@ public class MusavaccaBoatModel extends EntityModel<BoatRenderState> {
         float targetX = baseX + pitchDelta;
         float targetZ = baseZ; // keep twist constant
 
-        // Blend from rest → stroke based on motion; easing keeps start/stop silky
-        float t = smooth(blend01);
-        p.yRot = Mth.lerp(t, baseY, targetY);
-        p.xRot = Mth.lerp(t, baseX, targetX);
-        p.zRot = Mth.lerp(t, baseZ, targetZ);
+        // Blend from rest → stroke based on amplitude only
+        p.yRot = Mth.lerp(amp01, baseY, targetY);
+        p.xRot = Mth.lerp(amp01, baseX, targetX);
+        p.zRot = Mth.lerp(amp01, baseZ, targetZ);
     }
 
-    /** Wrap a phase delta to [-pi, pi] to detect true motion direction/magnitude. */
+    /** Wrap a delta to [-pi, pi] (for stable unwrapping). */
     private static float wrap(float a) {
         float twoPi = (float)(Math.PI * 2.0);
         a = (a + (float)Math.PI) % twoPi;
@@ -197,15 +217,21 @@ public class MusavaccaBoatModel extends EntityModel<BoatRenderState> {
         return a - (float)Math.PI;
     }
 
+    /** Choose value + k*2pi nearest to reference. */
+    private static float nearestWrapped(float reference, float value) {
+        float twoPi = (float)(Math.PI * 2.0);
+        float k = Math.round((reference - value) / twoPi);
+        return value + k * twoPi;
+    }
+
     /** Critically-damped step toward target (frame-rate agnostic feel). */
     private static float approach(float current, float target, float factor) {
         return current + (target - current) * Mth.clamp(factor, 0f, 1f);
     }
 
-    /** Smoothstep-like ease for nicer starts/stops. */
-    private static float smooth(float x) {
+    /** Smooth easing for amplitude (no kick). */
+    private static float easeInOutCubic(float x) {
         x = Mth.clamp(x, 0f, 1f);
-        // easeInOutCubic
         return x < 0.5f ? 4f * x * x * x : 1f - (float)Math.pow(-2f * x + 2f, 3) / 2f;
     }
 }

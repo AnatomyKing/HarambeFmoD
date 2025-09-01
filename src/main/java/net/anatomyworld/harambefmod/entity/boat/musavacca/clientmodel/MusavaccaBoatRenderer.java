@@ -33,7 +33,8 @@ public class MusavaccaBoatRenderer extends AbstractBoatRenderer {
         return RenderType.entityCutoutNoCull(TEX);
     }
 
-    public @NotNull ResourceLocation getTextureLocation(@NotNull BoatRenderState state) {
+    @NotNull
+    public ResourceLocation getTextureLocation(@NotNull BoatRenderState state) {
         return TEX;
     }
 }
