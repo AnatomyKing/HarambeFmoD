@@ -21,7 +21,7 @@ public class MusavaccaBoatModel extends EntityModel<BoatRenderState> {
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(HarambeCore.MOD_ID, "musavacca_boat"), "main");
 
     /** LOWER this to move the boat UP; raise it to move the boat DOWN. (Pixels; 16 px = 1 block) */
-    public static float ROOT_Y = 3.0F;
+    public static float ROOT_Y = 6.0F;
 
     /** Rotate model so it faces Minecraft forward (north = -Z). -HALF_PI maps +X → -Z. */
     public static float MODEL_YAW_FIX = -Mth.HALF_PI;
@@ -209,4 +209,3 @@ public class MusavaccaBoatModel extends EntityModel<BoatRenderState> {
         return x < 0.5f ? 4f * x * x * x : 1f - (float)Math.pow(-2f * x + 2f, 3) / 2f;
     }
 }
-

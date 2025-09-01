@@ -5,6 +5,7 @@ import net.anatomyworld.harambefmod.entity.boat.musavacca.MusavaccaBoat;
 import net.anatomyworld.harambefmod.entity.mob.bananacow.BananaCow;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -26,10 +27,16 @@ public final class ModEntities {
                     b -> b.sized(0.9F, 1.4F)
             );
 
+
     public static final Supplier<EntityType<MusavaccaBoat>> MUSAVACCA_BOAT =
-            ENTITY_TYPES.registerEntityType("musavacca_boat",
-                    MusavaccaBoat::new, MobCategory.MISC,
-                    b -> b.sized(1.875F, 0.875F).clientTrackingRange(10));
+            ENTITY_TYPES.registerEntityType(
+                    "musavacca_boat",
+                    MusavaccaBoat::new,
+                    MobCategory.MISC,
+                    b -> b.sized(1.60F, 0.875F)
+                            .clientTrackingRange(10)
+                    // Don't bother with passengerAttachments here; boats use their own logic.
+            );
 
 
     public static void register(IEventBus modBus) {
