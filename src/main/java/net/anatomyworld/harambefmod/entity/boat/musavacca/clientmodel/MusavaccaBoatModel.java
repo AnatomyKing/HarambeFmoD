@@ -85,26 +85,33 @@ public class MusavaccaBoatModel extends EntityModel<BoatRenderState> {
                         .addBox(-16.0F, -14.0F, -22.0F, 16.0F, 14.0F, 44.0F),
                 PartPose.offset(8.0F, 0.0F, 0.0F));
 
+        // UPDATED: tex v from 73 -> 75
         root.addOrReplaceChild("right",
-                CubeListBuilder.create().texOffs(21, 73).mirror()
+                CubeListBuilder.create().texOffs(21, 75).mirror()
                         .addBox(-3.5F, -3.5F, -22.0F, 7.0F, 7.0F, 44.0F).mirror(false),
                 PartPose.offset(-11.5F, -3.5F, 0.0F));
 
+        // UPDATED: tex v from 73 -> 75
         root.addOrReplaceChild("left",
-                CubeListBuilder.create().texOffs(21, 73)
+                CubeListBuilder.create().texOffs(21, 75)
                         .addBox(-3.5F, -3.5F, -22.0F, 7.0F, 7.0F, 44.0F),
                 PartPose.offset(11.5F, -3.5F, 0.0F));
 
         PartDefinition front = root.addOrReplaceChild("front", CubeListBuilder.create(),
                 PartPose.offset(0.0F, -17.0352F, -34.0538F));
+
+        // UPDATED: (0,60) -> (0,88)
         front.addOrReplaceChild("front_r1",
-                CubeListBuilder.create().texOffs(0, 60)
+                CubeListBuilder.create().texOffs(0, 88)
                         .addBox(-4.0F, -9.5F, -6.5F, 12.0F, 17.0F, 13.0F),
                 PartPose.offsetAndRotation(-2.0F, 8.2852F, 7.5538F, 1.1781F, 0.0F, 0.0F));
+
+        // UPDATED: (82,99) -> (82,101)
         front.addOrReplaceChild("front_r2",
-                CubeListBuilder.create().texOffs(82, 99)
+                CubeListBuilder.create().texOffs(82, 101)
                         .addBox(-3.0F, -3.0F, -0.5F, 10.0F, 7.0F, 7.0F),
                 PartPose.offsetAndRotation(-2.0F, -6.9565F, -4.1989F, 0.7854F, 0.0F, 0.0F));
+
         front.addOrReplaceChild("front_r3",
                 CubeListBuilder.create().texOffs(0, 0)
                         .addBox(-5.0F, -10.0F, -7.0F, 10.0F, 16.0F, 11.0F),
@@ -118,19 +125,21 @@ public class MusavaccaBoatModel extends EntityModel<BoatRenderState> {
                 PartPose.offsetAndRotation(-2.0F, 0.3827F, -0.9239F, -1.1781F, 0.0F, 0.0F));
 
         // Paddles (rest rotations from Blockbench)
+        // UPDATED: paddle tex v from 73 -> 75
         root.addOrReplaceChild("paddle_right",
-                CubeListBuilder.create().texOffs(82, 73).mirror()
+                CubeListBuilder.create().texOffs(82, 75).mirror()
                         .addBox(-1.0F, 0.0F, -5.0F, 2.0F, 2.0F, 18.0F).mirror(false)
-                        .texOffs(82, 73).mirror()
+                        .texOffs(82, 75).mirror()
                         .addBox(0.001F, -3.0F, 8.0F, 1.0F, 6.0F, 7.0F).mirror(false),
                 PartPose.offsetAndRotation(
                         -12.25F - PADDLE_OUT_EXTRA, -13.0F + PADDLE_DROP_EXTRA, -3.0F,
                         BB_BASE_X, -BB_BASE_Y, -BB_BASE_Z));
 
+        // UPDATED: paddle tex v from 73 -> 75
         root.addOrReplaceChild("paddle_left",
-                CubeListBuilder.create().texOffs(82, 73)
+                CubeListBuilder.create().texOffs(82, 75)
                         .addBox(-1.0F, 0.0F, -5.0F, 2.0F, 2.0F, 18.0F)
-                        .texOffs(82, 73)
+                        .texOffs(82, 75)
                         .addBox(-1.001F, -3.0F, 8.0F, 1.0F, 6.0F, 7.0F),
                 PartPose.offsetAndRotation(
                         12.25F + PADDLE_OUT_EXTRA, -13.0F + PADDLE_DROP_EXTRA, -3.0F,
@@ -156,7 +165,6 @@ public class MusavaccaBoatModel extends EntityModel<BoatRenderState> {
         // 2) Unwrap angle across 2π to keep phase continuous between frames.
         if (lActive) {
             if (!wasActiveL || Float.isNaN(prevRawL)) {
-                // align to the nearest wrap of the new raw angle (no phase pop on resume)
                 phaseL = nearestWrapped(phaseL, lRaw);
             } else {
                 phaseL += wrap(lRaw - prevRawL);
