@@ -14,7 +14,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.InsideBlockEffectApplier;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Relative; // <-- 1.21.4+ rename
+import net.minecraft.world.entity.Relative; // 1.21.x flags for teleport relativity
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -38,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.EnumSet;
 import java.util.Set;
 
-/** Re-entry gated portal with ultra-smooth, survival-safe teleport. */
+/** Re-entry gated portal with ultra-smooth, survival-safe teleport (intra + cross-dim). */
 public final class BananaPortalBlock extends Block implements EntityBlock {
     public static final MapCodec<BananaPortalBlock> CODEC = BlockBehaviour.simpleCodec(BananaPortalBlock::new);
     @Override protected @NotNull MapCodec<? extends Block> codec() { return CODEC; }
@@ -89,7 +89,7 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         return s.getValue(AXIS) == Direction.Axis.X ? SHAPE_X : SHAPE_Z;
     }
 
-    // 1.21.x: signature includes InsideBlockEffectApplier (5 params), override is protected
+    // 1.21.x signature includes InsideBlockEffectApplier (5 params)
     @Override
     protected void entityInside(@NotNull BlockState state,
                                 @NotNull Level level,
@@ -219,7 +219,7 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         tag.putLong(TAG_IN_ANCHOR, tgtAnchor.asLong());
         entity.resetFallDistance();
 
-        // Ensure the initial exit position is collision-free
+        // Ensure the initial exit position is collision-free (in destination if cross-dim)
         ServerLevel destinationLevel = crossDim ? server.getServer().getLevel(target.dim) : server;
         if (destinationLevel == null) return;
         Vec3 safeOut = findSafeExit(destinationLevel, entity, outPos, nDstOut, tgtAnchor, rDst, dstW, dstH);
@@ -232,8 +232,8 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         final boolean elytraFlag = wasElytra;
 
         if (crossDim) {
-            // === CROSS-DIMENSIONAL: use teleportTo(...) with Relative flags ===
-            Set<Relative> rel = EnumSet.noneOf(Relative.class);
+            // === CROSS-DIMENSIONAL: use teleportTo(...) with Relative flags for players & other entities
+            Set<Relative> rel = EnumSet.noneOf(Relative.class); // all absolute
 
             if (entity instanceof ServerPlayer sp) {
                 sp.teleportTo(destinationLevel, safeOut.x, safeOut.y, safeOut.z, rel, yawTarget, pitchTarget, false);
