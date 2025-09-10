@@ -20,7 +20,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-/** Links a hex code to 1 pending endpoint or a linked pair. */
+/**
+ * Links a hex code to 1 pending endpoint or a linked pair, with mode (INTRA or INTER).
+ * IMPORTANT: Stored GLOBALLY on the OVERWORLD data storage so all dimensions share the same map.
+ */
 public final class PortalLinkData extends SavedData {
 
     /* ---------- SavedDataType & Codec (1.21.8) ---------- */
@@ -39,9 +42,14 @@ public final class PortalLinkData extends SavedData {
     public static final SavedDataType<PortalLinkData> TYPE =
             new SavedDataType<>(HarambeCore.MOD_ID + "_portal_links", PortalLinkData::new, CODEC);
 
-    /** Grab or create for this ServerLevel. */
-    public static PortalLinkData get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(TYPE);
+    /**
+     * Always fetch the SINGLE shared map from the OVERWORLD's data storage.
+     * This makes linking work across dimensions.
+     */
+    public static PortalLinkData get(ServerLevel anyLevel) {
+        ServerLevel overworld = anyLevel.getServer().overworld();
+        // Overworld is always present on the server; keep all links here
+        return overworld.getDataStorage().computeIfAbsent(TYPE);
     }
 
     /* ---------- Model ---------- */
@@ -54,11 +62,12 @@ public final class PortalLinkData extends SavedData {
         public final int width, height;
         public final int color;                  // 0xRRGGBB
         public final Direction front;            // saved "front"
+        public final boolean inter;              // true = inter-dimensional link type
 
         public Endpoint(ResourceKey<Level> dim, BlockPos anchor, Direction.Axis axis,
-                        int width, int height, int color, Direction front) {
+                        int width, int height, int color, Direction front, boolean inter) {
             this.dim = dim; this.anchor = anchor; this.axis = axis;
-            this.width = width; this.height = height; this.color = color; this.front = front;
+            this.width = width; this.height = height; this.color = color; this.front = front; this.inter = inter;
         }
 
         public CompoundTag save() {
@@ -72,6 +81,7 @@ public final class PortalLinkData extends SavedData {
             t.putInt("h", height);
             t.putInt("color", color);
             t.putString("front", front.getName());
+            t.putBoolean("inter", inter);
             return t;
         }
 
@@ -95,7 +105,9 @@ public final class PortalLinkData extends SavedData {
             Direction fr = Direction.byName(frStr);
             if (fr == null || fr.getAxis() == Direction.Axis.Y) fr = Direction.SOUTH;
 
-            return new Endpoint(dim, anchor, axis, w, h, c, fr);
+            boolean inter = t.getBooleanOr("inter", false);
+
+            return new Endpoint(dim, anchor, axis, w, h, c, fr, inter);
         }
     }
 
@@ -114,7 +126,6 @@ public final class PortalLinkData extends SavedData {
         }
 
         static Link load(CompoundTag t) {
-            // 'a' must exist; 'b' is optional
             Link l = new Link(Endpoint.load(t.getCompoundOrEmpty("a")));
             t.getCompound("b").ifPresent(bTag -> l.b = Endpoint.load(bTag));
             return l;
@@ -141,17 +152,35 @@ public final class PortalLinkData extends SavedData {
 
     /* ---------- API ---------- */
 
-    /** 0 = first endpoint (pending), 1 = linked, -1 = code already used by two endpoints. */
+    /**
+     * 0 = first endpoint (pending),
+     * 1 = linked,
+     * -1 = code already used by two endpoints,
+     * -2 = frame types mismatch (intra vs inter),
+     * -3 = dimension rule violated (intra requires same dim, inter requires different dims).
+     */
     public int registerOrLink(ServerLevel level, BananaPortalShape.Frame f, String hexUpper, int rgb, Direction front) {
         Link l = links.get(hexUpper);
-        Endpoint ep = new Endpoint(level.dimension(), f.anchor(), f.axis(), f.width(), f.height(), rgb, front);
+        boolean inter = (f.mode() == BananaPortalShape.FrameMode.INTER);
+
+        Endpoint ep = new Endpoint(level.dimension(), f.anchor(), f.axis(), f.width(), f.height(), rgb, front, inter);
 
         if (l == null) { links.put(hexUpper, new Link(ep)); setDirty(); return 0; }
-        if (!l.linked()) { l.b = ep; setDirty(); return 1; }
+
+        if (!l.linked()) {
+            if (l.a.inter != inter) return -2;
+
+            boolean sameDim = level.dimension().equals(l.a.dim);
+            if (!inter && !sameDim) return -3;  // intra requires same dimension
+            if (inter &&  sameDim) return -3;   // inter requires different dimension
+
+            l.b = ep; setDirty(); return 1;
+        }
+
         return -1;
     }
 
-    /** Find the other side for any interior position. */
+    /** Find the other side for any interior position in THIS level. */
     public Optional<Endpoint> findOtherEndpointForPosition(ServerLevel level, BlockPos interior) {
         for (var e : links.values()) {
             if (!e.linked()) continue;
@@ -204,6 +233,4 @@ public final class PortalLinkData extends SavedData {
             }
         }
     }
-
-    /* Note: We don't need to override SavedData#save(...) here because we serialize via TYPE's Codec. */
 }

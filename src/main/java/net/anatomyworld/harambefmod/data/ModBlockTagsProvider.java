@@ -53,12 +53,18 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
         tag(net.minecraft.tags.BlockTags.CROPS).add(ModBlocks.MUSAVACCA_PLANT.get());
         tag(net.minecraft.tags.BlockTags.SAPLINGS).add(ModBlocks.MUSAVACCA_SAPLING.get());
 
-        /* ---------- YOUR CUSTOM TAG ---------- */
-        // This is what actually makes the file appear under data/harambefmod/tags/blocks/
+        // existing custom example
         tag(ModTags.Blocks.BANANA_COW_GROWTH).add(
                 ModBlocks.MUSAVACCA_STEM.get(),
                 ModBlocks.STRIPPED_MUSAVACCA_STEM.get(),
                 ModBlocks.MUSAVACCA_PLANKS.get()
         );
+
+        /* ---------- NEW: portal frame tags ---------- */
+        // Intra-dimensional frame blocks (current behavior). We include the Pearl Block by default.
+        tag(ModTags.Blocks.BANANA_PORTAL_FRAME).add(ModBlocks.BANANA_PEARL_BLOCK.get());
+
+        // Inter-dimensional frame blocks (empty by default — add via datapack or here later)
+        tag(ModTags.Blocks.BANANA_PORTAL_FRAME_INTER).add(ModBlocks.MUSAVACCA_PLANKS.get());
     }
 }

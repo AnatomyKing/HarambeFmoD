@@ -17,13 +17,7 @@ import net.minecraft.world.item.FlintAndSteelItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseFireBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.CampfireBlock;
-import net.minecraft.world.level.block.CandleBlock;
-import net.minecraft.world.level.block.CandleCakeBlock;
-import net.minecraft.world.level.block.TntBlock;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.portal.PortalShape;
@@ -37,11 +31,8 @@ import org.jetbrains.annotations.Nullable;
 public final class FlintAndPearlItem extends FlintAndSteelItem {
     private static final String DEFAULT_COLOR = "#D5CD49";
 
-    public FlintAndPearlItem(Properties props) {
-        super(props);
-    }
+    public FlintAndPearlItem(Properties props) { super(props); }
 
-    // 1.21.8: Item#use returns InteractionResult
     @Override
     public @NotNull InteractionResult use(Level level, Player player, InteractionHand hand) {
         if (level.isClientSide && FMLEnvironment.dist == Dist.CLIENT) {
@@ -65,7 +56,6 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
         return InteractionResult.PASS;
     }
 
-    // FlintAndSteelItem#useOn returns InteractionResult in 1.21.8
     @Override
     public @NotNull InteractionResult useOn(@NotNull UseOnContext ctx) {
         Level     level   = ctx.getLevel();
@@ -75,7 +65,6 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
         BlockState state  = level.getBlockState(clicked);
         ItemStack stack   = ctx.getItemInHand();
 
-        // ----- CLIENT -----
         if (level.isClientSide && FMLEnvironment.dist == Dist.CLIENT) {
             if (shouldPlacePearlFireClient(state, level, firePos, face)) {
                 String hex = stack.getOrDefault(
@@ -83,19 +72,15 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
                         DEFAULT_COLOR
                 );
                 int rgb = Integer.parseInt(hex.replace("#", ""), 16);
-
-                // Client -> server
                 ClientPacketDistributor.sendToServer(new PlaceFirePayload(
                         firePos, rgb, ctx.getHand() == InteractionHand.MAIN_HAND, (byte) face.ordinal()
                 ));
-
                 ClientPredictor.place(level, firePos, rgb);
                 return InteractionResult.SUCCESS;
             }
             return InteractionResult.PASS;
         }
 
-        // ----- SERVER -----
         String hex = stack.getOrDefault(
                 net.anatomyworld.harambefmod.component.ModDataComponents.FLAME_COLOR.get(),
                 DEFAULT_COLOR
@@ -131,7 +116,6 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
         if (clickedState.getBlock() instanceof TntBlock) return false;
         if (CampfireBlock.canLight(clickedState) || CandleBlock.canLight(clickedState) || CandleCakeBlock.canLight(clickedState)) return false;
 
-        // If a vanilla nether portal could spawn here, don’t client-predict
         if (PortalShape.findEmptyPortalShape(level, firePos, Direction.Axis.X).isPresent()
                 || PortalShape.findEmptyPortalShape(level, firePos, Direction.Axis.Z).isPresent()) return false;
 
@@ -186,7 +170,6 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
         );
 
         server.getServer().execute(() -> {
-            // Fill interior & set color/axis/anchor on each BE
             BananaPortalShape.fill(server, frame, rgb);
 
             Direction front = pickFront(player, frame);
@@ -205,6 +188,7 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
             int res = data.registerOrLink(server, frame, hexUpper, rgb, front);
 
             if (res < 0) {
+                // Undo fill if rejected
                 for (int y = 0; y < frame.height(); y++) {
                     for (int x = 0; x < frame.width(); x++) {
                         BlockPos ip = frame.anchor().relative(right, x).above(y);
@@ -213,9 +197,17 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
                         }
                     }
                 }
+                final String msg = switch (res) {
+                    case -1 -> "That code is already linked.";
+                    case -2 -> "Cannot link: inter-dimensional frames only link with inter-dimensional frames (and intra with intra).";
+                    case -3 -> (frame.mode() == BananaPortalShape.FrameMode.INTER)
+                            ? "Inter-dimensional frame: link only across different dimensions."
+                            : "Intra-dimensional frame: link only within the same dimension.";
+                    default -> "Cannot link this portal.";
+                };
                 server.players().forEach(p -> {
                     if (p.distanceToSqr(firePos.getX() + 0.5, firePos.getY() + 0.5, firePos.getZ() + 0.5) < 16 * 16)
-                        p.displayClientMessage(net.minecraft.network.chat.Component.literal("That code is already linked."), true);
+                        p.displayClientMessage(net.minecraft.network.chat.Component.literal(msg), true);
                 });
                 return;
             }
@@ -223,12 +215,16 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
             if (res == 0) {
                 server.players().forEach(p -> {
                     if (p.distanceToSqr(firePos.getX() + 0.5, firePos.getY() + 0.5, firePos.getZ() + 0.5) < 16 * 16)
-                        p.displayClientMessage(net.minecraft.network.chat.Component.literal("Portal set to code " + hexUpper + ". Light another frame with the same code to link."), true);
+                        p.displayClientMessage(net.minecraft.network.chat.Component.literal(
+                                "Portal set to code " + hexUpper + " (" + frame.mode().name().toLowerCase() + "). Light another frame with the same code to link."
+                        ), true);
                 });
             } else {
                 server.players().forEach(p -> {
                     if (p.distanceToSqr(firePos.getX() + 0.5, firePos.getY() + 0.5, firePos.getZ() + 0.5) < 16 * 16)
-                        p.displayClientMessage(net.minecraft.network.chat.Component.literal("Linked portals for " + hexUpper + "!"), true);
+                        p.displayClientMessage(net.minecraft.network.chat.Component.literal(
+                                "Linked portals for " + hexUpper + " (" + frame.mode().name().toLowerCase() + ")!"
+                        ), true);
                 });
             }
         });
@@ -241,19 +237,17 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
 
         Direction look = player.getDirection(); // nearest horizontal cardinal
         if (frame.axis() == Direction.Axis.X) {
-            // choose NORTH/SOUTH
             return (look == Direction.NORTH || look == Direction.SOUTH)
                     ? look
                     : (player.getZ() >= (frame.anchor().getZ() + frame.width() / 2.0) ? Direction.SOUTH : Direction.NORTH);
         } else {
-            // axis Z: choose EAST/WEST
             return (look == Direction.EAST || look == Direction.WEST)
                     ? look
                     : (player.getX() >= (frame.anchor().getX() + frame.width() / 2.0) ? Direction.EAST : Direction.WEST);
         }
     }
 
-    // ---------- CLIENT-ONLY HELPERS (kept inside this file, never referenced on server) ----------
+    // ---------- CLIENT-ONLY HELPERS ----------
     private static final class ScreenOpener {
         private ScreenOpener() {}
         static void openIfLookingAtAir(ItemStack stack) {

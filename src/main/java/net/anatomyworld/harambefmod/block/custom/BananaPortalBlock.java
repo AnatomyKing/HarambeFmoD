@@ -7,7 +7,6 @@ import net.anatomyworld.harambefmod.world.BananaPortalShape;
 import net.anatomyworld.harambefmod.world.PortalLinkData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -15,6 +14,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.InsideBlockEffectApplier;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Relative; // <-- 1.21.4+ rename
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -24,7 +24,6 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
@@ -35,6 +34,9 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.EnumSet;
+import java.util.Set;
 
 /** Re-entry gated portal with ultra-smooth, survival-safe teleport. */
 public final class BananaPortalBlock extends Block implements EntityBlock {
@@ -87,7 +89,7 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         return s.getValue(AXIS) == Direction.Axis.X ? SHAPE_X : SHAPE_Z;
     }
 
-    // 1.21.x: signature now includes InsideBlockEffectApplier (5 params), override is protected
+    // 1.21.x: signature includes InsideBlockEffectApplier (5 params), override is protected
     @Override
     protected void entityInside(@NotNull BlockState state,
                                 @NotNull Level level,
@@ -103,7 +105,7 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         long now        = server.getGameTime();
         long thisAnchor = portalBE.getAnchor().asLong();
 
-        // NBT in 1.21.8: use ...Or helpers instead of Optional<Long>
+        // NBT helpers
         CompoundTag tag = entity.getPersistentData();
         long lastAny = tag.getLongOr(TAG_ANY_TICK, 0L);
 
@@ -119,7 +121,6 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         var targetOpt = data.findOtherEndpointForPosition(server, pos);
         if (targetOpt.isEmpty()) return;
         var target = targetOpt.get();
-        if (!server.dimension().equals(target.dim)) return; // same-dimension only
 
         // Bases
         Vec3 nSrc    = dirToUnit(portalBE.getFront());
@@ -210,22 +211,100 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         boolean wasSprinting = (entity instanceof LivingEntity le2) && le2.isSprinting();
         boolean wasElytra    = (entity instanceof LivingEntity le3) && le3.isFallFlying();
 
-        // Ensure the initial exit position is collision-free
-        outPos = findSafeExit(server, entity, outPos, nDstOut, tgtAnchor, rDst, dstW, dstH);
+        // === Inter vs. Intra selection ===
+        boolean crossDim = !server.dimension().equals(target.dim);
 
         // Gate re-entry briefly
         tag.putLong(TAG_CD_UNTIL, now + COOLDOWN_TICKS);
         tag.putLong(TAG_IN_ANCHOR, tgtAnchor.asLong());
         entity.resetFallDistance();
 
+        // Ensure the initial exit position is collision-free
+        ServerLevel destinationLevel = crossDim ? server.getServer().getLevel(target.dim) : server;
+        if (destinationLevel == null) return;
+        Vec3 safeOut = findSafeExit(destinationLevel, entity, outPos, nDstOut, tgtAnchor, rDst, dstW, dstH);
+
+        // Common post-teleport state
         final Vec3  vOutTarget   = vOut;
         final float yawTarget    = yawOut;
         final float pitchTarget  = pitchOut;
         final boolean sprintFlag = wasSprinting;
         final boolean elytraFlag = wasElytra;
 
-        // === Ultra-smooth handoff: teleport now, then ease vel+rot for a couple ticks ===
-        Vec3 finalOutPos = outPos;
+        if (crossDim) {
+            // === CROSS-DIMENSIONAL: use teleportTo(...) with Relative flags ===
+            Set<Relative> rel = EnumSet.noneOf(Relative.class);
+
+            if (entity instanceof ServerPlayer sp) {
+                sp.teleportTo(destinationLevel, safeOut.x, safeOut.y, safeOut.z, rel, yawTarget, pitchTarget, false);
+                sp.setDeltaMovement(vOutTarget);
+                sp.resetFallDistance();
+                sp.setSprinting(sprintFlag);
+                if (elytraFlag) sp.startFallFlying();
+                sp.setYBodyRot(yawTarget);
+                sp.setYHeadRot(yawTarget);
+                sp.setXRot(pitchTarget);
+            } else {
+                entity.teleportTo(destinationLevel, safeOut.x, safeOut.y, safeOut.z, rel, yawTarget, pitchTarget, false);
+                entity.setDeltaMovement(vOutTarget);
+                entity.resetFallDistance();
+                if (entity instanceof LivingEntity le) {
+                    le.setSprinting(sprintFlag);
+                    le.setYBodyRot(yawTarget);
+                    le.setYHeadRot(yawTarget);
+                }
+            }
+
+            // Smooth easing for a couple of ticks on the destination level
+            for (int i = 0; i < SMOOTH_STEPS; i++) {
+                final int step = i;
+                Vec3 finalRDst = rDst;
+                runTicksLater(destinationLevel, step + 1, () -> {
+                    if (entity.isRemoved()) return;
+                    double f = SMOOTH_FACTORS[Math.min(step, SMOOTH_FACTORS.length - 1)];
+
+                    // Ease vel
+                    Vec3 curV = entity.getDeltaMovement();
+                    Vec3 easedV = curV.scale(1.0 - f).add(vOutTarget.scale(f));
+                    entity.setDeltaMovement(easedV);
+
+                    // Ease yaw/pitch
+                    if (entity instanceof LivingEntity lv) {
+                        float curYaw   = lv.getYHeadRot();
+                        float curPitch = lv.getXRot();
+                        float easedYaw   = lerpYawDegrees(curYaw, yawTarget, (float) f);
+                        float easedPitch = (float) Mth.lerp(f, curPitch, pitchTarget);
+
+                        if (entity instanceof ServerPlayer sp2) {
+                            sp2.connection.teleport(sp2.getX(), sp2.getY(), sp2.getZ(), easedYaw, easedPitch);
+                            sp2.setYBodyRot(easedYaw);
+                            sp2.setYHeadRot(easedYaw);
+                            sp2.setXRot(easedPitch);
+                        } else {
+                            entity.setYRot(easedYaw);
+                            entity.setXRot(easedPitch);
+                            lv.setYBodyRot(easedYaw);
+                            lv.setYHeadRot(easedYaw);
+                        }
+                    }
+
+                    // Keep inside safe lane
+                    clampInsideDestination(destinationLevel, entity, finalRDst, up, tgtAnchor, target.axis, dstW, dstH);
+                    entity.resetFallDistance();
+                });
+            }
+
+            runTicksLater(destinationLevel, SMOOTH_STEPS + 1, () -> {
+                if (entity.isRemoved()) return;
+                entity.setDeltaMovement(vOutTarget);
+                entity.resetFallDistance();
+            });
+
+            return; // cross-dim path completes here
+        }
+
+        // === INTRA-DIMENSIONAL: ultra-smooth handoff (same dimension) ===
+        final Vec3 finalOutPos = safeOut;
         runNextTick(server, () -> {
             if (entity.isRemoved()) return;
             if (entity instanceof ServerPlayer sp) {
@@ -391,8 +470,6 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         e.resetFallDistance();
     }
 
-    // ====== robust exit position finder ======
-
     /**
      * Search along the outward normal for a position where the entity's AABB doesn't collide.
      * Also tries tiny vertical nudges. Keeps the entity inside the portal lane if everything is blocked.
@@ -430,8 +507,7 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         if (minLd <= maxLd) L = Mth.clamp(L, minLd, maxLd);
         V = Mth.clamp(V, 0.0, maxVd);
 
-        Vec3 onSkin = base.add(rDst.scale(L)).add(0, V, 0).add(outNormal.scale(0.03125));
-        return onSkin;
+        return base.add(rDst.scale(L)).add(0, V, 0).add(outNormal.scale(0.03125));
     }
 
     /** AABB collision check at an arbitrary position (without moving the entity yet). */
