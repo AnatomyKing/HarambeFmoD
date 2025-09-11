@@ -23,6 +23,13 @@ public final class ModDataGenerators {
 
         // If/when you add item tags that depend on block tags, use:
         // event.createBlockAndItemTags(ModBlockTagsProvider::new, ModItemTagsProvider::new);
+
+        // NEW: models (blockstates + models + auto item models)
+        event.createProvider(ModModelProvider::new);
+
+        // NEW: lang (en_us)
+        event.createProvider(out -> new ModLanguageProvider(out, "en_us"));
+
     }
 
     private ModDataGenerators() {}
