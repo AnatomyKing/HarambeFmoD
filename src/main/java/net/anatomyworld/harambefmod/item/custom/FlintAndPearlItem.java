@@ -198,11 +198,11 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
                     }
                 }
                 final String msg = switch (res) {
-                    case -1 -> "That code is already linked.";
-                    case -2 -> "Cannot link: inter-dimensional frames only link with inter-dimensional frames (and intra with intra).";
+                    case -1 -> "That hex color code is already linked.";
+                    case -2 -> "Frame Block not compatible.";
                     case -3 -> (frame.mode() == BananaPortalShape.FrameMode.INTER)
-                            ? "Inter-dimensional frame: link only across different dimensions."
-                            : "Intra-dimensional frame: link only within the same dimension.";
+                            ? "Frame block can only be linked across different dimensions."
+                            : "Frame block can only be linked in the same dimension.";
                     default -> "Cannot link this portal.";
                 };
                 server.players().forEach(p -> {
@@ -216,7 +216,7 @@ public final class FlintAndPearlItem extends FlintAndSteelItem {
                 server.players().forEach(p -> {
                     if (p.distanceToSqr(firePos.getX() + 0.5, firePos.getY() + 0.5, firePos.getZ() + 0.5) < 16 * 16)
                         p.displayClientMessage(net.minecraft.network.chat.Component.literal(
-                                "Portal set to code " + hexUpper + " (" + frame.mode().name().toLowerCase() + "). Light another frame with the same code to link."
+                                "Portal set to code " + hexUpper + " (" + frame.mode().name().toLowerCase() + "). Light another compatible frame with the same code"
                         ), true);
                 });
             } else {

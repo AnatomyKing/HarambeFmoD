@@ -27,31 +27,36 @@ public final class ModModelProvider extends ModelProvider {
                 ModBlocks.MUSAVACCA_PLANKS.get()
         );
 
-        BlocksGenSimple.leaves(blockModels,
-                ModBlocks.MUSAVACCA_LEAVES.get(),
-                ModBlocks.MUSAVACCA_LEAVES_CROWN.get()
-        );
+        BlocksGenSimple.simpleState(blockModels, ModBlocks.MUSAVACCA_LEAVES_CROWN.get(),
+                "harambefmod:block/musavacca_leaves_crown");
+        BlocksGenSimple.simpleState(blockModels, ModBlocks.MUSAVACCA_LEAVES.get(),
+                "harambefmod:block/musavacca_leaves");
+        BlocksGenSimple.simpleState(blockModels, ModBlocks.MUSAVACCA_SAPLING.get(),
+                "harambefmod:block/musavacca_plant_stage3");
+
 
         BlocksGenSimple.pillarAuto(blockModels,
                 ModBlocks.MUSAVACCA_STEM.get(),
                 ModBlocks.STRIPPED_MUSAVACCA_STEM.get()
         );
 
-        // Planten/sapling (cross)
+
         BlocksGenSimple.cross(blockModels,
-                ModBlocks.MUSAVACCA_FLOWER.get(),
-                ModBlocks.MUSAVACCA_SAPLING.get()
+                ModBlocks.MUSAVACCA_FLOWER.get()
         );
 
+
         // 2) Complex: portal axis copy van vanilla
-        BlocksGenComplex.portalAxis(blockModels, ModBlocks.BANANA_PORTAL.get());
+        BlocksGenComplex.portalAxisStates(blockModels, ModBlocks.BANANA_PORTAL.get());
 
         // 3) Complex: custom FIRE (Pearl Fire) met vanilla FIRE templates
-        BlocksGenComplex.pearlFire(blockModels, ModBlocks.PEARL_FIRE.get());
+        BlocksGenComplex.fireStatesAuto(blockModels, ModBlocks.PEARL_FIRE.get());
 
         // 4) Jouw custom states
         BlocksGenComplex.bananaCowEggStates(blockModels, ModBlocks.BANANA_COW_EGG.get());
-        BlocksGenComplex.musavaccaCrop(blockModels, ModBlocks.MUSAVACCA_PLANT.get(), ModBlocks.MUSAVACCA_SAPLING.get());
+
+        BlocksGenComplex.musavaccaPlantStates(blockModels,
+                ModBlocks.MUSAVACCA_PLANT.get());
 
         /* ===================== ITEMS ===================== */
         // Flat food/materials
@@ -65,7 +70,8 @@ public final class ModModelProvider extends ModelProvider {
                 ModItems.MUSAVACCA_SPROUT.get(),
                 ModItems.BANANA_COW_EGG_RIPENING.get(),
                 ModItems.BANANA_COW_EGG_RIPE.get(),
-                ModItems.BANANA_COW_EGG_UNRIPE.get()
+                ModItems.BANANA_COW_EGG_UNRIPE.get(),
+                ModItems.BANANA_COW_SPAWN_EGG.get()
         );
 
 
@@ -74,10 +80,24 @@ public final class ModModelProvider extends ModelProvider {
 
         );
 
-        ItemsGen.itemUsesBlockModel(itemModels,
-                ModItems.MUSAVACCA_SPROUT.get(), "harambefmod:item/anyphone"
-
+        ItemsGen.itemUsesBlockModel(
+                itemModels,
+                ModBlocks.MUSAVACCA_LEAVES_CROWN.get().asItem(),
+                "harambefmod:block/musavacca_leaves_crown"
         );
+
+        ItemsGen.itemUsesBlockModel(
+                itemModels,
+                ModBlocks.MUSAVACCA_LEAVES.get().asItem(),
+                "harambefmod:block/musavacca_leaves"
+        );
+
+        ItemsGen.itemUsesBlockModel(
+                itemModels,
+                ModBlocks.MUSAVACCA_SAPLING.get().asItem(),
+                "harambefmod:item/musavacca_sprout"
+        );
+
 
     }
 

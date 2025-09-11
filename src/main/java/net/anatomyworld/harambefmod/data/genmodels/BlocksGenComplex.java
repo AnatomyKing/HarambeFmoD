@@ -2,12 +2,12 @@ package net.anatomyworld.harambefmod.data.genmodels;
 
 import com.mojang.math.Quadrant;
 import net.anatomyworld.harambefmod.block.custom.BananaCowEggBlock;
-import net.anatomyworld.harambefmod.block.custom.BananaPortalBlock;
 import net.anatomyworld.harambefmod.block.custom.MusavaccaPlantCropBlock;
 import net.minecraft.client.data.models.BlockModelGenerators;
 import net.minecraft.client.data.models.blockstates.MultiPartGenerator;
 import net.minecraft.client.data.models.blockstates.MultiVariantGenerator;
 import net.minecraft.client.data.models.blockstates.PropertyDispatch;
+import net.minecraft.client.data.models.model.ModelTemplate;
 import net.minecraft.client.data.models.model.ModelTemplates;
 import net.minecraft.client.data.models.model.TextureMapping;
 import net.minecraft.client.data.models.model.TextureSlot;
@@ -24,27 +24,75 @@ import static net.anatomyworld.harambefmod.data.genmodels.ModelUtil.*;
 public final class BlocksGenComplex {
 
     /* ------------------------ Portal axis (nether-like) ------------------------ */
-    // BlocksGenComplex.java
     public static void portalAxis(BlockModelGenerators gen, Block portalLike) {
-        var ds = portalLike.defaultBlockState();
+        // e.g. harambefmod:banana_portal
+        ResourceLocation id = idOf(portalLike);
+        String ns = id.getNamespace();
+        String name = id.getPath();
 
-        ResourceLocation xModel = blockModel("minecraft", "nether_portal_ns");
-        ResourceLocation zModel = blockModel("minecraft", "nether_portal_ew");
+        // Your portal texture: assets/<ns>/textures/block/<name>.png
+        ResourceLocation portalTex = texOf(portalLike);
 
-        // Use the exact property the block defines (BananaPortalBlock.AXIS == HORIZONTAL_AXIS)
-        if (ds.hasProperty(BananaPortalBlock.AXIS)) {
-            gen.blockStateOutput.accept(
-                    MultiVariantGenerator.dispatch(portalLike, mv(xModel))
-                            .with(PropertyDispatch.modify(BananaPortalBlock.AXIS)
-                                    .select(Direction.Axis.X, VariantMutator.MODEL.withValue(xModel))
-                                    .select(Direction.Axis.Z, VariantMutator.MODEL.withValue(zModel))
-                            )
-            );
-        } else {
-            // Fallback: no axis on the block, single model
-            gen.blockStateOutput.accept(MultiVariantGenerator.dispatch(portalLike, mv(xModel)));
-        }
+        // Vanilla portal models use "portal" + "particle" texture keys.
+        TextureSlot PORTAL = TextureSlot.create("portal", TextureSlot.ALL);
+
+        // Build fresh templates (DO NOT extend CUBE, or it will require face slots).
+        ModelTemplate nsTemplate = new ModelTemplate(
+                java.util.Optional.of(blockModel("minecraft", "nether_portal_ns")),
+                java.util.Optional.empty(),
+                TextureSlot.PARTICLE, PORTAL
+        );
+        ModelTemplate ewTemplate = new ModelTemplate(
+                java.util.Optional.of(blockModel("minecraft", "nether_portal_ew")),
+                java.util.Optional.empty(),
+                TextureSlot.PARTICLE, PORTAL
+        );
+
+        // Map the required slots to your texture.
+        TextureMapping mapping = new TextureMapping()
+                .put(PORTAL, portalTex)
+                .put(TextureSlot.PARTICLE, portalTex);
+
+        // Write YOUR models
+        ResourceLocation nsModel = nsTemplate.create(rl(ns, "block/" + name + "_ns"), mapping, gen.modelOutput);
+        ResourceLocation ewModel = ewTemplate.create(rl(ns, "block/" + name + "_ew"), mapping, gen.modelOutput);
+
+        // Blockstate: default → ns, then override by AXIS (vanilla mapping: X→NS, Z→EW)
+        Variant base = new Variant(nsModel);
+        gen.blockStateOutput.accept(
+                MultiVariantGenerator
+                        .dispatch(portalLike, BlockModelGenerators.variant(base))
+                        .with(PropertyDispatch.modify(
+                                        net.anatomyworld.harambefmod.block.custom.BananaPortalBlock.AXIS)
+                                .select(Direction.Axis.X, VariantMutator.MODEL.withValue(nsModel))
+                                .select(Direction.Axis.Z, VariantMutator.MODEL.withValue(ewModel))
+                        )
+        );
     }
+
+    /* ------------------------ Portal (axis) — blockstate-only ------------------------ */
+    public static void portalAxisStates(BlockModelGenerators gen, Block portalLike) {
+        ResourceLocation id = idOf(portalLike);
+        String ns = id.getNamespace();
+        String name = id.getPath();
+
+        // Preexisting model ids you provide
+        ResourceLocation nsModel = rl(ns, "block/" + name + "_ns");
+        ResourceLocation ewModel = rl(ns, "block/" + name + "_ew");
+
+        // Default to NS; override by AXIS (X→NS, Z→EW)
+        Variant base = new Variant(nsModel);
+        gen.blockStateOutput.accept(
+                MultiVariantGenerator
+                        .dispatch(portalLike, BlockModelGenerators.variant(base))
+                        .with(PropertyDispatch.modify(
+                                        net.anatomyworld.harambefmod.block.custom.BananaPortalBlock.AXIS)
+                                .select(Direction.Axis.X, VariantMutator.MODEL.withValue(nsModel))
+                                .select(Direction.Axis.Z, VariantMutator.MODEL.withValue(ewModel))
+                        )
+        );
+    }
+
 
 
 
@@ -176,91 +224,155 @@ public final class BlocksGenComplex {
     }
 
     /* ------------------------ Pearl Fire (vanilla FIRE templates) ------------------------ */
-    public static void pearlFire(BlockModelGenerators gen, Block fire) {
-        String ns = idOf(fire).getNamespace();
+    // BlocksGenComplex.java
+    public static void fireAuto(BlockModelGenerators gen, Block fire) {
+        // Textures you provide:
+        //   assets/<ns>/textures/block/<name>_0.png
+        //   assets/<ns>/textures/block/<name>_1.png
+        var id = idOf(fire);
+        String ns   = id.getNamespace();
+        String name = id.getPath();
 
-        // Textures you provide in assets/<ns>/textures/block/:
-        //   <id>_0.png  and  <id>_1.png
-        ResourceLocation tex0 = rl(ns, "block/" + idOf(fire).getPath() + "_0");
-        ResourceLocation tex1 = rl(ns, "block/" + idOf(fire).getPath() + "_1");
+        // Use the built-in FIRE TextureSlot (important)
+        TextureMapping tex0 = new TextureMapping().put(TextureSlot.FIRE, rl(ns, "block/" + name + "_0"));
+        TextureMapping tex1 = new TextureMapping().put(TextureSlot.FIRE, rl(ns, "block/" + name + "_1"));
 
-        // IMPORTANT: use the built-in slot instance required by FIRE_* templates.
-        TextureMapping m0 = new TextureMapping().put(TextureSlot.FIRE, tex0);
-        TextureMapping m1 = new TextureMapping().put(TextureSlot.FIRE, tex1);
+        // Give EVERY template a unique output path to avoid "Duplicate model definition"
+        ResourceLocation floor0    = ModelTemplates.FIRE_FLOOR    .create(rl(ns, "block/" + name + "_floor0"),     tex0, gen.modelOutput);
+        ResourceLocation floor1    = ModelTemplates.FIRE_FLOOR    .create(rl(ns, "block/" + name + "_floor1"),     tex1, gen.modelOutput);
+        ResourceLocation side0     = ModelTemplates.FIRE_SIDE     .create(rl(ns, "block/" + name + "_side0"),      tex0, gen.modelOutput);
+        ResourceLocation side1     = ModelTemplates.FIRE_SIDE     .create(rl(ns, "block/" + name + "_side1"),      tex1, gen.modelOutput);
+        ResourceLocation sideAlt0  = ModelTemplates.FIRE_SIDE_ALT .create(rl(ns, "block/" + name + "_side_alt0"),  tex0, gen.modelOutput);
+        ResourceLocation sideAlt1  = ModelTemplates.FIRE_SIDE_ALT .create(rl(ns, "block/" + name + "_side_alt1"),  tex1, gen.modelOutput);
 
-        ResourceLocation floor    = ModelTemplates.FIRE_FLOOR.create(fire, m0, gen.modelOutput);
-        ResourceLocation floorAlt = ModelTemplates.FIRE_FLOOR.create(
-                rl(ns, "block/" + idOf(fire).getPath() + "_floor_alt"), m1, gen.modelOutput);
-        ResourceLocation side     = ModelTemplates.FIRE_SIDE.create(fire, m0, gen.modelOutput);
-        ResourceLocation sideAlt  = ModelTemplates.FIRE_SIDE_ALT.create(fire, m1, gen.modelOutput);
-        ResourceLocation up       = ModelTemplates.FIRE_UP.create(fire, m0, gen.modelOutput);
-        ResourceLocation upAlt    = ModelTemplates.FIRE_UP_ALT.create(fire, m1, gen.modelOutput);
-
-        var base = BlockModelGenerators.condition()
-                .term(BlockStateProperties.EAST,  false)
-                .term(BlockStateProperties.WEST,  false)
-                .term(BlockStateProperties.NORTH, false)
-                .term(BlockStateProperties.SOUTH, false)
-                .term(BlockStateProperties.UP,    false);
-
+        // Soul-fire style: unconditional multipart (no EAST/WEST/NORTH/SOUTH/UP properties)
         var mp = MultiPartGenerator.multiPart(fire)
-                // floor: two alternatives
-                .with(base, BlockModelGenerators.variants(new Variant(floor), new Variant(floorAlt)))
-                // sides
-                .with(BlockModelGenerators.condition().term(BlockStateProperties.NORTH, true),
-                        BlockModelGenerators.variant(new Variant(side)))
-                .with(BlockModelGenerators.condition().term(BlockStateProperties.EAST, true),
-                        BlockModelGenerators.variant(new Variant(side).with(VariantMutator.Y_ROT.withValue(Quadrant.R90))))
-                .with(BlockModelGenerators.condition().term(BlockStateProperties.SOUTH, true),
-                        BlockModelGenerators.variant(new Variant(sideAlt).with(VariantMutator.Y_ROT.withValue(Quadrant.R180))))
-                .with(BlockModelGenerators.condition().term(BlockStateProperties.WEST, true),
-                        BlockModelGenerators.variant(new Variant(sideAlt).with(VariantMutator.Y_ROT.withValue(Quadrant.R270))))
-                // top: two alternatives
-                .with(BlockModelGenerators.condition().term(BlockStateProperties.UP, true),
-                        BlockModelGenerators.variants(new Variant(up), new Variant(upAlt)));
+                // Floors
+                .with(BlockModelGenerators.variant(new Variant(floor0)))
+                .with(BlockModelGenerators.variant(new Variant(floor1)))
+
+                // Sides @ 0°
+                .with(BlockModelGenerators.variant(new Variant(side0)))
+                .with(BlockModelGenerators.variant(new Variant(side1)))
+                .with(BlockModelGenerators.variant(new Variant(sideAlt0)))
+                .with(BlockModelGenerators.variant(new Variant(sideAlt1)))
+
+                // Sides @ 90°
+                .with(BlockModelGenerators.variant(new Variant(side0).with(VariantMutator.Y_ROT.withValue(Quadrant.R90))))
+                .with(BlockModelGenerators.variant(new Variant(side1).with(VariantMutator.Y_ROT.withValue(Quadrant.R90))))
+                .with(BlockModelGenerators.variant(new Variant(sideAlt0).with(VariantMutator.Y_ROT.withValue(Quadrant.R90))))
+                .with(BlockModelGenerators.variant(new Variant(sideAlt1).with(VariantMutator.Y_ROT.withValue(Quadrant.R90))))
+
+                // Sides @ 180°
+                .with(BlockModelGenerators.variant(new Variant(side0).with(VariantMutator.Y_ROT.withValue(Quadrant.R180))))
+                .with(BlockModelGenerators.variant(new Variant(side1).with(VariantMutator.Y_ROT.withValue(Quadrant.R180))))
+                .with(BlockModelGenerators.variant(new Variant(sideAlt0).with(VariantMutator.Y_ROT.withValue(Quadrant.R180))))
+                .with(BlockModelGenerators.variant(new Variant(sideAlt1).with(VariantMutator.Y_ROT.withValue(Quadrant.R180))))
+
+                // Sides @ 270°
+                .with(BlockModelGenerators.variant(new Variant(side0).with(VariantMutator.Y_ROT.withValue(Quadrant.R270))))
+                .with(BlockModelGenerators.variant(new Variant(side1).with(VariantMutator.Y_ROT.withValue(Quadrant.R270))))
+                .with(BlockModelGenerators.variant(new Variant(sideAlt0).with(VariantMutator.Y_ROT.withValue(Quadrant.R270))))
+                .with(BlockModelGenerators.variant(new Variant(sideAlt1).with(VariantMutator.Y_ROT.withValue(Quadrant.R270))));
 
         gen.blockStateOutput.accept(mp);
     }
 
+    public static void fireStatesAuto(BlockModelGenerators gen, Block fire) {
+        var id   = idOf(fire);
+        String ns   = id.getNamespace();
+        String name = id.getPath();
+
+        // Model IDs that must already exist under assets/<ns>/models/block/
+        ResourceLocation floor0   = rl(ns, "block/" + name + "_floor0");
+        ResourceLocation floor1   = rl(ns, "block/" + name + "_floor1");
+        ResourceLocation side0    = rl(ns, "block/" + name + "_side0");
+        ResourceLocation side1    = rl(ns, "block/" + name + "_side1");
+        ResourceLocation sideAlt0 = rl(ns, "block/" + name + "_side_alt0");
+        ResourceLocation sideAlt1 = rl(ns, "block/" + name + "_side_alt1");
+
+        var mp = MultiPartGenerator.multiPart(fire)
+                // Floors
+                .with(BlockModelGenerators.variant(new Variant(floor0)))
+                .with(BlockModelGenerators.variant(new Variant(floor1)))
+
+                // Sides @ 0°
+                .with(BlockModelGenerators.variant(new Variant(side0)))
+                .with(BlockModelGenerators.variant(new Variant(side1)))
+                .with(BlockModelGenerators.variant(new Variant(sideAlt0)))
+                .with(BlockModelGenerators.variant(new Variant(sideAlt1)))
+
+                // Sides @ 90°
+                .with(BlockModelGenerators.variant(new Variant(side0   ).with(VariantMutator.Y_ROT.withValue(Quadrant.R90))))
+                .with(BlockModelGenerators.variant(new Variant(side1   ).with(VariantMutator.Y_ROT.withValue(Quadrant.R90))))
+                .with(BlockModelGenerators.variant(new Variant(sideAlt0).with(VariantMutator.Y_ROT.withValue(Quadrant.R90))))
+                .with(BlockModelGenerators.variant(new Variant(sideAlt1).with(VariantMutator.Y_ROT.withValue(Quadrant.R90))))
+
+                // Sides @ 180°
+                .with(BlockModelGenerators.variant(new Variant(side0   ).with(VariantMutator.Y_ROT.withValue(Quadrant.R180))))
+                .with(BlockModelGenerators.variant(new Variant(side1   ).with(VariantMutator.Y_ROT.withValue(Quadrant.R180))))
+                .with(BlockModelGenerators.variant(new Variant(sideAlt0).with(VariantMutator.Y_ROT.withValue(Quadrant.R180))))
+                .with(BlockModelGenerators.variant(new Variant(sideAlt1).with(VariantMutator.Y_ROT.withValue(Quadrant.R180))))
+
+                // Sides @ 270°
+                .with(BlockModelGenerators.variant(new Variant(side0   ).with(VariantMutator.Y_ROT.withValue(Quadrant.R270))))
+                .with(BlockModelGenerators.variant(new Variant(side1   ).with(VariantMutator.Y_ROT.withValue(Quadrant.R270))))
+                .with(BlockModelGenerators.variant(new Variant(sideAlt0).with(VariantMutator.Y_ROT.withValue(Quadrant.R270))))
+                .with(BlockModelGenerators.variant(new Variant(sideAlt1).with(VariantMutator.Y_ROT.withValue(Quadrant.R270))));
+
+        gen.blockStateOutput.accept(mp);
+    }
+
+
+
     /* ------------------------ Banana Cow Egg (AGE 0..2) ------------------------ */
     public static void bananaCowEggStates(BlockModelGenerators gen, Block egg) {
-        var id = idOf(egg);
-        var model0 = rl(id.getNamespace(), "block/" + id.getPath() + "_0");
-        var model1 = rl(id.getNamespace(), "block/" + id.getPath() + "_1");
-        var model2 = rl(id.getNamespace(), "block/" + id.getPath() + "_2");
+        var id   = idOf(egg);
+        var ns   = id.getNamespace();
+        var base = id.getPath();
 
-        var state = MultiVariantGenerator.dispatch(egg, mv(model0))
-                .with(PropertyDispatch.modify(BananaCowEggBlock.AGE)
-                        .select(0, VariantMutator.MODEL.withValue(model0))
-                        .select(1, VariantMutator.MODEL.withValue(model1))
-                        .select(2, VariantMutator.MODEL.withValue(model2)));
-        gen.blockStateOutput.accept(state);
+        ResourceLocation[] free = {
+                rl(ns, "block/" + base + "_stage0"),
+                rl(ns, "block/" + base + "_stage1"),
+                rl(ns, "block/" + base + "_stage2")
+        };
+        ResourceLocation[] stem = {
+                rl(ns, "block/" + base + "_stem_stage0"),
+                rl(ns, "block/" + base + "_stem_stage1"),
+                rl(ns, "block/" + base + "_stem_stage2")
+        };
+
+        gen.blockStateOutput.accept(
+                MultiVariantGenerator
+                        .dispatch(egg, mv(free[0])) // a harmless default
+                        .with(PropertyDispatch.modify(BananaCowEggBlock.ATTACHED, BananaCowEggBlock.AGE)
+                                // attached = false
+                                .select(false, 0, VariantMutator.MODEL.withValue(free[0]))
+                                .select(false, 1, VariantMutator.MODEL.withValue(free[1]))
+                                .select(false, 2, VariantMutator.MODEL.withValue(free[2]))
+                                // attached = true
+                                .select(true,  0, VariantMutator.MODEL.withValue(stem[0]))
+                                .select(true,  1, VariantMutator.MODEL.withValue(stem[1]))
+                                .select(true,  2, VariantMutator.MODEL.withValue(stem[2]))
+                        )
+        );
     }
 
     /* ------------------------ Musavacca Crop (AGE 0..3) ------------------------ */
-    public static void musavaccaCrop(BlockModelGenerators gen, Block crop, Block sapling) {
+    public static void musavaccaPlantStates(BlockModelGenerators gen, Block crop) {
         String ns = idOf(crop).getNamespace();
-        var t0 = rl(ns, "block/musavacca_plant_stage0");
-        var t1 = rl(ns, "block/musavacca_plant_stage1");
-        var t2 = rl(ns, "block/musavacca_plant_stage2");
 
-        var m0 = ModelTemplates.CROSS.create(rl(ns,"block/musavacca_plant_stage0"),
-                new TextureMapping().put(TextureSlot.CROSS, t0), gen.modelOutput);
-        var m1 = ModelTemplates.CROSS.create(rl(ns,"block/musavacca_plant_stage1"),
-                new TextureMapping().put(TextureSlot.CROSS, t1), gen.modelOutput);
-        var m2 = ModelTemplates.CROSS.create(rl(ns,"block/musavacca_plant_stage2"),
-                new TextureMapping().put(TextureSlot.CROSS, t2), gen.modelOutput);
-
-        // AGE=3 -> sapling block model ("block/<sapling_id>")
-        var saplingId = idOf(sapling);
-        var saplingModel = rl(saplingId.getNamespace(), "block/" + saplingId.getPath());
+        ResourceLocation m0 = rl(ns, "block/musavacca_plant_stage0");
+        ResourceLocation m1 = rl(ns, "block/musavacca_plant_stage1");
+        ResourceLocation m2 = rl(ns, "block/musavacca_plant_stage2");
+        ResourceLocation m3 = rl(ns, "block/musavacca_plant_stage2");
 
         var state = MultiVariantGenerator.dispatch(crop, mv(m0))
                 .with(PropertyDispatch.modify(MusavaccaPlantCropBlock.AGE)
                         .select(0, VariantMutator.MODEL.withValue(m0))
                         .select(1, VariantMutator.MODEL.withValue(m1))
                         .select(2, VariantMutator.MODEL.withValue(m2))
-                        .select(3, VariantMutator.MODEL.withValue(saplingModel)));
+                        .select(3, VariantMutator.MODEL.withValue(m3)));
         gen.blockStateOutput.accept(state);
     }
 }

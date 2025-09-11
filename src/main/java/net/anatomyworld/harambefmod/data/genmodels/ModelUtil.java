@@ -33,5 +33,7 @@ public final class ModelUtil {
         return BlockModelGenerators.variants(new Variant(model));
     }
 
+
+
     public static Variant plain(ResourceLocation model) { return new Variant(model); }
 }

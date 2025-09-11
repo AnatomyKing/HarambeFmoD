@@ -1,0 +1,18 @@
+{
+	"format_version": "1.21.6",
+	"credit": "AnatomyKing(𝕏🐦@LuukMus,ᵈᶦˢᶜᵒʳᵈ@anatomyking)",
+	"textures": {
+		"particle": "harambefmod:block/banana_portal",
+		"portal": "harambefmod:block/banana_portal"
+	},
+	"elements": [
+		{
+			"from": [0, 0, 6],
+			"to": [16, 16, 10],
+			"faces": {
+				"north": {"uv": [0, 0, 16, 16], "texture": "#portal", "cullface": "north", "tintindex": 0},
+				"south": {"uv": [0, 0, 16, 16], "texture": "#portal", "cullface": "south", "tintindex": 0}
+			}
+		}
+	]
+}

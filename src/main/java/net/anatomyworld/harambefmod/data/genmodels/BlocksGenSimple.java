@@ -56,4 +56,12 @@ public final class BlocksGenSimple {
         });
         gen.createHorizontallyRotatedBlock(block, provider);
     }
+
+    /** Simple one-variant blockstate: { "variants": { "": { "model": "<block model id>" } } } */
+    public static void simpleState(BlockModelGenerators gen, Block block, String blockModelId) {
+        ResourceLocation model = ResourceLocation.parse(blockModelId); // e.g. "harambefmod:block/musavacca_leaves_crown"
+        gen.blockStateOutput.accept(MultiVariantGenerator.dispatch(block, mv(model)));
+    }
+
+
 }
