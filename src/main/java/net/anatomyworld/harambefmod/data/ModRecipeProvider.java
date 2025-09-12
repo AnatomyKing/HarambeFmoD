@@ -1,6 +1,7 @@
 package net.anatomyworld.harambefmod.data;
 
 import net.anatomyworld.harambefmod.HarambeCore;
+import net.anatomyworld.harambefmod.block.ModBlocks;
 import net.anatomyworld.harambefmod.data.recipegen.RecipeDSL;
 import net.anatomyworld.harambefmod.item.ModItems;
 import net.minecraft.core.HolderLookup;
@@ -37,76 +38,111 @@ public final class ModRecipeProvider extends RecipeProvider {
 
         /* ---------- Shapeless ---------- */
 
-        dsl.shapeless(RecipeCategory.MISC, ModItems.RAW_ANYTOMITHIUM.get())
-                .requires(Items.RAW_IRON, Items.PRISMARINE_CRYSTALS, Items.AMETHYST_SHARD)
-                .unlockedByHas(Items.AMETHYST_SHARD)
-                .save("raw_anytomithium");
+//        dsl.shapeless(RecipeCategory.MISC, ModItems.RAW_ANYTOMITHIUM.get())
+//                .requires(Items.RAW_IRON, Items.PRISMARINE_CRYSTALS, Items.AMETHYST_SHARD)
+//                .unlockedByHas(Items.AMETHYST_SHARD)
+//                .save("raw_anytomithium");
 
         dsl.shapeless(RecipeCategory.MISC, ModItems.FLINT_AND_PEARL.get())
                 .requires(Items.FLINT, ModItems.BANANA_PEARL.get())
                 .unlockedByHas(Items.FLINT, ModItems.BANANA_PEARL.get())
-                .save("flint_and_pearl");
-
-        dsl.shapeless(RecipeCategory.MISC, ModItems.HONEY_CRYSTALLINE.get(), 1)
-                .requires(ModItems.BANANA_PEARL.get())
-                .unlockedByHas(ModItems.BANANA_PEARL.get())
-                .save("bananas_from_pearl");
-
-        dsl.shapelessCountToCount(
-                RecipeCategory.MISC,
-                ModItems.HONEY_CRYSTALLINE.get(), 1,
-                ModItems.CRYSTALLIZED_HONEY.get(), 9,
-                "honey/crystallized_to_crystalline"
-        );
+                .save("banana/flint_and_pearl");
 
 
-        dsl.shapelessCountToCount(
-                RecipeCategory.MISC,
-                ModItems.HONEY_CLUSTER.get(), 1,
-                ModItems.HONEY_CRYSTALLINE.get(), 9,
-                "honey/crystalline_to_cluster"
-        );
+//        dsl.shapeless(RecipeCategory.MISC, ModItems.HONEY_CRYSTALLINE.get(), 1)
+//                .requires(ModItems.BANANA_PEARL.get())
+//                .unlockedByHas(ModItems.BANANA_PEARL.get())
+//                .save("bananas_from_pearl");
+//
+//        dsl.shapelessCountToCount(
+//                RecipeCategory.MISC,
+//                ModItems.HONEY_CRYSTALLINE.get(), 1,
+//                ModItems.CRYSTALLIZED_HONEY.get(), 9,
+//                "honey/crystallized_to_crystalline"
+//        );
 
 
         dsl.shapelessCountToCount(
                 RecipeCategory.MISC,
-                ModItems.HONEY_CORE.get(), 1,
-                ModItems.HONEY_CLUSTER.get(), 9,
-                "honey/cluster_to_core"
+                ModBlocks.BANANA_PEARL_BLOCK.get(), 1,
+                ModItems.BANANA_PEARL.get(), 9,
+                "banana/banana_pearl_to_block"
         );
+
+        dsl.shapelessCountToCount(
+                RecipeCategory.MISC,
+                ModBlocks.MUSAVACCA_PLANKS.get(), 4,
+                ModBlocks.MUSAVACCA_STEM.get(), 1,
+                "musavacca/stem_to_plank"
+        );
+
+        dsl.shapelessCountToCount(
+                RecipeCategory.MISC,
+                ModBlocks.MUSAVACCA_PLANKS.get(), 4,
+                ModBlocks.STRIPPED_MUSAVACCA_STEM.get(), 1,
+                "musavacca/strip_stem_to_plank"
+        );
+
+
+//        dsl.shapelessCountToCount(
+//                RecipeCategory.MISC,
+//                ModItems.HONEY_CORE.get(), 1,
+//                ModItems.HONEY_CLUSTER.get(), 9,
+//                "honey/cluster_to_core"
+//        );
 
 
         /* ---------- Smelting / Blasting ---------- */
 
-        ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> SMELT_KEY =
-                ResourceKey.create(Registries.RECIPE,
-                        ResourceLocation.fromNamespaceAndPath(HarambeCore.MOD_ID, "anytomithium_ingot_smelting"));
-        ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> BLAST_KEY =
-                ResourceKey.create(Registries.RECIPE,
-                        ResourceLocation.fromNamespaceAndPath(HarambeCore.MOD_ID, "anytomithium_ingot_blasting"));
-
-        dsl.cook().smelt(Ingredient.of(ModItems.RAW_ANYTOMITHIUM.get()),
-                        RecipeCategory.MISC, ModItems.ANYTOMITHIUM_INGOT.get(), 0.7F, 300)
-                .unlockedByHas(ModItems.RAW_ANYTOMITHIUM.get())
-                .save(SMELT_KEY);
-
-        dsl.cook().blast(Ingredient.of(ModItems.RAW_ANYTOMITHIUM.get()),
-                        RecipeCategory.MISC, ModItems.ANYTOMITHIUM_INGOT.get(), 0.7F, 150)
-                .unlockedByHas(ModItems.RAW_ANYTOMITHIUM.get())
-                .save(BLAST_KEY);
+//        ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> SMELT_KEY =
+//                ResourceKey.create(Registries.RECIPE,
+//                        ResourceLocation.fromNamespaceAndPath(HarambeCore.MOD_ID, "anytomithium_ingot_smelting"));
+//        ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> BLAST_KEY =
+//                ResourceKey.create(Registries.RECIPE,
+//                        ResourceLocation.fromNamespaceAndPath(HarambeCore.MOD_ID, "anytomithium_ingot_blasting"));
+//
+//        dsl.cook().smelt(Ingredient.of(ModItems.RAW_ANYTOMITHIUM.get()),
+//                        RecipeCategory.MISC, ModItems.ANYTOMITHIUM_INGOT.get(), 0.7F, 300)
+//                .unlockedByHas(ModItems.RAW_ANYTOMITHIUM.get())
+//                .save(SMELT_KEY);
+//
+//        dsl.cook().blast(Ingredient.of(ModItems.RAW_ANYTOMITHIUM.get()),
+//                        RecipeCategory.MISC, ModItems.ANYTOMITHIUM_INGOT.get(), 0.7F, 150)
+//                .unlockedByHas(ModItems.RAW_ANYTOMITHIUM.get())
+//                .save(BLAST_KEY);
 
         /* ---------- Shaped ---------- */
 
-        dsl.shaped(RecipeCategory.MISC, ModItems.ANYPHONE.get())
-                .pattern("xcx")
-                .pattern("xgx")
-                .pattern("xrx")
-                .define('x', ModItems.ANYTOMITHIUM_INGOT.get())
-                .define('c', Items.COMPASS)
-                .define('g', Items.LIGHT_BLUE_STAINED_GLASS_PANE)
-                .define('r', Items.REPEATER)
-                .unlockedByHas(ModItems.ANYTOMITHIUM_INGOT.get())
-                .save("anyphone");
+//        dsl.shaped(RecipeCategory.MISC, ModItems.ANYPHONE.get())
+//                .pattern("xcx")
+//                .pattern("xgx")
+//                .pattern("xrx")
+//                .define('x', ModItems.ANYTOMITHIUM_INGOT.get())
+//                .define('c', Items.COMPASS)
+//                .define('g', Items.LIGHT_BLUE_STAINED_GLASS_PANE)
+//                .define('r', Items.REPEATER)
+//                .unlockedByHas(ModItems.ANYTOMITHIUM_INGOT.get())
+//                .save("anyphone");
+
+
+        dsl.shaped(RecipeCategory.MISC, ModItems.BANANA_PEARL.get())
+                .pattern("xxx")
+                .pattern("xox")
+                .pattern("xxx")
+                .define('x', Items.AMETHYST_SHARD)
+                .define('o', ModItems.BANANA)
+                .unlockedByHas(ModBlocks.BANANA_PEARL_BLOCK.get())
+                .save("banana/banana_to_pearl");
+
+
+                dsl.shaped(RecipeCategory.MISC, ModBlocks.PEARLIDIAN.get())
+                .pattern("xxx")
+                .pattern("xox")
+                .pattern("xxx")
+                .define('x', ModBlocks.BANANA_PEARL_BLOCK.get())
+                .define('o', Items.OBSIDIAN)
+                .unlockedByHas(ModBlocks.BANANA_PEARL_BLOCK.get())
+                .save("banana/pearlidian");
     }
 
     /** Runner hook for GatherDataEvent#createProvider(...) (1.21.x). */

@@ -1,11 +1,11 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_anytomithium_ingot": {
+    "has_stripped_musavacca_stem": {
       "conditions": {
         "items": [
           {
-            "items": "harambefmod:anytomithium_ingot"
+            "items": "harambefmod:stripped_musavacca_stem"
           }
         ]
       },
@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "harambefmod:anyphone"
+        "recipe": "harambefmod:musavacca/strip_stem_to_plank"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -21,12 +21,12 @@
   "requirements": [
     [
       "has_the_recipe",
-      "has_anytomithium_ingot"
+      "has_stripped_musavacca_stem"
     ]
   ],
   "rewards": {
     "recipes": [
-      "harambefmod:anyphone"
+      "harambefmod:musavacca/strip_stem_to_plank"
     ]
   }
 }

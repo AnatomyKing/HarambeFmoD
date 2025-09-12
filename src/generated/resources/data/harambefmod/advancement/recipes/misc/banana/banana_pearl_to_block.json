@@ -1,11 +1,11 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_raw_anytomithium": {
+    "has_banana_pearl": {
       "conditions": {
         "items": [
           {
-            "items": "harambefmod:raw_anytomithium"
+            "items": "harambefmod:banana_pearl"
           }
         ]
       },
@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "harambefmod:anytomithium_ingot_blasting"
+        "recipe": "harambefmod:banana/banana_pearl_to_block"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -21,12 +21,12 @@
   "requirements": [
     [
       "has_the_recipe",
-      "has_raw_anytomithium"
+      "has_banana_pearl"
     ]
   ],
   "rewards": {
     "recipes": [
-      "harambefmod:anytomithium_ingot_blasting"
+      "harambefmod:banana/banana_pearl_to_block"
     ]
   }
 }

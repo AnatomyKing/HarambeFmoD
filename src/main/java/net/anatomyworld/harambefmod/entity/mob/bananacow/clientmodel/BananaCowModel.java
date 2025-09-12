@@ -15,8 +15,11 @@ public class BananaCowModel extends EntityModel<BananaCowModel.State> {
 
     /** Minimal custom state (embedded so there’s no extra file). */
     public static class State extends LivingEntityRenderState {
-        public float headYawDeg;
-        public float headPitchDeg;
+        /** Head rotations already in RADIANS (precomputed in renderer). */
+        public float headYawRad;
+        public float headPitchRad;
+
+        /** Walk anim + age */
         public float limbSwing;
         public float limbSwingAmount;
         public float ageTicks;
@@ -118,9 +121,18 @@ public class BananaCowModel extends EntityModel<BananaCowModel.State> {
     /* ===== Animation (RenderState-based) ===== */
     @Override
     public void setupAnim(@NotNull State s) {
-        head.yRot = s.headYawDeg   * Mth.DEG_TO_RAD;
-        head.xRot = s.headPitchDeg * Mth.DEG_TO_RAD;
+        // Correct, smooth, relative head look (set in renderer in radians)
+        head.yRot = s.headYawRad;
+        head.xRot = s.headPitchRad;
 
+        // Baby head scale (matches vanilla “big head” feel)
+        if (s.isBaby) {
+            head.xScale = head.yScale = head.zScale = 1.40F;
+        } else {
+            head.xScale = head.yScale = head.zScale = 1.0F;
+        }
+
+        // Walk cycle
         float walk = s.limbSwing;
         float amt  = s.limbSwingAmount;
 
@@ -129,6 +141,7 @@ public class BananaCowModel extends EntityModel<BananaCowModel.State> {
         leftFrontLeg.xRot  = Mth.cos(walk * 0.6662F + Mth.PI) * 1.4F * amt;
         rightBackLeg.xRot  = Mth.cos(walk * 0.6662F + Mth.PI) * 1.4F * amt;
 
+        // Idle tail sway
         tail.xRot = Mth.cos(s.ageTicks * 0.2F) * 0.05F;
     }
 

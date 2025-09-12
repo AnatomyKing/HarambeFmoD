@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "o": "minecraft:obsidian",
+    "x": "harambefmod:banana_pearl_block"
+  },
+  "pattern": [
+    "xxx",
+    "xox",
+    "xxx"
+  ],
+  "result": {
+    "count": 1,
+    "id": "harambefmod:pearlidian"
+  }
+}

@@ -23,7 +23,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "harambefmod:flint_and_pearl"
+        "recipe": "harambefmod:banana/flint_and_pearl"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -37,7 +37,7 @@
   ],
   "rewards": {
     "recipes": [
-      "harambefmod:flint_and_pearl"
+      "harambefmod:banana/flint_and_pearl"
     ]
   }
 }

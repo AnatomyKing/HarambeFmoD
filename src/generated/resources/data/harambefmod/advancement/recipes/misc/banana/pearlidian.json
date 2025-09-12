@@ -1,11 +1,11 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_crystallized_honey": {
+    "has_banana_pearl_block": {
       "conditions": {
         "items": [
           {
-            "items": "harambefmod:crystallized_honey"
+            "items": "harambefmod:banana_pearl_block"
           }
         ]
       },
@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "harambefmod:honey/crystallized_to_crystalline"
+        "recipe": "harambefmod:banana/pearlidian"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -21,12 +21,12 @@
   "requirements": [
     [
       "has_the_recipe",
-      "has_crystallized_honey"
+      "has_banana_pearl_block"
     ]
   ],
   "rewards": {
     "recipes": [
-      "harambefmod:honey/crystallized_to_crystalline"
+      "harambefmod:banana/pearlidian"
     ]
   }
 }

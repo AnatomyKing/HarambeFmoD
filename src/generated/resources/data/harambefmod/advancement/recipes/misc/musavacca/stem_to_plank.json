@@ -1,11 +1,11 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_banana_pearl": {
+    "has_musavacca_stem": {
       "conditions": {
         "items": [
           {
-            "items": "harambefmod:banana_pearl"
+            "items": "harambefmod:musavacca_stem"
           }
         ]
       },
@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "harambefmod:bananas_from_pearl"
+        "recipe": "harambefmod:musavacca/stem_to_plank"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -21,12 +21,12 @@
   "requirements": [
     [
       "has_the_recipe",
-      "has_banana_pearl"
+      "has_musavacca_stem"
     ]
   ],
   "rewards": {
     "recipes": [
-      "harambefmod:bananas_from_pearl"
+      "harambefmod:musavacca/stem_to_plank"
     ]
   }
 }

@@ -26,7 +26,7 @@ public final class ModLanguageProvider extends LanguageProvider {
 
     /** Full translation key -> custom text (wins last). */
     private static final Map<String, String> OVERRIDES = new LinkedHashMap<>(Map.of(
-            // "block.anybackrooms.lobby_wallpaper_plinth", "Lobby Plinth (Wallpaper Top)",
+            "block.harambefmod.musavacca_sprout", "Musavacca Sprout"
             // "item.anybackrooms.almond_water", "Almond Water",
             // "itemGroup.anybackrooms.anybackrooms_tab", "AnyBackrooms"
     ));

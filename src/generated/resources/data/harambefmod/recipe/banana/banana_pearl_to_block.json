@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "harambefmod:banana_pearl",
+    "harambefmod:banana_pearl",
+    "harambefmod:banana_pearl",
+    "harambefmod:banana_pearl",
+    "harambefmod:banana_pearl",
+    "harambefmod:banana_pearl",
+    "harambefmod:banana_pearl",
+    "harambefmod:banana_pearl",
+    "harambefmod:banana_pearl"
+  ],
+  "result": {
+    "count": 1,
+    "id": "harambefmod:banana_pearl_block"
+  }
+}
