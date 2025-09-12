@@ -60,6 +60,33 @@ public final class ModNetworking {
                 })
         );
 
+        // S -> C: cosmetic sets list
+        reg.playToClient(
+                net.anatomyworld.harambefmod.network.SyncCosmeticSetsPayload.TYPE,
+                net.anatomyworld.harambefmod.network.SyncCosmeticSetsPayload.STREAM_CODEC,
+                (payload, ctx) -> ctx.enqueueWork(() ->
+                        net.anatomyworld.harambefmod.cosmetic.client.ClientCosmeticSets.accept(payload)
+                )
+        );
+
+
+        reg.playToServer(SelectCosmeticSetPayload.TYPE, SelectCosmeticSetPayload.STREAM_CODEC,
+                (payload, ctx) -> ctx.enqueueWork(() -> {
+                    if (!(ctx instanceof net.neoforged.neoforge.network.handling.ServerPayloadContext s)) return;
+                    var player = s.player(); if (player == null) return;
+
+                    var set = net.anatomyworld.harambefmod.cosmetic.CosmeticSets.get(payload.id());
+                    if (set == null) return;
+
+                    // Apply to attachment (server-authoritative)
+                    var ward = player.getData(net.anatomyworld.harambefmod.attachment.ModAttachments.COSMETIC_WARDROBE.get());
+                    set.head().ifPresentOrElse(ward::setHead, ()->ward.setHead(null));
+                    set.chest().ifPresentOrElse(ward::setChest, ()->ward.setChest(null));
+                    set.legs().ifPresentOrElse(ward::setLegs, ()->ward.setLegs(null));
+                    set.feet().ifPresentOrElse(ward::setFeet, ()->ward.setFeet(null));
+                    player.setData(net.anatomyworld.harambefmod.attachment.ModAttachments.COSMETIC_WARDROBE.get(), ward); // triggers sync
+                }));
+
         // S -> C: pre-tint the whole portal interior on clients
         reg.playToClient(
                 SyncPortalTintPayload.TYPE,
@@ -68,6 +95,8 @@ public final class ModNetworking {
                         payload.anchor(), payload.axis(), payload.width(), payload.height(), payload.rgb()
                 ))
         );
+
+
     }
 
     private static void handlePlaceFire(PlaceFirePayload payload, IPayloadContext ctx) {

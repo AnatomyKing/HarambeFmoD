@@ -1,0 +1,7 @@
+{
+  "title": "fake netherite",
+  "head":  "minecraft:netherite_helmet",
+  "chest": "minecraft:netherite_chestplate",
+  "legs":  "minecraft:netherite_leggings",
+  "feet":  "minecraft:netherite_boots"
+}

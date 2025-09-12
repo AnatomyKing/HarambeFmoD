@@ -25,6 +25,18 @@ public final class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(HarambeCore.MOD_ID);
     public static final DeferredRegister.Items  ITEMS  = DeferredRegister.createItems(HarambeCore.MOD_ID);
 
+
+    public static final DeferredBlock<AnyChestBlock> ANYTOMITHIUM_CHEST =
+            BLOCKS.registerBlock("anytomoithium_chest",
+                    props -> new AnyChestBlock(
+                            props.mapColor(MapColor.COLOR_PURPLE)
+                                    .strength(2.5F)
+                                    .sound(SoundType.NETHER_ORE)
+                                    .noOcclusion()
+                                    .pushReaction(PushReaction.NORMAL)
+                    ));
+
+
     /* -------------------- Blocks (use registerBlock!) -------------------- */
 
     public static final DeferredBlock<Block> BANANA_PEARL_BLOCK =

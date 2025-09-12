@@ -1,6 +1,7 @@
 package net.anatomyworld.harambefmod.block;
 
 import net.anatomyworld.harambefmod.HarambeCore;
+import net.anatomyworld.harambefmod.block.entity.AnyChestBlockEntity;
 import net.anatomyworld.harambefmod.block.entity.BananaPortalBlockEntity;
 import net.anatomyworld.harambefmod.block.entity.PearlFireBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -28,6 +29,15 @@ public final class ModBlockEntities {
                             BananaPortalBlockEntity::new,
                             Set.of(ModBlocks.BANANA_PORTAL.get()),
                             false));
+
+
+    public static final Supplier<BlockEntityType<AnyChestBlockEntity>> ANY_CHEST_ENTITY =
+            BLOCK_ENTITY_TYPES.register("anytomithium_chest",
+                    () -> new BlockEntityType<>(
+                            AnyChestBlockEntity::new,
+                            Set.of(ModBlocks.ANYTOMITHIUM_CHEST.get()),
+                            false));
+
 
     public static void register(IEventBus modBus) {
         BLOCK_ENTITY_TYPES.register(modBus);

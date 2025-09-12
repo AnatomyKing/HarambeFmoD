@@ -1,10 +1,10 @@
 package net.anatomyworld.harambefmod;
 
 import com.mojang.logging.LogUtils;
+import net.anatomyworld.harambefmod.attachment.ModAttachments;
 import net.anatomyworld.harambefmod.block.ModBlockEntities;
 import net.anatomyworld.harambefmod.block.ModBlocks;
 import net.anatomyworld.harambefmod.block.entity.PearlFireBlockEntity;
-import net.anatomyworld.harambefmod.client.render.HarambeRenderLayers;
 import net.anatomyworld.harambefmod.component.ModDataComponents;
 import net.anatomyworld.harambefmod.data.ModDataGenerators;
 import net.anatomyworld.harambefmod.entity.ModEntities;
@@ -38,7 +38,7 @@ import static net.neoforged.neoforge.common.NeoForge.EVENT_BUS;
 @Mod(HarambeCore.MOD_ID)
 public final class HarambeCore {
     public static final String MOD_ID = "harambefmod";
-    private static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LogUtils.getLogger();
 
     public HarambeCore(IEventBus modBus, ModContainer container) {
         // Registries
@@ -49,11 +49,15 @@ public final class HarambeCore {
         ModBlockEntities.register(modBus);
         ModCreativeTabs.register(modBus);
         ModNetworking.register(modBus);
+        ModAttachments.register(modBus);
 
         // Common + datagen
         modBus.addListener(this::commonSetup);
         container.registerConfig(ModConfig.Type.COMMON, Config.COMMON_SPEC);
         modBus.addListener(ModDataGenerators::gatherData);
+
+        EVENT_BUS.addListener(net.anatomyworld.harambefmod.cosmetic.CosmeticSets::addServerReloaders);
+        EVENT_BUS.addListener(net.anatomyworld.harambefmod.cosmetic.CosmeticSets::onDatapackSync);
         EVENT_BUS.addListener(
                 CaroteneGrassBonemealHandler::onBonemeal
         );
@@ -62,8 +66,15 @@ public final class HarambeCore {
         if (FMLLoader.getDist() == Dist.CLIENT) {
             modBus.addListener(ClientEvents::layerDefs);
             modBus.addListener(ClientEvents::clientSetup);
+
             // Force render layers via model bake hook
-            modBus.addListener(HarambeRenderLayers::onModifyBakingResult);
+            modBus.addListener(net.anatomyworld.harambefmod.client.render.HarambeRenderLayers::onModifyBakingResult);
+
+            // cosmetic armor:
+            // 1) push stacks into PlayerRenderState (MOD bus)
+            modBus.addListener(net.anatomyworld.harambefmod.client.render.CosmeticWardrobeRenderData::onRegisterStateMods);
+            // 2) add our render layer to player renderers (MOD bus)
+            modBus.addListener(net.anatomyworld.harambefmod.client.render.CosmeticArmorRenderHandler::onAddLayers);
         }
     }
 
@@ -93,7 +104,18 @@ public final class HarambeCore {
                     net.minecraft.client.renderer.entity.EntityRenderers.register(
                             ModEntities.MUSAVACCA_BOAT.get(), MusavaccaBoatRenderer::new
                     );
+
+                    net.minecraft.client.renderer.blockentity.BlockEntityRenderers.register(
+                            net.anatomyworld.harambefmod.block.ModBlockEntities.ANY_CHEST_ENTITY.get(),
+                            net.anatomyworld.harambefmod.entity.chest.any.AnyChestRenderer::new
+                    );
+
                 });
+
+
+
+
+
 
                 // colors
                 BlockColors colors = Minecraft.getInstance().getBlockColors();
@@ -126,6 +148,8 @@ public final class HarambeCore {
                         },
                         ModBlocks.BANANA_PORTAL.get()
                 );
+
+
             });
         }
     }

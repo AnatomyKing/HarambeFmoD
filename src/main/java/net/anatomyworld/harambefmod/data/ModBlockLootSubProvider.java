@@ -41,6 +41,7 @@ public final class ModBlockLootSubProvider extends BlockLootSubProvider {
         dropSelf(ModBlocks.STRIPPED_MUSAVACCA_STEM.get());
         dropSelf(ModBlocks.MUSAVACCA_FLOWER.get());
         dropSelf(ModBlocks.PEARLIDIAN.get());
+        dropSelf(ModBlocks.ANYTOMITHIUM_CHEST.get());
 
         add(ModBlocks.MUSAVACCA_LEAVES.get(),
                 createSilkTouchOrShearsDispatchTable(

@@ -45,4 +45,12 @@ public final class ItemsGen {
                 ResourceLocation.parse(blockModelId), List.of()
         ));
     }
+
+    /** Item model that renders via the block-entity renderer (e.g., chests/heads/banners). */
+    public static void builtinEntity(ItemModelGenerators gen, ItemLike thing) {
+        gen.itemModelOutput.accept(thing.asItem(), new BlockModelWrapper.Unbaked(
+                ResourceLocation.withDefaultNamespace("builtin/entity"),
+                List.of()
+        ));
+    }
 }

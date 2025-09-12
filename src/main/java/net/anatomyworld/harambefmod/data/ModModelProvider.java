@@ -41,6 +41,11 @@ public final class ModModelProvider extends ModelProvider {
         BlocksGenSimple.simpleState(blockModels, ModBlocks.MUSAVACCA_SAPLING.get(),
                 "harambefmod:block/musavacca_plant_stage3");
 
+        BlocksGenSimple.simpleState(blockModels, ModBlocks.ANYTOMITHIUM_CHEST.get(),
+                "minecraft:block/chest");
+
+
+
 
         BlocksGenSimple.pillarAuto(blockModels,
                 ModBlocks.MUSAVACCA_STEM.get(),
@@ -123,6 +128,14 @@ public final class ModModelProvider extends ModelProvider {
                 ModBlocks.MUSAVACCA_LEAVES.get().asItem(),
                 "harambefmod:block/musavacca_leaves"
         );
+
+        ItemsGen.itemUsesBlockModel(
+                itemModels,
+                ModBlocks.ANYTOMITHIUM_CHEST.get().asItem(),
+                "harambefmod:item/anytomithium_chest_gui"
+        );
+
+
 
         ItemsGen.itemUsesBlockModel(
                 itemModels,

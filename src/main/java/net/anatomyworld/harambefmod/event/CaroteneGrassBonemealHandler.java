@@ -4,6 +4,9 @@ import net.anatomyworld.harambefmod.block.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.item.BoneMealItem;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.event.entity.player.BonemealEvent;
@@ -26,21 +29,25 @@ public final class CaroteneGrassBonemealHandler {
         for (Direction d : Direction.Plane.HORIZONTAL) {
             if (level.getBlockState(pos.relative(d)).is(ModBlocks.CAROTENE_GRASS_BLOCK.get())) {
                 if (level instanceof ServerLevel sl) {
-                    // do the conversion
+                    // 1) do the conversion
                     sl.setBlock(pos, ModBlocks.CAROTENE_GRASS_BLOCK.get().defaultBlockState(), 3);
-                    // bonemeal particles/sound (vanilla uses 2005 for the “green sparkle”)
-                    sl.levelEvent(2005, pos, 0);
+
+                    // 2) vanilla bone-meal growth particles (same helper vanilla uses)
+                    BoneMealItem.addGrowthParticles(sl, pos, 15);
+
+                    // 3) vanilla bone-meal use sound
+                    sl.playSound(null, pos, SoundEvents.BONE_MEAL_USE, SoundSource.BLOCKS, 1.0F, 1.0F);
                 }
 
                 // consume one bonemeal if not creative
-                var player = event.getPlayer(); // 1.21+: getPlayer(), not getEntity()
+                var player = event.getPlayer(); // 1.21+: getPlayer() may be null
                 if (player == null || !player.getAbilities().instabuild) {
                     event.getStack().shrink(1);
                 }
 
-                // tell the system that bonemeal was used and stop vanilla
-                event.setSuccessful(true); // signals “handled/used”
-                event.setCanceled(true);   // prevents vanilla handling
+                // mark as handled and stop vanilla
+                event.setSuccessful(true);
+                event.setCanceled(true);
                 return;
             }
         }

@@ -74,7 +74,8 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
                 ModBlocks.MUSAVACCA_PLANKS.get()
         );
 
-        tag(BlockTags.MINEABLE_WITH_PICKAXE).add(ModBlocks.PEARLIDIAN.get());
+        tag(BlockTags.MINEABLE_WITH_PICKAXE).add(ModBlocks.PEARLIDIAN.get(),
+                ModBlocks.ANYTOMITHIUM_CHEST.get());
         tag(BlockTags.NEEDS_DIAMOND_TOOL).add(ModBlocks.PEARLIDIAN.get());
 
         /* ---------- NEW: portal frame tags ---------- */

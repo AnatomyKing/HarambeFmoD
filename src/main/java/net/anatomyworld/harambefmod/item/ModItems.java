@@ -4,6 +4,7 @@ import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.block.ModBlocks;
 import net.anatomyworld.harambefmod.entity.ModEntities;
 import net.anatomyworld.harambefmod.item.boat.MusavaccaBoatItem;
+import net.anatomyworld.harambefmod.item.custom.AnyPhoneItem;
 import net.anatomyworld.harambefmod.item.custom.BananaCowEggStageItem;
 import net.anatomyworld.harambefmod.item.custom.FlintAndPearlItem;
 import net.minecraft.world.food.Foods;
@@ -43,7 +44,8 @@ public final class ModItems {
             ITEMS.registerItem("honey_core", props -> new Item(props.rarity(Rarity.EPIC)));
 
     public static final DeferredItem<Item> ANYPHONE =
-            ITEMS.registerItem("anyphone", props -> new Item(props.rarity(Rarity.EPIC)));
+            ITEMS.registerItem("anyphone", p -> new AnyPhoneItem(
+                    p.rarity(net.minecraft.world.item.Rarity.EPIC)));
 
     public static final DeferredItem<Item> FLINT_AND_PEARL =
             ITEMS.registerItem("flint_and_pearl",
