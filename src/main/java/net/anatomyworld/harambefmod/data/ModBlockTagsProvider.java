@@ -4,6 +4,7 @@ import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.block.ModBlocks;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
+import net.minecraft.tags.BlockTags;
 import net.neoforged.neoforge.common.data.BlockTagsProvider;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,6 +27,7 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
                 ModBlocks.BANANA_COW_EGG.get(),
                 ModBlocks.MUSAVACCA_STEM.get(),
                 ModBlocks.STRIPPED_MUSAVACCA_STEM.get(),
+                ModBlocks.BANANA_BLOCK.get(),
                 ModBlocks.MUSAVACCA_PLANKS.get()
         );
         tag(net.minecraft.tags.BlockTags.MINEABLE_WITH_HOE).add(
@@ -34,11 +36,23 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
                 ModBlocks.MUSAVACCA_LEAVES_CROWN.get()
         );
 
+        tag(net.minecraft.tags.BlockTags.MINEABLE_WITH_SHOVEL).add(
+                ModBlocks.BANANA_CREAM_STONE.get(),
+                ModBlocks.CHOCO_CREAM_STONE.get(),
+                ModBlocks.VANILLA_CREAM_STONE.get(),
+                ModBlocks.STRAWBERRY_CREAM_STONE.get()
+        );
+
         // leaves/logs/planks
         tag(net.minecraft.tags.BlockTags.LEAVES).add(
                 ModBlocks.MUSAVACCA_LEAVES.get(),
                 ModBlocks.MUSAVACCA_LEAVES_CROWN.get()
         );
+
+        tag(BlockTags.MOSS_REPLACEABLE).add(
+                ModBlocks.CAROTENE_GRASS_BLOCK.get()
+        );
+
         tag(net.minecraft.tags.BlockTags.LOGS).add(
                 ModBlocks.MUSAVACCA_STEM.get(),
                 ModBlocks.STRIPPED_MUSAVACCA_STEM.get()

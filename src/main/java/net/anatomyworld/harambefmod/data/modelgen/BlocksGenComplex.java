@@ -1,4 +1,4 @@
-package net.anatomyworld.harambefmod.data.genmodels;
+package net.anatomyworld.harambefmod.data.modelgen;
 
 import com.mojang.math.Quadrant;
 import net.anatomyworld.harambefmod.block.custom.BananaCowEggBlock;
@@ -18,7 +18,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
-import static net.anatomyworld.harambefmod.data.genmodels.ModelUtil.*;
+import static net.anatomyworld.harambefmod.data.modelgen.ModelUtil.*;
 
 /** Complex helpers + your specific states (1.21.8-safe). */
 public final class BlocksGenComplex {
@@ -375,4 +375,64 @@ public final class BlocksGenComplex {
                         .select(3, VariantMutator.MODEL.withValue(m3)));
         gen.blockStateOutput.accept(state);
     }
+
+
+    public static void amethystLikeClusterAuto(BlockModelGenerators gen,
+                                               Block small, Block medium, Block large, Block cluster) {
+        // ---- Models (vanilla buds/clusters use a single CROSS texture)
+        ResourceLocation mSmall   = ModelTemplates.CROSS.create(
+                small,  new TextureMapping().put(TextureSlot.CROSS, texOf(small)),  gen.modelOutput);
+        ResourceLocation mMedium  = ModelTemplates.CROSS.create(
+                medium, new TextureMapping().put(TextureSlot.CROSS, texOf(medium)), gen.modelOutput);
+        ResourceLocation mLarge   = ModelTemplates.CROSS.create(
+                large,  new TextureMapping().put(TextureSlot.CROSS, texOf(large)),  gen.modelOutput);
+        ResourceLocation mCluster = ModelTemplates.CROSS.create(
+                cluster,new TextureMapping().put(TextureSlot.CROSS, texOf(cluster)),gen.modelOutput);
+
+        // ---- Blockstates (FACING -> rotations), identical mapping for all four pieces
+        gen.blockStateOutput.accept(facingRotationsLikeVanillaAmethyst(small,   mSmall));
+        gen.blockStateOutput.accept(facingRotationsLikeVanillaAmethyst(medium,  mMedium));
+        gen.blockStateOutput.accept(facingRotationsLikeVanillaAmethyst(large,   mLarge));
+        gen.blockStateOutput.accept(facingRotationsLikeVanillaAmethyst(cluster, mCluster));
+    }
+
+    /** Matches vanilla amethyst buds/clusters FACING rotations (UP/DOWN/N/E/S/W). */
+    private static MultiVariantGenerator facingRotationsLikeVanillaAmethyst(Block block, ResourceLocation model) {
+        Variant base = new Variant(model); // base model to mutate
+
+        return MultiVariantGenerator
+                // pass the base variant wrapper here
+                .dispatch(block, BlockModelGenerators.variant(base))
+                // important: in 1.21.8 you must use 'modify(...)' and pass VariantMutators to select(...)
+                .with(PropertyDispatch.modify(BlockStateProperties.FACING)
+                        // UP: no rotation
+                        .select(Direction.UP, BlockModelGenerators.NOP)
+
+                        // DOWN: x = 180  (90 + 90)
+                        .select(Direction.DOWN,
+                                BlockModelGenerators.X_ROT_90.then(BlockModelGenerators.X_ROT_90))
+
+                        // NORTH: x = 90
+                        .select(Direction.NORTH, BlockModelGenerators.X_ROT_90)
+
+                        // SOUTH: x = 90, y = 180  (y: 90 + 90)
+                        .select(Direction.SOUTH,
+                                BlockModelGenerators.X_ROT_90
+                                        .then(BlockModelGenerators.Y_ROT_90)
+                                        .then(BlockModelGenerators.Y_ROT_90))
+
+                        // EAST: x = 90, y = 90
+                        .select(Direction.EAST,
+                                BlockModelGenerators.X_ROT_90
+                                        .then(BlockModelGenerators.Y_ROT_90))
+
+                        // WEST: x = 90, y = 270  (y: 90 + 90 + 90)
+                        .select(Direction.WEST,
+                                BlockModelGenerators.X_ROT_90
+                                        .then(BlockModelGenerators.Y_ROT_90)
+                                        .then(BlockModelGenerators.Y_ROT_90)
+                                        .then(BlockModelGenerators.Y_ROT_90))
+                );
+    }
 }
+

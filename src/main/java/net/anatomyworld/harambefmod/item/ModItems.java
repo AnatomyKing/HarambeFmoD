@@ -30,6 +30,18 @@ public final class ModItems {
     public static final DeferredItem<Item> RAW_ANYTOMITHIUM =
             ITEMS.registerItem("raw_anytomithium", props -> new Item(props.rarity(Rarity.RARE)));
 
+    public static final DeferredItem<Item> CRYSTALLIZED_HONEY =
+            ITEMS.registerItem("crystallized_honey", props -> new Item(props.rarity(Rarity.RARE)));
+
+    public static final DeferredItem<Item> HONEY_CRYSTALLINE =
+            ITEMS.registerItem("honey_crystalline", props -> new Item(props.rarity(Rarity.RARE)));
+
+    public static final DeferredItem<Item> HONEY_CLUSTER =
+            ITEMS.registerItem("honey_cluster", props -> new Item(props.rarity(Rarity.RARE)));
+
+    public static final DeferredItem<Item> HONEY_CORE =
+            ITEMS.registerItem("honey_core", props -> new Item(props.rarity(Rarity.EPIC)));
+
     public static final DeferredItem<Item> ANYPHONE =
             ITEMS.registerItem("anyphone", props -> new Item(props.rarity(Rarity.EPIC)));
 

@@ -105,6 +105,46 @@ public final class ModBlocks {
                             .noCollission()
                             .randomTicks()));
 
+    public static final DeferredBlock<Block> BANANA_CREAM_STONE =
+            BLOCKS.registerBlock("banana_cream_stone",
+                    props -> new Block(props
+                            .mapColor(MapColor.COLOR_YELLOW)
+                            .strength(0.6F)
+                            .sound(SoundType.HONEY_BLOCK)
+                            .pushReaction(PushReaction.NORMAL)));
+
+    public static final DeferredBlock<Block> CHOCO_CREAM_STONE =
+            BLOCKS.registerBlock("choco_cream_stone",
+                    props -> new Block(props
+                            .mapColor(MapColor.COLOR_YELLOW)
+                            .strength(0.6F)
+                            .sound(SoundType.HONEY_BLOCK)
+                            .pushReaction(PushReaction.NORMAL)));
+
+    public static final DeferredBlock<Block> VANILLA_CREAM_STONE =
+            BLOCKS.registerBlock("vanilla_cream_stone",
+                    props -> new Block(props
+                            .mapColor(MapColor.COLOR_YELLOW)
+                            .strength(0.6F)
+                            .sound(SoundType.HONEY_BLOCK)
+                            .pushReaction(PushReaction.NORMAL)));
+
+    public static final DeferredBlock<Block> STRAWBERRY_CREAM_STONE =
+            BLOCKS.registerBlock("strawberry_cream_stone",
+                    props -> new Block(props
+                            .mapColor(MapColor.COLOR_YELLOW)
+                            .strength(0.6F)
+                            .sound(SoundType.HONEY_BLOCK)
+                            .pushReaction(PushReaction.NORMAL)));
+
+    public static final DeferredBlock<Block> BANANA_BLOCK =
+            BLOCKS.registerBlock("banana_block",
+                    props -> new Block(props
+                            .mapColor(MapColor.COLOR_YELLOW)
+                            .strength(1.0F)
+                            .sound(SoundType.SHROOMLIGHT)
+                            .pushReaction(PushReaction.NORMAL)));
+
     public static final DeferredBlock<BananaPortalBlock> BANANA_PORTAL =
             BLOCKS.registerBlock("banana_portal",
                     props -> new BananaPortalBlock(props
@@ -146,6 +186,49 @@ public final class ModBlocks {
                             .randomTicks()
                             .sound(SoundType.GRASS)));
 
+    public static final DeferredBlock<CaroteneGrassBlock> CAROTENE_GRASS_BLOCK =
+            BLOCKS.registerBlock("carotene_grass_block",
+                    props -> new CaroteneGrassBlock(
+                            props.mapColor(MapColor.GRASS)
+                                    .strength(0.6F)
+                                    .sound(SoundType.GRASS)
+                                    .randomTicks() // optional: matches many ground blocks
+                                    .pushReaction(PushReaction.NORMAL)
+                    ));
+
+    public static final net.neoforged.neoforge.registries.DeferredBlock<HoneyCrystalBlock> HONEY_CRYSTAL_BLOCK =
+            BLOCKS.registerBlock("honey_crystal_block",
+                    p -> new HoneyCrystalBlock(p
+                            .strength(1.5F, 1.5F)
+                            .sound(net.minecraft.world.level.block.SoundType.AMETHYST)));
+
+    public static final net.neoforged.neoforge.registries.DeferredBlock<HoneyCrystalClusterLikeBlock> SMALL_HONEY_CRYSTAL_BUD =
+            BLOCKS.registerBlock("small_honey_crystal_bud",
+                    p -> new HoneyCrystalClusterLikeBlock(3, 4, p
+                            .strength(1.0F)
+                            .sound(net.minecraft.world.level.block.SoundType.AMETHYST)
+                            .noOcclusion()));
+
+    public static final net.neoforged.neoforge.registries.DeferredBlock<HoneyCrystalClusterLikeBlock> MEDIUM_HONEY_CRYSTAL_BUD =
+            BLOCKS.registerBlock("medium_honey_crystal_bud",
+                    p -> new HoneyCrystalClusterLikeBlock(4, 4, p
+                            .strength(1.0F)
+                            .sound(net.minecraft.world.level.block.SoundType.AMETHYST)
+                            .noOcclusion()));
+
+    public static final net.neoforged.neoforge.registries.DeferredBlock<HoneyCrystalClusterLikeBlock> LARGE_HONEY_CRYSTAL_BUD =
+            BLOCKS.registerBlock("large_honey_crystal_bud",
+                    p -> new HoneyCrystalClusterLikeBlock(5, 4, p
+                            .strength(1.0F)
+                            .sound(net.minecraft.world.level.block.SoundType.AMETHYST)
+                            .noOcclusion()));
+
+    public static final net.neoforged.neoforge.registries.DeferredBlock<HoneyCrystalClusterLikeBlock> HONEY_CRYSTAL_CLUSTER =
+            BLOCKS.registerBlock("honey_crystal_cluster",
+                    p -> new HoneyCrystalClusterLikeBlock(7, 3, p
+                            .strength(1.0F)
+                            .sound(net.minecraft.world.level.block.SoundType.AMETHYST)
+                            .noOcclusion()));
     /* -------------------- Auto BlockItems -------------------- */
 
     private static final Set<DeferredHolder<Block, ? extends Block>> SKIP_BLOCK_ITEMS = Set.of(

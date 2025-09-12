@@ -1,4 +1,4 @@
-package net.anatomyworld.harambefmod.data.genmodels;
+package net.anatomyworld.harambefmod.data.modelgen;
 
 import net.minecraft.client.data.models.BlockModelGenerators;
 import net.minecraft.client.data.models.blockstates.MultiVariantGenerator;
@@ -6,10 +6,11 @@ import net.minecraft.client.data.models.model.ModelTemplates;
 import net.minecraft.client.data.models.model.TextureMapping;
 import net.minecraft.client.data.models.model.TextureSlot;
 import net.minecraft.client.data.models.model.TexturedModel;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 
-import static net.anatomyworld.harambefmod.data.genmodels.ModelUtil.*;
+import static net.anatomyworld.harambefmod.data.modelgen.ModelUtil.*;
 
 public final class BlocksGenSimple {
     private BlocksGenSimple() {}
@@ -63,5 +64,53 @@ public final class BlocksGenSimple {
         gen.blockStateOutput.accept(MultiVariantGenerator.dispatch(block, mv(model)));
     }
 
+    public static void barrelAutoTrivial(BlockModelGenerators gen, Block... blocks) {
+        TexturedModel.Provider provider = TexturedModel.createDefault(
+                b -> new TextureMapping()
+                        .put(TextureSlot.SIDE,   TextureMapping.getBlockTexture(b))
+                        .put(TextureSlot.TOP,    TextureMapping.getBlockTexture(b, "_top"))
+                        .put(TextureSlot.BOTTOM, TextureMapping.getBlockTexture(b, "_bottom")),
+                ModelTemplates.CUBE_BOTTOM_TOP
+        );
+        for (Block b : blocks) gen.createTrivialBlock(b, provider);
+    }
+
+    /** Full override: provide side/top/bottom explicitly. */
+    public static void barrelAutoTrivialOverride(BlockModelGenerators gen,
+                                                 Block block,
+                                                 ResourceLocation side,
+                                                 ResourceLocation top,
+                                                 ResourceLocation bottom) {
+        TexturedModel.Provider provider = TexturedModel.createDefault(
+                b -> new TextureMapping()
+                        .put(TextureSlot.SIDE,   side)
+                        .put(TextureSlot.TOP,    top)
+                        .put(TextureSlot.BOTTOM, bottom),
+                ModelTemplates.CUBE_BOTTOM_TOP
+        );
+        gen.createTrivialBlock(block, provider);
+    }
+
+    /** Convenience: override side & bottom, keep top = <block>_top. */
+    public static void barrelAutoTrivialOverride(BlockModelGenerators gen,
+                                                 Block block,
+                                                 ResourceLocation side,
+                                                 ResourceLocation bottom) {
+        barrelAutoTrivialOverride(gen, block, side, texOf(block, "_top"), bottom);
+    }
+
+    /** Convenience: override ONLY bottom, keep side = <block>, top = <block>_top. */
+    public static void barrelAutoTrivialOverride(BlockModelGenerators gen,
+                                                 Block block,
+                                                 ResourceLocation bottom) {
+        barrelAutoTrivialOverride(gen, block, texOf(block), texOf(block, "_top"), bottom);
+    }
+
+
+    public static ResourceLocation texOf(Block b) { return texOf(b, ""); }
+    public static ResourceLocation texOf(Block b, String suffix) {
+        ResourceLocation id = BuiltInRegistries.BLOCK.getKey(b);
+        return ResourceLocation.fromNamespaceAndPath(id.getNamespace(), "block/" + id.getPath() + suffix);
+    }
 
 }

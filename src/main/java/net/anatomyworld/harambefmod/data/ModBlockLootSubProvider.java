@@ -10,9 +10,11 @@ import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
+import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
 import net.minecraft.world.level.storage.loot.predicates.AnyOfCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemBlockStatePropertyCondition;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
@@ -30,6 +32,10 @@ public final class ModBlockLootSubProvider extends BlockLootSubProvider {
     protected void generate() {
         // Normal blocks
         dropSelf(ModBlocks.BANANA_PEARL_BLOCK.get());
+        dropSelf(ModBlocks.BANANA_CREAM_STONE.get());
+        dropSelf(ModBlocks.VANILLA_CREAM_STONE.get());
+        dropSelf(ModBlocks.CHOCO_CREAM_STONE.get());
+        dropSelf(ModBlocks.STRAWBERRY_CREAM_STONE.get());
         dropSelf(ModBlocks.MUSAVACCA_PLANKS.get());
         dropSelf(ModBlocks.MUSAVACCA_STEM.get());
         dropSelf(ModBlocks.STRIPPED_MUSAVACCA_STEM.get());
@@ -81,6 +87,79 @@ public final class ModBlockLootSubProvider extends BlockLootSubProvider {
                 .withPool(LootPool.lootPool()
                         .setRolls(ConstantValue.exactly(3))
                         .add(LootItem.lootTableItem(Items.STICK)))
+        );
+
+        add(ModBlocks.BANANA_BLOCK.get(),
+                createSilkTouchDispatchTable(
+                        ModBlocks.BANANA_BLOCK.get(),
+                        applyExplosionDecay(
+                                ModBlocks.BANANA_BLOCK.get(),
+                                LootItem.lootTableItem(ModItems.BANANA.get())
+                                        .apply(SetItemCountFunction.setCount(ConstantValue.exactly(9)))
+                        )
+                )
+        );
+
+        add(ModBlocks.HONEY_CRYSTAL_BLOCK.get(),
+                createSilkTouchDispatchTable(
+                        ModBlocks.HONEY_CRYSTAL_BLOCK.get(),
+                        applyExplosionDecay(
+                                ModBlocks.HONEY_CRYSTAL_BLOCK.get(),
+                                LootItem.lootTableItem(ModItems.HONEY_CLUSTER.get())
+                                        .apply(SetItemCountFunction.setCount(ConstantValue.exactly(4)))
+                        )
+                )
+        );
+
+        add(ModBlocks.HONEY_CRYSTAL_CLUSTER.get(),
+                createSilkTouchDispatchTable(
+                        ModBlocks.HONEY_CRYSTAL_CLUSTER.get(),
+                        applyExplosionDecay(
+                                ModBlocks.HONEY_CRYSTAL_BLOCK.get(),
+                                LootItem.lootTableItem(ModItems.HONEY_CLUSTER.get())
+                                        .apply(SetItemCountFunction.setCount(ConstantValue.exactly(1)))
+                        )
+                )
+        );
+
+        add(ModBlocks.LARGE_HONEY_CRYSTAL_BUD.get(),
+                createSilkTouchDispatchTable(
+                        ModBlocks.LARGE_HONEY_CRYSTAL_BUD.get(),
+                        applyExplosionDecay(
+                                ModBlocks.LARGE_HONEY_CRYSTAL_BUD.get(),
+                                LootItem.lootTableItem(ModItems.HONEY_CRYSTALLINE.get())
+                                        .apply(SetItemCountFunction.setCount(ConstantValue.exactly(4)))
+                        )
+                )
+        );
+
+        add(ModBlocks.MEDIUM_HONEY_CRYSTAL_BUD.get(),
+                createSilkTouchDispatchTable(
+                        ModBlocks.MEDIUM_HONEY_CRYSTAL_BUD.get(),
+                        applyExplosionDecay(
+                                ModBlocks.MEDIUM_HONEY_CRYSTAL_BUD.get(),
+                                LootItem.lootTableItem(ModItems.HONEY_CRYSTALLINE.get())
+                                        .apply(SetItemCountFunction.setCount(ConstantValue.exactly(3)))
+                        )
+                )
+        );
+
+        add(ModBlocks.SMALL_HONEY_CRYSTAL_BUD.get(),
+                createSilkTouchDispatchTable(
+                        ModBlocks.SMALL_HONEY_CRYSTAL_BUD.get(),
+                        applyExplosionDecay(
+                                ModBlocks.SMALL_HONEY_CRYSTAL_BUD.get(),
+                                LootItem.lootTableItem(ModItems.CRYSTALLIZED_HONEY.get())
+                                        .apply(SetItemCountFunction.setCount(ConstantValue.exactly(2)))
+                        )
+                )
+        );
+
+        add(ModBlocks.CAROTENE_GRASS_BLOCK.get(),
+                createSilkTouchDispatchTable(
+                        ModBlocks.CAROTENE_GRASS_BLOCK.get(),
+                        LootItem.lootTableItem(Blocks.DIRT)
+                )
         );
 
         // Egg uses custom spawnAfterBreak; keep empty to avoid double drops

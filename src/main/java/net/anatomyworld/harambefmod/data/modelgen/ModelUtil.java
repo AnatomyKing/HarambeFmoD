@@ -1,4 +1,4 @@
-package net.anatomyworld.harambefmod.data.genmodels;
+package net.anatomyworld.harambefmod.data.modelgen;
 
 import net.minecraft.client.data.models.BlockModelGenerators;
 import net.minecraft.client.data.models.MultiVariant; // <-- correct import

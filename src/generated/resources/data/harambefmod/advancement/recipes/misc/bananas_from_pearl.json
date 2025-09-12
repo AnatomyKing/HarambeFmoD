@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_banana_pearl": {
+      "conditions": {
+        "items": [
+          {
+            "items": "harambefmod:banana_pearl"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "harambefmod:bananas_from_pearl"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_banana_pearl"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "harambefmod:bananas_from_pearl"
+    ]
+  }
+}

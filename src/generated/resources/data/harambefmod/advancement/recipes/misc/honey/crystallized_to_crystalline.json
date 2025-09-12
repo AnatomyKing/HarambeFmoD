@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_crystallized_honey": {
+      "conditions": {
+        "items": [
+          {
+            "items": "harambefmod:crystallized_honey"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "harambefmod:honey/crystallized_to_crystalline"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_crystallized_honey"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "harambefmod:honey/crystallized_to_crystalline"
+    ]
+  }
+}

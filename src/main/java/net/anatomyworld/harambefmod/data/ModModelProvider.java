@@ -2,15 +2,16 @@ package net.anatomyworld.harambefmod.data;
 
 import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.block.ModBlocks;
-import net.anatomyworld.harambefmod.data.genmodels.BlocksGenComplex;
-import net.anatomyworld.harambefmod.data.genmodels.BlocksGenSimple;
-import net.anatomyworld.harambefmod.data.genmodels.ItemsGen;
+import net.anatomyworld.harambefmod.data.modelgen.BlocksGenComplex;
+import net.anatomyworld.harambefmod.data.modelgen.BlocksGenSimple;
+import net.anatomyworld.harambefmod.data.modelgen.ItemsGen;
 import net.anatomyworld.harambefmod.item.ModItems;
 
 import net.minecraft.client.data.models.BlockModelGenerators;
 import net.minecraft.client.data.models.ItemModelGenerators;
 import net.minecraft.client.data.models.ModelProvider;
 import net.minecraft.data.PackOutput;
+import net.minecraft.world.level.block.Blocks;
 
 public final class ModModelProvider extends ModelProvider {
 
@@ -24,7 +25,12 @@ public final class ModModelProvider extends ModelProvider {
         // 1) Simpele patronen
         BlocksGenSimple.cubeAll(blockModels,
                 ModBlocks.BANANA_PEARL_BLOCK.get(),
-                ModBlocks.MUSAVACCA_PLANKS.get()
+                ModBlocks.MUSAVACCA_PLANKS.get(),
+                ModBlocks.VANILLA_CREAM_STONE.get(),
+                ModBlocks.BANANA_CREAM_STONE.get(),
+                ModBlocks.CHOCO_CREAM_STONE.get(),
+                ModBlocks.STRAWBERRY_CREAM_STONE.get(),
+                ModBlocks.HONEY_CRYSTAL_BLOCK.get()
         );
 
         BlocksGenSimple.simpleState(blockModels, ModBlocks.MUSAVACCA_LEAVES_CROWN.get(),
@@ -39,6 +45,18 @@ public final class ModModelProvider extends ModelProvider {
                 ModBlocks.MUSAVACCA_STEM.get(),
                 ModBlocks.STRIPPED_MUSAVACCA_STEM.get()
         );
+
+        BlocksGenSimple.barrelAutoTrivial(blockModels,
+                ModBlocks.BANANA_BLOCK.get()
+                );
+
+        BlocksGenSimple.barrelAutoTrivialOverride(blockModels,
+                ModBlocks.CAROTENE_GRASS_BLOCK.get(),
+                BlocksGenSimple.texOf(ModBlocks.CAROTENE_GRASS_BLOCK.get()),        // side
+                BlocksGenSimple.texOf(ModBlocks.CAROTENE_GRASS_BLOCK.get(), "_top"),// top
+                BlocksGenSimple.texOf(Blocks.DIRT)  // bottom
+        );
+
 
 
         BlocksGenSimple.cross(blockModels,
@@ -71,7 +89,12 @@ public final class ModModelProvider extends ModelProvider {
                 ModItems.BANANA_COW_EGG_RIPENING.get(),
                 ModItems.BANANA_COW_EGG_RIPE.get(),
                 ModItems.BANANA_COW_EGG_UNRIPE.get(),
-                ModItems.BANANA_COW_SPAWN_EGG.get()
+                ModItems.BANANA_COW_SPAWN_EGG.get(),
+                ModItems.CRYSTALLIZED_HONEY.get(),
+                ModItems.HONEY_CRYSTALLINE.get(),
+                ModItems.HONEY_CLUSTER.get(),
+                ModItems.HONEY_CORE.get()
+
         );
 
 
@@ -97,6 +120,12 @@ public final class ModModelProvider extends ModelProvider {
                 ModBlocks.MUSAVACCA_SAPLING.get().asItem(),
                 "harambefmod:item/musavacca_sprout"
         );
+
+        BlocksGenComplex.amethystLikeClusterAuto(blockModels,
+                ModBlocks.SMALL_HONEY_CRYSTAL_BUD.get(),
+                ModBlocks.MEDIUM_HONEY_CRYSTAL_BUD.get(),
+                ModBlocks.LARGE_HONEY_CRYSTAL_BUD.get(),
+                ModBlocks.HONEY_CRYSTAL_CLUSTER.get());
 
 
     }

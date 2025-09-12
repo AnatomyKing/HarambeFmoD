@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "harambefmod:crystallized_honey",
+    "harambefmod:crystallized_honey",
+    "harambefmod:crystallized_honey",
+    "harambefmod:crystallized_honey",
+    "harambefmod:crystallized_honey",
+    "harambefmod:crystallized_honey",
+    "harambefmod:crystallized_honey",
+    "harambefmod:crystallized_honey",
+    "harambefmod:crystallized_honey"
+  ],
+  "result": {
+    "count": 1,
+    "id": "harambefmod:honey_crystalline"
+  }
+}

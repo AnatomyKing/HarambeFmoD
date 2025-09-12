@@ -1,13 +1,11 @@
-package net.anatomyworld.harambefmod.data.genmodels;
+package net.anatomyworld.harambefmod.data.modelgen;
 
 import net.minecraft.client.data.models.ItemModelGenerators;
 import net.minecraft.client.data.models.model.ModelTemplates;
 import net.minecraft.client.renderer.item.BlockModelWrapper;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 
-import java.util.Collections;
 import java.util.List;
 
 public final class ItemsGen {

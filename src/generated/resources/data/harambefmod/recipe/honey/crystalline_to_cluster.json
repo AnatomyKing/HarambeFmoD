@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "harambefmod:honey_crystalline",
+    "harambefmod:honey_crystalline",
+    "harambefmod:honey_crystalline",
+    "harambefmod:honey_crystalline",
+    "harambefmod:honey_crystalline",
+    "harambefmod:honey_crystalline",
+    "harambefmod:honey_crystalline",
+    "harambefmod:honey_crystalline",
+    "harambefmod:honey_crystalline"
+  ],
+  "result": {
+    "count": 1,
+    "id": "harambefmod:honey_cluster"
+  }
+}
