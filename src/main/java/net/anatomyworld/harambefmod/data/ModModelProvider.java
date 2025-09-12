@@ -30,7 +30,8 @@ public final class ModModelProvider extends ModelProvider {
                 ModBlocks.BANANA_CREAM_STONE.get(),
                 ModBlocks.CHOCO_CREAM_STONE.get(),
                 ModBlocks.STRAWBERRY_CREAM_STONE.get(),
-                ModBlocks.HONEY_CRYSTAL_BLOCK.get()
+                ModBlocks.HONEY_CRYSTAL_BLOCK.get(),
+                ModBlocks.PEARLIDIAN.get()
         );
 
         BlocksGenSimple.simpleState(blockModels, ModBlocks.MUSAVACCA_LEAVES_CROWN.get(),
@@ -78,7 +79,7 @@ public final class ModModelProvider extends ModelProvider {
 
         /* ===================== ITEMS ===================== */
         // Flat food/materials
-        ItemsGen.flat(itemModels,
+        ItemsGen.flatItems(itemModels,
                 ModItems.BANANA_PEARL.get(),
                 ModItems.BANANA.get(),
                 ModItems.ANYTOMITHIUM_INGOT.get(),
@@ -95,6 +96,14 @@ public final class ModModelProvider extends ModelProvider {
                 ModItems.HONEY_CLUSTER.get(),
                 ModItems.HONEY_CORE.get()
 
+        );
+
+        ItemsGen.flatBlockItems(blockModels,
+                ModBlocks.SMALL_HONEY_CRYSTAL_BUD.get(),
+                ModBlocks.MEDIUM_HONEY_CRYSTAL_BUD.get(),
+                ModBlocks.LARGE_HONEY_CRYSTAL_BUD.get(),
+                ModBlocks.HONEY_CRYSTAL_CLUSTER.get(),
+                ModBlocks.MUSAVACCA_FLOWER.get()
         );
 
 

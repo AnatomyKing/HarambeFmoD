@@ -12,6 +12,7 @@ import net.anatomyworld.harambefmod.entity.boat.musavacca.clientmodel.MusavaccaB
 import net.anatomyworld.harambefmod.entity.boat.musavacca.clientmodel.MusavaccaBoatRenderer;
 import net.anatomyworld.harambefmod.entity.mob.bananacow.clientmodel.BananaCowModel;
 import net.anatomyworld.harambefmod.entity.mob.bananacow.clientmodel.BananaCowRenderer;
+import net.anatomyworld.harambefmod.event.CaroteneGrassBonemealHandler;
 import net.anatomyworld.harambefmod.item.ModCreativeTabs;
 import net.anatomyworld.harambefmod.item.ModItems;
 import net.anatomyworld.harambefmod.network.ModNetworking;
@@ -32,6 +33,8 @@ import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import org.slf4j.Logger;
 
+import static net.neoforged.neoforge.common.NeoForge.EVENT_BUS;
+
 @Mod(HarambeCore.MOD_ID)
 public final class HarambeCore {
     public static final String MOD_ID = "harambefmod";
@@ -51,6 +54,9 @@ public final class HarambeCore {
         modBus.addListener(this::commonSetup);
         container.registerConfig(ModConfig.Type.COMMON, Config.COMMON_SPEC);
         modBus.addListener(ModDataGenerators::gatherData);
+        EVENT_BUS.addListener(
+                CaroteneGrassBonemealHandler::onBonemeal
+        );
 
         // Client listeners (no @OnlyIn, no Bus enum needed)
         if (FMLLoader.getDist() == Dist.CLIENT) {

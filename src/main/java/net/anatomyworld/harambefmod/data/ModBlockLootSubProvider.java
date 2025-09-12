@@ -40,6 +40,7 @@ public final class ModBlockLootSubProvider extends BlockLootSubProvider {
         dropSelf(ModBlocks.MUSAVACCA_STEM.get());
         dropSelf(ModBlocks.STRIPPED_MUSAVACCA_STEM.get());
         dropSelf(ModBlocks.MUSAVACCA_FLOWER.get());
+        dropSelf(ModBlocks.PEARLIDIAN.get());
 
         add(ModBlocks.MUSAVACCA_LEAVES.get(),
                 createSilkTouchOrShearsDispatchTable(
@@ -164,6 +165,10 @@ public final class ModBlockLootSubProvider extends BlockLootSubProvider {
 
         // Egg uses custom spawnAfterBreak; keep empty to avoid double drops
         add(ModBlocks.BANANA_COW_EGG.get(), LootTable.lootTable());
+
+
+
+
     }
 
     @Override

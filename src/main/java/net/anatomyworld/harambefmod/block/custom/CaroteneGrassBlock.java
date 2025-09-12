@@ -16,43 +16,18 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.player.BonemealEvent;
 
 public class CaroteneGrassBlock extends Block {
-    public CaroteneGrassBlock(BlockBehaviour.Properties props) {
-        super(props);
-    }
+    public CaroteneGrassBlock(Properties props) { super(props.randomTicks()); }
 
-    // --- Nylium-style conversion: bonemeal Rooted Dirt adjacent to Carotene -> convert
-    @SubscribeEvent
-    public static void onBonemeal(BonemealEvent event) {
-        Level level = event.getLevel();
-        BlockPos pos = event.getPos();
-        BlockState state = event.getState();
-        if (!state.is(Blocks.ROOTED_DIRT)) return;
-        if (!level.getBlockState(pos.above()).isAir()) return;
-
-        for (Direction d : Direction.Plane.HORIZONTAL) {
-            if (level.getBlockState(pos.relative(d)).is(ModBlocks.CAROTENE_GRASS_BLOCK.get())) {
-                if (!level.isClientSide() && level instanceof ServerLevel sl) {
-                    sl.setBlock(pos, ModBlocks.CAROTENE_GRASS_BLOCK.get().defaultBlockState(), 3);
-                }
-                event.setSuccessful(true);
-                event.setCanceled(true);
-                return;
-            }
-        }
-    }
-
-    // --- “Dies” when covered/too dark, like grass/mycelium -> revert to ROOTED_DIRT
     @Override
     public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource rng) {
         BlockPos abovePos = pos.above();
         BlockState above = level.getBlockState(abovePos);
 
-        boolean opaqueAbove = above.isSolidRender() || above.canOcclude();
-        int lightAbove = level.getRawBrightness(abovePos, 0);
+        // 1.21+: isSolidRender() has no parameters
+        boolean covered = above.isSolidRender() || above.canOcclude();
+        int light = level.getRawBrightness(abovePos, 0);
 
-        // Matches vanilla behavior: covered OR very low light causes decay.
-        // (Grass/mycelium need light; nylium decays with opaque above.)
-        if (opaqueAbove || lightAbove < 4) { // 4 is the grass/mycelium death threshold
+        if (covered || light < 4) {
             level.setBlock(pos, Blocks.ROOTED_DIRT.defaultBlockState(), 3);
         }
     }

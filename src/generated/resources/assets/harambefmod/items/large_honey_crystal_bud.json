@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "harambefmod:block/large_honey_crystal_bud"
+    "model": "harambefmod:item/large_honey_crystal_bud"
   }
 }

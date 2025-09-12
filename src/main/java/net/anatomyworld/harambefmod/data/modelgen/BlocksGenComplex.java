@@ -398,40 +398,32 @@ public final class BlocksGenComplex {
 
     /** Matches vanilla amethyst buds/clusters FACING rotations (UP/DOWN/N/E/S/W). */
     private static MultiVariantGenerator facingRotationsLikeVanillaAmethyst(Block block, ResourceLocation model) {
-        Variant base = new Variant(model); // base model to mutate
-
         return MultiVariantGenerator
-                // pass the base variant wrapper here
-                .dispatch(block, BlockModelGenerators.variant(base))
-                // important: in 1.21.8 you must use 'modify(...)' and pass VariantMutators to select(...)
+                .dispatch(block, BlockModelGenerators.variant(new Variant(model)))
                 .with(PropertyDispatch.modify(BlockStateProperties.FACING)
                         // UP: no rotation
                         .select(Direction.UP, BlockModelGenerators.NOP)
 
-                        // DOWN: x = 180  (90 + 90)
-                        .select(Direction.DOWN,
-                                BlockModelGenerators.X_ROT_90.then(BlockModelGenerators.X_ROT_90))
+                        // DOWN: x = 180  (absolute, not 90+90)
+                        .select(Direction.DOWN, VariantMutator.X_ROT.withValue(Quadrant.R180))
 
                         // NORTH: x = 90
-                        .select(Direction.NORTH, BlockModelGenerators.X_ROT_90)
+                        .select(Direction.NORTH, VariantMutator.X_ROT.withValue(Quadrant.R90))
 
-                        // SOUTH: x = 90, y = 180  (y: 90 + 90)
+                        // SOUTH: x = 90, y = 180
                         .select(Direction.SOUTH,
-                                BlockModelGenerators.X_ROT_90
-                                        .then(BlockModelGenerators.Y_ROT_90)
-                                        .then(BlockModelGenerators.Y_ROT_90))
+                                VariantMutator.X_ROT.withValue(Quadrant.R90)
+                                        .then(VariantMutator.Y_ROT.withValue(Quadrant.R180)))
 
                         // EAST: x = 90, y = 90
                         .select(Direction.EAST,
-                                BlockModelGenerators.X_ROT_90
-                                        .then(BlockModelGenerators.Y_ROT_90))
+                                VariantMutator.X_ROT.withValue(Quadrant.R90)
+                                        .then(VariantMutator.Y_ROT.withValue(Quadrant.R90)))
 
-                        // WEST: x = 90, y = 270  (y: 90 + 90 + 90)
+                        // WEST: x = 90, y = 270
                         .select(Direction.WEST,
-                                BlockModelGenerators.X_ROT_90
-                                        .then(BlockModelGenerators.Y_ROT_90)
-                                        .then(BlockModelGenerators.Y_ROT_90)
-                                        .then(BlockModelGenerators.Y_ROT_90))
+                                VariantMutator.X_ROT.withValue(Quadrant.R90)
+                                        .then(VariantMutator.Y_ROT.withValue(Quadrant.R270)))
                 );
     }
 }

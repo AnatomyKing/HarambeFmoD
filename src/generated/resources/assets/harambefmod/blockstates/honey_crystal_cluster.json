@@ -2,7 +2,7 @@
   "variants": {
     "facing=down": {
       "model": "harambefmod:block/honey_crystal_cluster",
-      "x": 90
+      "x": 180
     },
     "facing=east": {
       "model": "harambefmod:block/honey_crystal_cluster",
@@ -16,7 +16,7 @@
     "facing=south": {
       "model": "harambefmod:block/honey_crystal_cluster",
       "x": 90,
-      "y": 90
+      "y": 180
     },
     "facing=up": {
       "model": "harambefmod:block/honey_crystal_cluster"
@@ -24,7 +24,7 @@
     "facing=west": {
       "model": "harambefmod:block/honey_crystal_cluster",
       "x": 90,
-      "y": 90
+      "y": 270
     }
   }
 }

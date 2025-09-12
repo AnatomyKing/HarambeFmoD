@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "harambefmod:block/honey_crystal_cluster"
+    "model": "harambefmod:item/honey_crystal_cluster"
   }
 }

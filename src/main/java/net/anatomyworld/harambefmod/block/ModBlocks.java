@@ -36,6 +36,16 @@ public final class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .pushReaction(PushReaction.NORMAL)));
 
+    public static final DeferredBlock<Block> PEARLIDIAN =
+            BLOCKS.registerBlock("pearlidian",
+                    props -> new Block(props
+                            .mapColor(MapColor.COLOR_BLACK)
+                            .strength(50.0F, 1200.0F)
+                            .sound(SoundType.STONE)
+                            .requiresCorrectToolForDrops()
+                            .pushReaction(PushReaction.IGNORE)
+                    ));
+
     public static final DeferredBlock<Block> MUSAVACCA_PLANKS =
             BLOCKS.registerBlock("musavacca_planks",
                     props -> new Block(props

@@ -34,7 +34,12 @@ public final class HarambeRenderLayers {
             ModBlocks.MUSAVACCA_PLANT.get(),
             ModBlocks.MUSAVACCA_SAPLING.get(),
             ModBlocks.BANANA_COW_EGG.get(),
-            ModBlocks.PEARL_FIRE.get()
+            ModBlocks.PEARL_FIRE.get(),
+            ModBlocks.SMALL_HONEY_CRYSTAL_BUD.get(),
+            ModBlocks.MEDIUM_HONEY_CRYSTAL_BUD.get(),
+            ModBlocks.LARGE_HONEY_CRYSTAL_BUD.get(),
+            ModBlocks.HONEY_CRYSTAL_CLUSTER.get()
+
     );
 
     private static final Set<Block> TRANSLUCENT_BLOCKS = Sets.newHashSet(
