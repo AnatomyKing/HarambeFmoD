@@ -8,8 +8,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class CaroteneGrassBlock extends Block {
-    public CaroteneGrassBlock(Properties props) { super(props.randomTicks()); }
+public class FactionGrassBlock extends Block {
+    public FactionGrassBlock(Properties props) { super(props.randomTicks()); }
 
     @Override
     public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource rng) {
@@ -21,7 +21,7 @@ public class CaroteneGrassBlock extends Block {
         int light = level.getRawBrightness(abovePos, 0);
 
         if (covered || light < 4) {
-            level.setBlock(pos, Blocks.ROOTED_DIRT.defaultBlockState(), 3);
+            level.setBlock(pos, Blocks.DIRT.defaultBlockState(), 3);
         }
     }
 }

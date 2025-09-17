@@ -1,5 +1,6 @@
 package net.anatomyworld.harambefmod.event;
 
+import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.block.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -8,13 +9,19 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.BoneMealItem;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.core.particles.ParticleTypes;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.BonemealEvent;
 
+@EventBusSubscriber(modid = HarambeCore.MOD_ID) // auto-registers this class on the GAME bus
 public final class CaroteneGrassBonemealHandler {
     private CaroteneGrassBonemealHandler() {}
 
-    /** Bonemeal Rooted Dirt next to Carotene Grass -> convert it (nylium-like). */
+    /** Bonemeal Rooted Dirt next to Carotene Grass -> convert it (nylium-like) with vanilla particles. */
+    @SubscribeEvent
     public static void onBonemeal(BonemealEvent event) {
         BlockState state = event.getState();
         if (!state.is(Blocks.ROOTED_DIRT)) return;
@@ -22,34 +29,49 @@ public final class CaroteneGrassBonemealHandler {
         var level = event.getLevel();
         BlockPos pos = event.getPos();
 
-        // need air above (like nylium conversion space check)
+        // need air above (like nylium conversion)
         if (!level.getBlockState(pos.above()).isAir()) return;
 
         // look for adjacent carotene grass
         for (Direction d : Direction.Plane.HORIZONTAL) {
-            if (level.getBlockState(pos.relative(d)).is(ModBlocks.CAROTENE_GRASS_BLOCK.get())) {
-                if (level instanceof ServerLevel sl) {
-                    // 1) do the conversion
-                    sl.setBlock(pos, ModBlocks.CAROTENE_GRASS_BLOCK.get().defaultBlockState(), 3);
+            if (!level.getBlockState(pos.relative(d)).is(ModBlocks.CAROTENE_GRASS_BLOCK.get())) continue;
 
-                    // 2) vanilla bone-meal growth particles (same helper vanilla uses)
-                    BoneMealItem.addGrowthParticles(sl, pos, 15);
+            if (level instanceof ServerLevel sl) {
+                // 1) convert the block
+                sl.setBlock(pos, ModBlocks.CAROTENE_GRASS_BLOCK.get().defaultBlockState(), 3);
 
-                    // 3) vanilla bone-meal use sound
-                    sl.playSound(null, pos, SoundEvents.BONE_MEAL_USE, SoundSource.BLOCKS, 1.0F, 1.0F);
-                }
+                // 2) VANILLA bone-meal effect (client expects it one block ABOVE)
+                BlockPos posUp = pos.above();
+                sl.levelEvent(LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, posUp, 0);
 
-                // consume one bonemeal if not creative
-                var player = event.getPlayer(); // 1.21+: getPlayer() may be null
-                if (player == null || !player.getAbilities().instabuild) {
-                    event.getStack().shrink(1);
-                }
+                // 3) Redundant but reliable: add the exact “happy villager” burst around the top
+                double cx = pos.getX() + 0.5;
+                double cy = pos.getY() + 1.0;
+                double cz = pos.getZ() + 0.5;
+                sl.sendParticles(ParticleTypes.HAPPY_VILLAGER, cx, cy, cz,
+                        12,   // count
+                        0.5,  // dx
+                        0.5,  // dy
+                        0.5,  // dz
+                        0.0); // speed
 
-                // mark as handled and stop vanilla
-                event.setSuccessful(true);
-                event.setCanceled(true);
-                return;
+                // Optional extra sparkle burst (same helper vanilla crops use)
+                BoneMealItem.addGrowthParticles(sl, posUp, 15);
+
+                // (Also nice to have the bone-meal use sound)
+                sl.playSound(null, pos, SoundEvents.BONE_MEAL_USE, SoundSource.BLOCKS, 1.0F, 1.0F);
             }
+
+            // consume one bonemeal if not creative
+            var player = event.getPlayer();
+            if (player == null || !player.getAbilities().instabuild) {
+                event.getStack().shrink(1);
+            }
+
+            // mark handled and stop vanilla
+            event.setSuccessful(true);
+            event.setCanceled(true);
+            return;
         }
     }
 }

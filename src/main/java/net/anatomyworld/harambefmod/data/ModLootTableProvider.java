@@ -1,3 +1,4 @@
+// src/main/java/net/anatomyworld/harambefmod/data/ModLootTableProvider.java
 package net.anatomyworld.harambefmod.data;
 
 import net.minecraft.core.HolderLookup;
@@ -12,8 +13,14 @@ import java.util.concurrent.CompletableFuture;
 public final class ModLootTableProvider extends LootTableProvider {
     public ModLootTableProvider(PackOutput out, CompletableFuture<HolderLookup.Provider> lookup) {
         super(out,
-                Set.of(),
-                List.of(new SubProviderEntry(ModBlockLootSubProvider::new, LootContextParamSets.BLOCK)),
-                lookup);
+                Set.of(), // required tables
+                List.of(
+                        // Block loot: function expects HolderLookup.Provider -> SubProvider
+                        new SubProviderEntry(ModBlockLootSubProvider::new, LootContextParamSets.BLOCK),
+                        // Gameplay loot: no lookup needed, still must be a Function<HolderLookup.Provider, ...>
+                        new SubProviderEntry((prov) -> new ModGameplayLootSubProvider(), LootContextParamSets.EMPTY)
+                ),
+                lookup
+        );
     }
 }

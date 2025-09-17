@@ -30,6 +30,10 @@ public final class ModDataGenerators {
         // NEW: lang (en_us)
         event.createProvider(out -> new ModLanguageProvider(out, "en_us"));
 
+        event.createProvider(out -> new ModGLMProvider(out, event.getLookupProvider()));
+
+        event.createProvider(out -> new ModWorldgenProvider(out, event.getLookupProvider()));
+
     }
 
     private ModDataGenerators() {}
