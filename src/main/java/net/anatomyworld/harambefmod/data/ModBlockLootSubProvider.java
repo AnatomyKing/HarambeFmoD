@@ -9,14 +9,19 @@ import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.entries.AlternativesEntry;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
+import net.minecraft.world.level.storage.loot.functions.ApplyBonusCount;
 import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
 import net.minecraft.world.level.storage.loot.predicates.AnyOfCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemBlockStatePropertyCondition;
+import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
+import net.minecraft.world.level.storage.loot.predicates.MatchTool;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 
 import java.util.Set;
@@ -169,6 +174,32 @@ public final class ModBlockLootSubProvider extends BlockLootSubProvider {
         add(ModBlocks.BANANA_COW_EGG.get(), LootTable.lootTable());
 
 
+        var itemLookup = this.registries.lookupOrThrow(net.minecraft.core.registries.Registries.ITEM);
+        var enchLookup = this.registries.lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+        add(ModBlocks.CAROTENE_SHORT_GRASS.get(),
+                LootTable.lootTable()
+                        .withPool(LootPool.lootPool()
+                                .setRolls(ConstantValue.exactly(1))
+                                .add(AlternativesEntry.alternatives(
+                                        // Shears -> drop itself
+                                        LootItem.lootTableItem(ModBlocks.CAROTENE_SHORT_GRASS.get())
+                                                .when(MatchTool.toolMatches(
+                                                        net.minecraft.advancements.critereon.ItemPredicate.Builder.item()
+                                                                .of(itemLookup, Items.SHEARS)
+                                                )),
+
+                                        // Otherwise -> 12.5% seeds, Fortune boosts (uniform bonus count *2), respects explosion decay
+                                        applyExplosionDecay(ModBlocks.CAROTENE_SHORT_GRASS.get(),
+                                                LootItem.lootTableItem(Items.WHEAT_SEEDS)
+                                                        .when(LootItemRandomChanceCondition.randomChance(0.125f))
+                                                        .apply(ApplyBonusCount.addUniformBonusCount(
+                                                                enchLookup.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.FORTUNE),
+                                                                2
+                                                        ))
+                                        )
+                                ))
+                        )
+        );
 
 
     }

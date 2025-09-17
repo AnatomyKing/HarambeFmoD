@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.UntintedParticleLeavesBlock;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
 import net.neoforged.bus.api.IEventBus;
@@ -138,7 +139,7 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> CHOCO_CREAM_STONE =
             BLOCKS.registerBlock("choco_cream_stone",
                     props -> new Block(props
-                            .mapColor(MapColor.COLOR_YELLOW)
+                            .mapColor(MapColor.TERRACOTTA_BROWN)
                             .strength(0.6F)
                             .sound(SoundType.HONEY_BLOCK)
                             .pushReaction(PushReaction.NORMAL)));
@@ -217,6 +218,18 @@ public final class ModBlocks {
                                     .randomTicks() // optional: matches many ground blocks
                                     .pushReaction(PushReaction.NORMAL)
                     ));
+
+    public static final DeferredBlock<CaroteneShortGrassBlock> CAROTENE_SHORT_GRASS =
+            BLOCKS.registerBlock("carotene_short_grass",
+                    props -> new CaroteneShortGrassBlock(
+                            props.noCollission()
+                                    .instabreak()
+                                    .offsetType(BlockBehaviour.OffsetType.XZ)
+                                    .mapColor(MapColor.GRASS)
+                                    .sound(SoundType.GRASS)
+                                    .pushReaction(PushReaction.DESTROY)
+                    )
+            );
 
 
 

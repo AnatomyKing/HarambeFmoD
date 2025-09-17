@@ -66,7 +66,8 @@ public final class ModModelProvider extends ModelProvider {
 
 
         BlocksGenSimple.cross(blockModels,
-                ModBlocks.MUSAVACCA_FLOWER.get()
+                ModBlocks.MUSAVACCA_FLOWER.get(),
+                ModBlocks.CAROTENE_SHORT_GRASS.get()
         );
 
 
@@ -108,7 +109,8 @@ public final class ModModelProvider extends ModelProvider {
                 ModBlocks.MEDIUM_HONEY_CRYSTAL_BUD.get(),
                 ModBlocks.LARGE_HONEY_CRYSTAL_BUD.get(),
                 ModBlocks.HONEY_CRYSTAL_CLUSTER.get(),
-                ModBlocks.MUSAVACCA_FLOWER.get()
+                ModBlocks.MUSAVACCA_FLOWER.get(),
+                ModBlocks.CAROTENE_SHORT_GRASS.get()
         );
 
 

@@ -44,7 +44,7 @@ public final class CaroteneGrassBonemealHandler {
                 BlockPos posUp = pos.above();
                 sl.levelEvent(LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, posUp, 0);
 
-                // 3) Redundant but reliable: add the exact “happy villager” burst around the top
+
                 double cx = pos.getX() + 0.5;
                 double cy = pos.getY() + 1.0;
                 double cz = pos.getZ() + 0.5;

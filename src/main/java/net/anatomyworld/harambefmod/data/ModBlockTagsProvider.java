@@ -40,7 +40,8 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
                 ModBlocks.BANANA_CREAM_STONE.get(),
                 ModBlocks.CHOCO_CREAM_STONE.get(),
                 ModBlocks.VANILLA_CREAM_STONE.get(),
-                ModBlocks.STRAWBERRY_CREAM_STONE.get()
+                ModBlocks.STRAWBERRY_CREAM_STONE.get(),
+                ModBlocks.CAROTENE_GRASS_BLOCK.get()
         );
 
         // leaves/logs/planks
@@ -84,5 +85,10 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
 
         // Inter-dimensional frame blocks (empty by default — add via datapack or here later)
         tag(ModTags.Blocks.BANANA_PORTAL_FRAME_INTER).add(ModBlocks.PEARLIDIAN.get());
+
+        tag(net.minecraft.tags.BlockTags.DIRT).add(ModBlocks.CAROTENE_GRASS_BLOCK.get());
+
+        tag(BlockTags.DIRT).add(ModBlocks.CAROTENE_GRASS_BLOCK.get());
+
     }
 }

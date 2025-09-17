@@ -405,7 +405,7 @@
               "type": "minecraft:noise_threshold",
               "max_threshold": 0.6,
               "min_threshold": -0.15,
-              "noise": "harambefmod:carotene_gate"
+              "noise": "harambefmod:carotene_gate_overworldnew"
             },
             "then_run": {
               "type": "minecraft:condition",
@@ -429,7 +429,7 @@
                       "type": "minecraft:noise_threshold",
                       "max_threshold": 0.22,
                       "min_threshold": -0.22,
-                      "noise": "harambefmod:carotene_patches"
+                      "noise": "harambefmod:carotene_patches_overworldnew"
                     },
                     "then_run": {
                       "type": "minecraft:condition",
@@ -454,7 +454,7 @@
                       "type": "minecraft:noise_threshold",
                       "max_threshold": -0.22,
                       "min_threshold": -0.38,
-                      "noise": "harambefmod:carotene_patches"
+                      "noise": "harambefmod:carotene_patches_overworldnew"
                     },
                     "then_run": {
                       "type": "minecraft:condition",
@@ -479,7 +479,7 @@
                       "type": "minecraft:noise_threshold",
                       "max_threshold": 0.38,
                       "min_threshold": 0.22,
-                      "noise": "harambefmod:carotene_patches"
+                      "noise": "harambefmod:carotene_patches_overworldnew"
                     },
                     "then_run": {
                       "type": "minecraft:condition",
@@ -504,7 +504,7 @@
                       "type": "minecraft:noise_threshold",
                       "max_threshold": -0.38,
                       "min_threshold": -0.5,
-                      "noise": "harambefmod:carotene_patches"
+                      "noise": "harambefmod:carotene_patches_overworldnew"
                     },
                     "then_run": {
                       "type": "minecraft:condition",
@@ -529,7 +529,7 @@
                       "type": "minecraft:noise_threshold",
                       "max_threshold": 0.5,
                       "min_threshold": 0.38,
-                      "noise": "harambefmod:carotene_patches"
+                      "noise": "harambefmod:carotene_patches_overworldnew"
                     },
                     "then_run": {
                       "type": "minecraft:condition",
@@ -573,7 +573,7 @@
               "type": "minecraft:noise_threshold",
               "max_threshold": 0.6,
               "min_threshold": -0.15,
-              "noise": "harambefmod:carotene_gate"
+              "noise": "harambefmod:carotene_gate_overworldnew"
             },
             "then_run": {
               "type": "minecraft:condition",
@@ -600,7 +600,7 @@
                       "type": "minecraft:noise_threshold",
                       "max_threshold": 0.22,
                       "min_threshold": -0.22,
-                      "noise": "harambefmod:carotene_patches"
+                      "noise": "harambefmod:carotene_patches_overworldnew"
                     },
                     "then_run": {
                       "type": "minecraft:sequence",
@@ -646,7 +646,7 @@
                       "type": "minecraft:noise_threshold",
                       "max_threshold": -0.22,
                       "min_threshold": -0.38,
-                      "noise": "harambefmod:carotene_patches"
+                      "noise": "harambefmod:carotene_patches_overworldnew"
                     },
                     "then_run": {
                       "type": "minecraft:sequence",
@@ -657,7 +657,7 @@
                             "type": "minecraft:noise_threshold",
                             "max_threshold": 1.7976931348623157E308,
                             "min_threshold": 0.05,
-                            "noise": "harambefmod:carotene_dither"
+                            "noise": "harambefmod:carotene_dither_overworldnew"
                           },
                           "then_run": {
                             "type": "minecraft:sequence",
@@ -741,7 +741,7 @@
                       "type": "minecraft:noise_threshold",
                       "max_threshold": 0.38,
                       "min_threshold": 0.22,
-                      "noise": "harambefmod:carotene_patches"
+                      "noise": "harambefmod:carotene_patches_overworldnew"
                     },
                     "then_run": {
                       "type": "minecraft:sequence",
@@ -752,7 +752,7 @@
                             "type": "minecraft:noise_threshold",
                             "max_threshold": 1.7976931348623157E308,
                             "min_threshold": 0.05,
-                            "noise": "harambefmod:carotene_dither"
+                            "noise": "harambefmod:carotene_dither_overworldnew"
                           },
                           "then_run": {
                             "type": "minecraft:sequence",
@@ -836,7 +836,7 @@
                       "type": "minecraft:noise_threshold",
                       "max_threshold": -0.38,
                       "min_threshold": -0.5,
-                      "noise": "harambefmod:carotene_patches"
+                      "noise": "harambefmod:carotene_patches_overworldnew"
                     },
                     "then_run": {
                       "type": "minecraft:sequence",
@@ -885,7 +885,7 @@
                       "type": "minecraft:noise_threshold",
                       "max_threshold": 0.5,
                       "min_threshold": 0.38,
-                      "noise": "harambefmod:carotene_patches"
+                      "noise": "harambefmod:carotene_patches_overworldnew"
                     },
                     "then_run": {
                       "type": "minecraft:sequence",
