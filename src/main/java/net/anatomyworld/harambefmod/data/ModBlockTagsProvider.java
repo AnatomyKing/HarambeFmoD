@@ -29,18 +29,28 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
                 ModBlocks.STRIPPED_MUSAVACCA_STEM.get(),
                 ModBlocks.BANANA_BLOCK.get(),
                 ModBlocks.MUSAVACCA_PLANKS.get(),
+                ModBlocks.BELMONT_PLANKS.get(),
+                ModBlocks.DYNASTY_PLANKS.get(),
+                ModBlocks.IMPERIUM_PLANKS.get(),
+                ModBlocks.MISCHIEF_PLANKS.get(),
                 ModBlocks.STRIPPED_BELMONT_LOG.get(),
                 ModBlocks.BELMONT_LOG.get(),
-                ModBlocks.BELMONT_PLANKS.get(),
                 ModBlocks.STRIPPED_DYNASTY_LOG.get(),
                 ModBlocks.DYNASTY_LOG.get(),
-                ModBlocks.DYNASTY_PLANKS.get(),
                 ModBlocks.STRIPPED_IMPERIUM_LOG.get(),
                 ModBlocks.IMPERIUM_LOG.get(),
-                ModBlocks.IMPERIUM_PLANKS.get(),
                 ModBlocks.STRIPPED_MISCHIEF_LOG.get(),
                 ModBlocks.MISCHIEF_LOG.get(),
-                ModBlocks.MISCHIEF_PLANKS.get()
+                ModBlocks.MUSAVACCA_PSEUDOSTEM.get(),
+                ModBlocks.STRIPPED_MUSAVACCA_PSEUDOSTEM.get(),
+                ModBlocks.STRIPPED_BELMONT_WOOD.get(),
+                ModBlocks.BELMONT_WOOD.get(),
+                ModBlocks.STRIPPED_DYNASTY_WOOD.get(),
+                ModBlocks.DYNASTY_WOOD.get(),
+                ModBlocks.STRIPPED_IMPERIUM_WOOD.get(),
+                ModBlocks.IMPERIUM_WOOD.get(),
+                ModBlocks.STRIPPED_MISCHIEF_WOOD.get(),
+                ModBlocks.MISCHIEF_WOOD.get()
 
         );
         tag(net.minecraft.tags.BlockTags.MINEABLE_WITH_HOE).add(
@@ -54,7 +64,11 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
                 ModBlocks.CHOCO_CREAM_STONE.get(),
                 ModBlocks.VANILLA_CREAM_STONE.get(),
                 ModBlocks.STRAWBERRY_CREAM_STONE.get(),
-                ModBlocks.CAROTENE_GRASS_BLOCK.get()
+                ModBlocks.CAROTENE_GRASS_BLOCK.get(),
+                ModBlocks.BELMONT_GRASS_BLOCK.get(),
+                ModBlocks.DYNASTY_GRASS_BLOCK.get(),
+                ModBlocks.IMPERIUM_GRASS_BLOCK.get(),
+                ModBlocks.MISCHIEF_GRASS_BLOCK.get()
         );
 
         // leaves/logs/planks
@@ -79,18 +93,8 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
                 ModBlocks.MUSAVACCA_STEM.get(),
                 ModBlocks.STRIPPED_MUSAVACCA_STEM.get(),
 
-                ModBlocks.STRIPPED_BELMONT_LOG.get(),
-                ModBlocks.BELMONT_LOG.get(),
-                ModBlocks.STRIPPED_DYNASTY_LOG.get(),
-                ModBlocks.DYNASTY_LOG.get(),
-                ModBlocks.STRIPPED_IMPERIUM_LOG.get(),
-                ModBlocks.IMPERIUM_LOG.get(),
-                ModBlocks.STRIPPED_MISCHIEF_LOG.get(),
-                ModBlocks.MISCHIEF_LOG.get()
-        );
-        tag(net.minecraft.tags.BlockTags.LOGS_THAT_BURN).add(
-                ModBlocks.MUSAVACCA_STEM.get(),
-                ModBlocks.STRIPPED_MUSAVACCA_STEM.get(),
+                ModBlocks.MUSAVACCA_PSEUDOSTEM.get(),
+                ModBlocks.STRIPPED_MUSAVACCA_PSEUDOSTEM.get(),
 
                 ModBlocks.STRIPPED_BELMONT_LOG.get(),
                 ModBlocks.BELMONT_LOG.get(),
@@ -99,7 +103,40 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
                 ModBlocks.STRIPPED_IMPERIUM_LOG.get(),
                 ModBlocks.IMPERIUM_LOG.get(),
                 ModBlocks.STRIPPED_MISCHIEF_LOG.get(),
-                ModBlocks.MISCHIEF_LOG.get()
+                ModBlocks.MISCHIEF_LOG.get(),
+                ModBlocks.STRIPPED_BELMONT_WOOD.get(),
+                ModBlocks.BELMONT_WOOD.get(),
+                ModBlocks.STRIPPED_DYNASTY_WOOD.get(),
+                ModBlocks.DYNASTY_WOOD.get(),
+                ModBlocks.STRIPPED_IMPERIUM_WOOD.get(),
+                ModBlocks.IMPERIUM_WOOD.get(),
+                ModBlocks.STRIPPED_MISCHIEF_WOOD.get(),
+                ModBlocks.MISCHIEF_WOOD.get()
+
+        );
+        tag(net.minecraft.tags.BlockTags.LOGS_THAT_BURN).add(
+                ModBlocks.MUSAVACCA_STEM.get(),
+                ModBlocks.STRIPPED_MUSAVACCA_STEM.get(),
+
+                ModBlocks.MUSAVACCA_PSEUDOSTEM.get(),
+                ModBlocks.STRIPPED_MUSAVACCA_PSEUDOSTEM.get(),
+
+                ModBlocks.STRIPPED_BELMONT_LOG.get(),
+                ModBlocks.BELMONT_LOG.get(),
+                ModBlocks.STRIPPED_DYNASTY_LOG.get(),
+                ModBlocks.DYNASTY_LOG.get(),
+                ModBlocks.STRIPPED_IMPERIUM_LOG.get(),
+                ModBlocks.IMPERIUM_LOG.get(),
+                ModBlocks.STRIPPED_MISCHIEF_LOG.get(),
+                ModBlocks.MISCHIEF_LOG.get(),
+                ModBlocks.STRIPPED_BELMONT_WOOD.get(),
+                ModBlocks.BELMONT_WOOD.get(),
+                ModBlocks.STRIPPED_DYNASTY_WOOD.get(),
+                ModBlocks.DYNASTY_WOOD.get(),
+                ModBlocks.STRIPPED_IMPERIUM_WOOD.get(),
+                ModBlocks.IMPERIUM_WOOD.get(),
+                ModBlocks.STRIPPED_MISCHIEF_WOOD.get(),
+                ModBlocks.MISCHIEF_WOOD.get()
         );
         tag(BlockTags.PLANKS).add(
                 ModBlocks.MUSAVACCA_PLANKS.get(),
@@ -120,7 +157,9 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
         tag(ModTags.Blocks.BANANA_COW_GROWTH).add(
                 ModBlocks.MUSAVACCA_STEM.get(),
                 ModBlocks.STRIPPED_MUSAVACCA_STEM.get(),
-                ModBlocks.MUSAVACCA_PLANKS.get()
+                ModBlocks.MUSAVACCA_PLANKS.get(),
+                ModBlocks.MUSAVACCA_PSEUDOSTEM.get(),
+                ModBlocks.STRIPPED_MUSAVACCA_PSEUDOSTEM.get()
         );
 
         tag(BlockTags.MINEABLE_WITH_PICKAXE).add(ModBlocks.PEARLIDIAN.get(),

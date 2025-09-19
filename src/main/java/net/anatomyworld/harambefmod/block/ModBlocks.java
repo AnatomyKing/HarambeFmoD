@@ -426,6 +426,42 @@ public final class ModBlocks {
                             .randomTicks()
                             .sound(SoundType.GRASS)));
 
+    public static final DeferredBlock<BelmontSaplingBlock> BELMONT_SAPLING =
+            BLOCKS.registerBlock("belmont_sapling",
+                    props -> new BelmontSaplingBlock(props
+                            .mapColor(MapColor.PLANT)
+                            .noCollission()
+                            .instabreak()
+                            .randomTicks()
+                            .sound(SoundType.GRASS)));
+
+    public static final DeferredBlock<DynastySaplingBlock> DYNASTY_SAPLING =
+            BLOCKS.registerBlock("dynasty_sapling",
+                    props -> new DynastySaplingBlock(props
+                            .mapColor(MapColor.PLANT)
+                            .noCollission()
+                            .instabreak()
+                            .randomTicks()
+                            .sound(SoundType.GRASS)));
+
+    public static final DeferredBlock<ImperiumSaplingBlock> IMPERIUM_SAPLING =
+            BLOCKS.registerBlock("imperium_sapling",
+                    props -> new ImperiumSaplingBlock(props
+                            .mapColor(MapColor.PLANT)
+                            .noCollission()
+                            .instabreak()
+                            .randomTicks()
+                            .sound(SoundType.GRASS)));
+
+    public static final DeferredBlock<MischiefSaplingBlock> MISCHIEF_SAPLING =
+            BLOCKS.registerBlock("mischief_sapling",
+                    props -> new MischiefSaplingBlock(props
+                            .mapColor(MapColor.PLANT)
+                            .noCollission()
+                            .instabreak()
+                            .randomTicks()
+                            .sound(SoundType.GRASS)));
+
     public static final DeferredBlock<CaroteneGrassBlock> CAROTENE_GRASS_BLOCK =
             BLOCKS.registerBlock("carotene_grass_block",
                     props -> new CaroteneGrassBlock(

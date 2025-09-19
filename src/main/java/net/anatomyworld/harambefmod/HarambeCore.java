@@ -66,7 +66,8 @@ public final class HarambeCore {
         EVENT_BUS.addListener(ImperiumGrassBonemealHandler::onBonemeal);
         EVENT_BUS.addListener(MischiefGrassBonemealHandler::onBonemeal);
 
-        EVENT_BUS.addListener(CrossDimPortalHandler::register);
+        CrossDimPortalHandler.register();
+        PortalIgnitionHandler.register();
 
 
         // Client listeners (no @OnlyIn, no Bus enum needed)

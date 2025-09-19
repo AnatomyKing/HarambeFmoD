@@ -47,6 +47,29 @@ public final class BlocksGenSimple {
         }
     }
 
+    public static void pillarAutoOverride(BlockModelGenerators gen,
+                                          Block block,
+                                          ResourceLocation end,
+                                          ResourceLocation side) {
+        // vertical version
+        TexturedModel.Provider vertical = TexturedModel.createDefault(
+                b -> new TextureMapping()
+                        .put(TextureSlot.SIDE, side)
+                        .put(TextureSlot.END, end),
+                ModelTemplates.CUBE_COLUMN
+        );
+
+        // horizontal version
+        TexturedModel.Provider horizontal = TexturedModel.createDefault(
+                b -> new TextureMapping()
+                        .put(TextureSlot.SIDE, side)
+                        .put(TextureSlot.END, end),
+                ModelTemplates.CUBE_COLUMN_HORIZONTAL
+        );
+
+        gen.createRotatedPillarWithHorizontalVariant(block, vertical, horizontal);
+    }
+
     /** furnace-like: side/front/top */
     public static void orientable(BlockModelGenerators gen, Block block,
                                   ResourceLocation side, ResourceLocation front, ResourceLocation top) {
@@ -111,6 +134,18 @@ public final class BlocksGenSimple {
     public static ResourceLocation texOf(Block b, String suffix) {
         ResourceLocation id = BuiltInRegistries.BLOCK.getKey(b);
         return ResourceLocation.fromNamespaceAndPath(id.getNamespace(), "block/" + id.getPath() + suffix);
+    }
+
+    public static void pillarAutoMatchEnd(BlockModelGenerators gen, Block... blocks) {
+        for (Block b : blocks) {
+            TexturedModel.Provider provider = TexturedModel.createDefault(
+                    block -> new TextureMapping()
+                            .put(TextureSlot.SIDE, texOf(block))
+                            .put(TextureSlot.END, texOf(block)), // ends use the same texture as side
+                    ModelTemplates.CUBE_COLUMN
+            );
+            gen.createTrivialBlock(b, provider);
+        }
     }
 
 }

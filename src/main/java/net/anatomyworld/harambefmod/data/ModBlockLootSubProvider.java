@@ -59,7 +59,21 @@ public final class ModBlockLootSubProvider extends BlockLootSubProvider {
                 ModBlocks.STRIPPED_IMPERIUM_LOG.get(),
                 ModBlocks.IMPERIUM_LOG.get(),
                 ModBlocks.STRIPPED_MISCHIEF_LOG.get(),
-                ModBlocks.MISCHIEF_LOG.get()
+                ModBlocks.MISCHIEF_LOG.get(),
+                ModBlocks.MUSAVACCA_PSEUDOSTEM.get(),
+                ModBlocks.STRIPPED_MUSAVACCA_PSEUDOSTEM.get(),
+                ModBlocks.STRIPPED_BELMONT_WOOD.get(),
+                ModBlocks.BELMONT_WOOD.get(),
+                ModBlocks.STRIPPED_DYNASTY_WOOD.get(),
+                ModBlocks.DYNASTY_WOOD.get(),
+                ModBlocks.STRIPPED_IMPERIUM_WOOD.get(),
+                ModBlocks.IMPERIUM_WOOD.get(),
+                ModBlocks.STRIPPED_MISCHIEF_WOOD.get(),
+                ModBlocks.MISCHIEF_WOOD.get(),
+                ModBlocks.BELMONT_SAPLING.get(),
+                ModBlocks.DYNASTY_SAPLING.get(),
+                ModBlocks.IMPERIUM_SAPLING.get(),
+                ModBlocks.MISCHIEF_SAPLING.get()
         };
 
         for (Block b : selfDropping) {

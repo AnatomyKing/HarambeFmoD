@@ -1,5 +1,5 @@
 {
-  "type": "minecraft:overworld",
+  "type": "harambefmod:dynastirium",
   "generator": {
     "type": "minecraft:noise",
     "settings": "minecraft:amplified",

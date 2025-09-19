@@ -60,6 +60,66 @@ public final class ModModelProvider extends ModelProvider {
                 ModBlocks.STRIPPED_MUSAVACCA_STEM.get()
         );
 
+        BlocksGenSimple.pillarAutoOverride(blockModels,
+                ModBlocks.BELMONT_WOOD.get(),
+                BlocksGenSimple.texOf(ModBlocks.BELMONT_LOG.get()),   // end
+                BlocksGenSimple.texOf(ModBlocks.BELMONT_LOG.get())    // side
+        );
+
+        BlocksGenSimple.pillarAutoOverride(blockModels,
+                ModBlocks.STRIPPED_BELMONT_WOOD.get(),
+                BlocksGenSimple.texOf(ModBlocks.STRIPPED_BELMONT_LOG.get()), // end
+                BlocksGenSimple.texOf(ModBlocks.STRIPPED_BELMONT_LOG.get())  // side
+        );
+
+        BlocksGenSimple.pillarAutoOverride(blockModels,
+                ModBlocks.DYNASTY_WOOD.get(),
+                BlocksGenSimple.texOf(ModBlocks.DYNASTY_LOG.get()),   // end
+                BlocksGenSimple.texOf(ModBlocks.DYNASTY_LOG.get())    // side
+        );
+
+        BlocksGenSimple.pillarAutoOverride(blockModels,
+                ModBlocks.STRIPPED_DYNASTY_WOOD.get(),
+                BlocksGenSimple.texOf(ModBlocks.STRIPPED_DYNASTY_LOG.get()), // end
+                BlocksGenSimple.texOf(ModBlocks.STRIPPED_DYNASTY_LOG.get())  // side
+        );
+
+        BlocksGenSimple.pillarAutoOverride(blockModels,
+                ModBlocks.IMPERIUM_WOOD.get(),
+                BlocksGenSimple.texOf(ModBlocks.IMPERIUM_LOG.get()),   // end
+                BlocksGenSimple.texOf(ModBlocks.IMPERIUM_LOG.get())    // side
+        );
+
+        BlocksGenSimple.pillarAutoOverride(blockModels,
+                ModBlocks.STRIPPED_IMPERIUM_WOOD.get(),
+                BlocksGenSimple.texOf(ModBlocks.STRIPPED_IMPERIUM_LOG.get()), // end
+                BlocksGenSimple.texOf(ModBlocks.STRIPPED_IMPERIUM_LOG.get())  // side
+        );
+
+        BlocksGenSimple.pillarAutoOverride(blockModels,
+                ModBlocks.MISCHIEF_WOOD.get(),
+                BlocksGenSimple.texOf(ModBlocks.MISCHIEF_LOG.get()),   // end
+                BlocksGenSimple.texOf(ModBlocks.MISCHIEF_LOG.get())    // side
+        );
+
+        BlocksGenSimple.pillarAutoOverride(blockModels,
+                ModBlocks.STRIPPED_MISCHIEF_WOOD.get(),
+                BlocksGenSimple.texOf(ModBlocks.STRIPPED_MISCHIEF_LOG.get()), // end
+                BlocksGenSimple.texOf(ModBlocks.STRIPPED_MISCHIEF_LOG.get())  // side
+        );
+
+        BlocksGenSimple.pillarAutoOverride(blockModels,
+                ModBlocks.MUSAVACCA_PSEUDOSTEM.get(),
+                BlocksGenSimple.texOf(ModBlocks.MUSAVACCA_STEM.get()),   // end
+                BlocksGenSimple.texOf(ModBlocks.MUSAVACCA_STEM.get())    // side
+        );
+
+        BlocksGenSimple.pillarAutoOverride(blockModels,
+                ModBlocks.STRIPPED_MUSAVACCA_PSEUDOSTEM.get(),
+                BlocksGenSimple.texOf(ModBlocks.STRIPPED_MUSAVACCA_STEM.get()), // end
+                BlocksGenSimple.texOf(ModBlocks.STRIPPED_MUSAVACCA_STEM.get())  // side
+        );
+
 
 
         BlocksGenComplex.pillarNaturalCapAuto(blockModels,
@@ -81,6 +141,7 @@ public final class ModModelProvider extends ModelProvider {
                 ModBlocks.MISCHIEF_LOG.get(),
                 ModBlocks.STRIPPED_MISCHIEF_LOG.get()
         );
+
 
 
         BlocksGenSimple.barrelAutoTrivial(blockModels,
@@ -107,7 +168,11 @@ public final class ModModelProvider extends ModelProvider {
                 ModBlocks.BELMONT_SHORT_GRASS.get(),
                 ModBlocks.DYNASTY_SHORT_GRASS.get(),
                 ModBlocks.IMPERIUM_SHORT_GRASS.get(),
-                ModBlocks.MISCHIEF_SHORT_GRASS.get()
+                ModBlocks.MISCHIEF_SHORT_GRASS.get(),
+                ModBlocks.BELMONT_SAPLING.get(),
+                ModBlocks.DYNASTY_SAPLING.get(),
+                ModBlocks.IMPERIUM_SAPLING.get(),
+                ModBlocks.MISCHIEF_SAPLING.get()
         );
 
 
@@ -150,7 +215,15 @@ public final class ModModelProvider extends ModelProvider {
                 ModBlocks.LARGE_HONEY_CRYSTAL_BUD.get(),
                 ModBlocks.HONEY_CRYSTAL_CLUSTER.get(),
                 ModBlocks.MUSAVACCA_FLOWER.get(),
-                ModBlocks.CAROTENE_SHORT_GRASS.get()
+                ModBlocks.CAROTENE_SHORT_GRASS.get(),
+                ModBlocks.BELMONT_SHORT_GRASS.get(),
+                ModBlocks.DYNASTY_SHORT_GRASS.get(),
+                ModBlocks.IMPERIUM_SHORT_GRASS.get(),
+                ModBlocks.MISCHIEF_SHORT_GRASS.get(),
+                ModBlocks.BELMONT_SAPLING.get(),
+                ModBlocks.DYNASTY_SAPLING.get(),
+                ModBlocks.IMPERIUM_SAPLING.get(),
+                ModBlocks.MISCHIEF_SAPLING.get()
         );
 
 
