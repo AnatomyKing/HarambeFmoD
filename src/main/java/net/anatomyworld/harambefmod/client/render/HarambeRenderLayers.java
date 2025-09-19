@@ -50,7 +50,11 @@ public final class HarambeRenderLayers {
             ModBlocks.BELMONT_LEAVES.get(),
             ModBlocks.DYNASTY_LEAVES.get(),
             ModBlocks.IMPERIUM_LEAVES.get(),
-            ModBlocks.MISCHIEF_LEAVES.get()
+            ModBlocks.MISCHIEF_LEAVES.get(),
+            ModBlocks.BELMONT_SAPLING.get(),
+            ModBlocks.DYNASTY_SAPLING.get(),
+            ModBlocks.IMPERIUM_SAPLING.get(),
+            ModBlocks.MISCHIEF_SAPLING.get()
 
     );
 
@@ -65,7 +69,11 @@ public final class HarambeRenderLayers {
             ModBlocks.BELMONT_SHORT_GRASS.get(),
             ModBlocks.DYNASTY_SHORT_GRASS.get(),
             ModBlocks.IMPERIUM_SHORT_GRASS.get(),
-            ModBlocks.MISCHIEF_SHORT_GRASS.get()
+            ModBlocks.MISCHIEF_SHORT_GRASS.get(),
+            ModBlocks.BELMONT_SAPLING.get(),
+            ModBlocks.DYNASTY_SAPLING.get(),
+            ModBlocks.IMPERIUM_SAPLING.get(),
+            ModBlocks.MISCHIEF_SAPLING.get()
 
     );
 
