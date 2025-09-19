@@ -16,6 +16,7 @@ import net.minecraft.client.renderer.block.model.VariantMutator;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 import static net.anatomyworld.harambefmod.data.modelgen.ModelUtil.*;
@@ -94,17 +95,15 @@ public final class BlocksGenComplex {
     }
 
 
-
-
     /* ------------------------ Lamp (LIT boolean) ------------------------ */
     public static void lampLit(BlockModelGenerators gen, Block lamp) {
         var id = idOf(lamp);
         var unlitTex = rl(id.getNamespace(), "block/" + id.getPath());
-        var litTex   = rl(id.getNamespace(), "block/" + id.getPath() + "_on");
+        var litTex = rl(id.getNamespace(), "block/" + id.getPath() + "_on");
 
         var unlitModel = ModelTemplates.CUBE_ALL.create(lamp,
                 new TextureMapping().put(TextureSlot.ALL, unlitTex), gen.modelOutput);
-        var litModel   = ModelTemplates.CUBE_ALL.create(
+        var litModel = ModelTemplates.CUBE_ALL.create(
                 rl(id.getNamespace(), "block/" + id.getPath() + "_on"),
                 new TextureMapping().put(TextureSlot.ALL, litTex), gen.modelOutput);
 
@@ -127,12 +126,12 @@ public final class BlocksGenComplex {
     /* ------------------------ Slab/Stairs/Fence/Wall/Pane ------------------------ */
     public static void slabAuto(BlockModelGenerators gen, Block slab, Block full) {
         TextureMapping map = new TextureMapping()
-                .put(TextureSlot.SIDE,   texOf(full))
-                .put(TextureSlot.TOP,    texOf(full, "_top"))
+                .put(TextureSlot.SIDE, texOf(full))
+                .put(TextureSlot.TOP, texOf(full, "_top"))
                 .put(TextureSlot.BOTTOM, texOf(full, "_bottom"));
 
         var bottom = ModelTemplates.SLAB_BOTTOM.create(slab, map, gen.modelOutput);
-        var top    = ModelTemplates.SLAB_TOP.create(   slab, map, gen.modelOutput);
+        var top = ModelTemplates.SLAB_TOP.create(slab, map, gen.modelOutput);
         var fullModel = rl(idOf(full).getNamespace(), "block/" + idOf(full).getPath());
 
         gen.blockStateOutput.accept(BlockModelGenerators.createSlab(slab, mv(bottom), mv(top), mv(fullModel)));
@@ -140,13 +139,13 @@ public final class BlocksGenComplex {
 
     public static void stairsAuto(BlockModelGenerators gen, Block stairs) {
         TextureMapping map = new TextureMapping()
-                .put(TextureSlot.SIDE,   texOf(stairs))
-                .put(TextureSlot.TOP,    texOf(stairs, "_top"))
+                .put(TextureSlot.SIDE, texOf(stairs))
+                .put(TextureSlot.TOP, texOf(stairs, "_top"))
                 .put(TextureSlot.BOTTOM, texOf(stairs, "_bottom"));
 
         var straight = ModelTemplates.STAIRS_STRAIGHT.create(stairs, map, gen.modelOutput);
-        var inner    = ModelTemplates.STAIRS_INNER.create(  stairs, map, gen.modelOutput);
-        var outer    = ModelTemplates.STAIRS_OUTER.create(  stairs, map, gen.modelOutput);
+        var inner = ModelTemplates.STAIRS_INNER.create(stairs, map, gen.modelOutput);
+        var outer = ModelTemplates.STAIRS_OUTER.create(stairs, map, gen.modelOutput);
 
         gen.blockStateOutput.accept(BlockModelGenerators.createStairs(stairs, mv(inner), mv(straight), mv(outer)));
     }
@@ -160,11 +159,11 @@ public final class BlocksGenComplex {
 
     public static void wallAuto(BlockModelGenerators gen, Block wall) {
         TextureMapping map = new TextureMapping()
-                .put(TextureSlot.SIDE,   texOf(wall))
-                .put(TextureSlot.TOP,    texOf(wall, "_top"))
+                .put(TextureSlot.SIDE, texOf(wall))
+                .put(TextureSlot.TOP, texOf(wall, "_top"))
                 .put(TextureSlot.BOTTOM, texOf(wall, "_bottom"));
-        var post     = ModelTemplates.WALL_POST.create(wall, map, gen.modelOutput);
-        var sideLow  = ModelTemplates.WALL_LOW_SIDE.create(wall, map, gen.modelOutput);
+        var post = ModelTemplates.WALL_POST.create(wall, map, gen.modelOutput);
+        var sideLow = ModelTemplates.WALL_LOW_SIDE.create(wall, map, gen.modelOutput);
         var sideTall = ModelTemplates.WALL_TALL_SIDE.create(wall, map, gen.modelOutput);
         gen.blockStateOutput.accept(BlockModelGenerators.createWall(wall, mv(post), mv(sideLow), mv(sideTall)));
     }
@@ -175,28 +174,28 @@ public final class BlocksGenComplex {
         TextureSlot PANE = TextureSlot.create("pane", TextureSlot.ALL);
         TextureSlot EDGE = TextureSlot.create("edge", TextureSlot.ALL);
 
-        var post    = ModelTemplates.CUBE.extend().parent(blockModel("minecraft","template_glass_pane_post"))
+        var post = ModelTemplates.CUBE.extend().parent(blockModel("minecraft", "template_glass_pane_post"))
                 .suffix("_post").requiredTextureSlot(PANE).requiredTextureSlot(EDGE)
                 .renderType("minecraft:translucent").build();
-        var side    = ModelTemplates.CUBE.extend().parent(blockModel("minecraft","template_glass_pane_side"))
+        var side = ModelTemplates.CUBE.extend().parent(blockModel("minecraft", "template_glass_pane_side"))
                 .suffix("_side").requiredTextureSlot(PANE).requiredTextureSlot(EDGE)
                 .renderType("minecraft:translucent").build();
-        var sideAlt = ModelTemplates.CUBE.extend().parent(blockModel("minecraft","template_glass_pane_side_alt"))
+        var sideAlt = ModelTemplates.CUBE.extend().parent(blockModel("minecraft", "template_glass_pane_side_alt"))
                 .suffix("_side_alt").requiredTextureSlot(PANE).requiredTextureSlot(EDGE)
                 .renderType("minecraft:translucent").build();
-        var noSide  = ModelTemplates.CUBE.extend().parent(blockModel("minecraft","template_glass_pane_noside"))
+        var noSide = ModelTemplates.CUBE.extend().parent(blockModel("minecraft", "template_glass_pane_noside"))
                 .suffix("_noside").requiredTextureSlot(PANE).requiredTextureSlot(EDGE)
                 .renderType("minecraft:translucent").build();
-        var noSideAlt = ModelTemplates.CUBE.extend().parent(blockModel("minecraft","template_glass_pane_noside_alt"))
+        var noSideAlt = ModelTemplates.CUBE.extend().parent(blockModel("minecraft", "template_glass_pane_noside_alt"))
                 .suffix("_noside_alt").requiredTextureSlot(PANE).requiredTextureSlot(EDGE)
                 .renderType("minecraft:translucent").build();
 
         TextureMapping tex = new TextureMapping().put(PANE, paneTex).put(EDGE, edgeTex);
 
-        var postM      = post.create(pane, tex, gen.modelOutput);
-        var sideM      = side.create(pane, tex, gen.modelOutput);
-        var sideAltM   = sideAlt.create(pane, tex, gen.modelOutput);
-        var noSideM    = noSide.create(pane, tex, gen.modelOutput);
+        var postM = post.create(pane, tex, gen.modelOutput);
+        var sideM = side.create(pane, tex, gen.modelOutput);
+        var sideAltM = sideAlt.create(pane, tex, gen.modelOutput);
+        var noSideM = noSide.create(pane, tex, gen.modelOutput);
         var noSideAltM = noSideAlt.create(pane, tex, gen.modelOutput);
 
         var mp = MultiPartGenerator.multiPart(pane)
@@ -230,7 +229,7 @@ public final class BlocksGenComplex {
         //   assets/<ns>/textures/block/<name>_0.png
         //   assets/<ns>/textures/block/<name>_1.png
         var id = idOf(fire);
-        String ns   = id.getNamespace();
+        String ns = id.getNamespace();
         String name = id.getPath();
 
         // Use the built-in FIRE TextureSlot (important)
@@ -238,12 +237,12 @@ public final class BlocksGenComplex {
         TextureMapping tex1 = new TextureMapping().put(TextureSlot.FIRE, rl(ns, "block/" + name + "_1"));
 
         // Give EVERY template a unique output path to avoid "Duplicate model definition"
-        ResourceLocation floor0    = ModelTemplates.FIRE_FLOOR    .create(rl(ns, "block/" + name + "_floor0"),     tex0, gen.modelOutput);
-        ResourceLocation floor1    = ModelTemplates.FIRE_FLOOR    .create(rl(ns, "block/" + name + "_floor1"),     tex1, gen.modelOutput);
-        ResourceLocation side0     = ModelTemplates.FIRE_SIDE     .create(rl(ns, "block/" + name + "_side0"),      tex0, gen.modelOutput);
-        ResourceLocation side1     = ModelTemplates.FIRE_SIDE     .create(rl(ns, "block/" + name + "_side1"),      tex1, gen.modelOutput);
-        ResourceLocation sideAlt0  = ModelTemplates.FIRE_SIDE_ALT .create(rl(ns, "block/" + name + "_side_alt0"),  tex0, gen.modelOutput);
-        ResourceLocation sideAlt1  = ModelTemplates.FIRE_SIDE_ALT .create(rl(ns, "block/" + name + "_side_alt1"),  tex1, gen.modelOutput);
+        ResourceLocation floor0 = ModelTemplates.FIRE_FLOOR.create(rl(ns, "block/" + name + "_floor0"), tex0, gen.modelOutput);
+        ResourceLocation floor1 = ModelTemplates.FIRE_FLOOR.create(rl(ns, "block/" + name + "_floor1"), tex1, gen.modelOutput);
+        ResourceLocation side0 = ModelTemplates.FIRE_SIDE.create(rl(ns, "block/" + name + "_side0"), tex0, gen.modelOutput);
+        ResourceLocation side1 = ModelTemplates.FIRE_SIDE.create(rl(ns, "block/" + name + "_side1"), tex1, gen.modelOutput);
+        ResourceLocation sideAlt0 = ModelTemplates.FIRE_SIDE_ALT.create(rl(ns, "block/" + name + "_side_alt0"), tex0, gen.modelOutput);
+        ResourceLocation sideAlt1 = ModelTemplates.FIRE_SIDE_ALT.create(rl(ns, "block/" + name + "_side_alt1"), tex1, gen.modelOutput);
 
         // Soul-fire style: unconditional multipart (no EAST/WEST/NORTH/SOUTH/UP properties)
         var mp = MultiPartGenerator.multiPart(fire)
@@ -279,15 +278,15 @@ public final class BlocksGenComplex {
     }
 
     public static void fireStatesAuto(BlockModelGenerators gen, Block fire) {
-        var id   = idOf(fire);
-        String ns   = id.getNamespace();
+        var id = idOf(fire);
+        String ns = id.getNamespace();
         String name = id.getPath();
 
         // Model IDs that must already exist under assets/<ns>/models/block/
-        ResourceLocation floor0   = rl(ns, "block/" + name + "_floor0");
-        ResourceLocation floor1   = rl(ns, "block/" + name + "_floor1");
-        ResourceLocation side0    = rl(ns, "block/" + name + "_side0");
-        ResourceLocation side1    = rl(ns, "block/" + name + "_side1");
+        ResourceLocation floor0 = rl(ns, "block/" + name + "_floor0");
+        ResourceLocation floor1 = rl(ns, "block/" + name + "_floor1");
+        ResourceLocation side0 = rl(ns, "block/" + name + "_side0");
+        ResourceLocation side1 = rl(ns, "block/" + name + "_side1");
         ResourceLocation sideAlt0 = rl(ns, "block/" + name + "_side_alt0");
         ResourceLocation sideAlt1 = rl(ns, "block/" + name + "_side_alt1");
 
@@ -303,20 +302,20 @@ public final class BlocksGenComplex {
                 .with(BlockModelGenerators.variant(new Variant(sideAlt1)))
 
                 // Sides @ 90°
-                .with(BlockModelGenerators.variant(new Variant(side0   ).with(VariantMutator.Y_ROT.withValue(Quadrant.R90))))
-                .with(BlockModelGenerators.variant(new Variant(side1   ).with(VariantMutator.Y_ROT.withValue(Quadrant.R90))))
+                .with(BlockModelGenerators.variant(new Variant(side0).with(VariantMutator.Y_ROT.withValue(Quadrant.R90))))
+                .with(BlockModelGenerators.variant(new Variant(side1).with(VariantMutator.Y_ROT.withValue(Quadrant.R90))))
                 .with(BlockModelGenerators.variant(new Variant(sideAlt0).with(VariantMutator.Y_ROT.withValue(Quadrant.R90))))
                 .with(BlockModelGenerators.variant(new Variant(sideAlt1).with(VariantMutator.Y_ROT.withValue(Quadrant.R90))))
 
                 // Sides @ 180°
-                .with(BlockModelGenerators.variant(new Variant(side0   ).with(VariantMutator.Y_ROT.withValue(Quadrant.R180))))
-                .with(BlockModelGenerators.variant(new Variant(side1   ).with(VariantMutator.Y_ROT.withValue(Quadrant.R180))))
+                .with(BlockModelGenerators.variant(new Variant(side0).with(VariantMutator.Y_ROT.withValue(Quadrant.R180))))
+                .with(BlockModelGenerators.variant(new Variant(side1).with(VariantMutator.Y_ROT.withValue(Quadrant.R180))))
                 .with(BlockModelGenerators.variant(new Variant(sideAlt0).with(VariantMutator.Y_ROT.withValue(Quadrant.R180))))
                 .with(BlockModelGenerators.variant(new Variant(sideAlt1).with(VariantMutator.Y_ROT.withValue(Quadrant.R180))))
 
                 // Sides @ 270°
-                .with(BlockModelGenerators.variant(new Variant(side0   ).with(VariantMutator.Y_ROT.withValue(Quadrant.R270))))
-                .with(BlockModelGenerators.variant(new Variant(side1   ).with(VariantMutator.Y_ROT.withValue(Quadrant.R270))))
+                .with(BlockModelGenerators.variant(new Variant(side0).with(VariantMutator.Y_ROT.withValue(Quadrant.R270))))
+                .with(BlockModelGenerators.variant(new Variant(side1).with(VariantMutator.Y_ROT.withValue(Quadrant.R270))))
                 .with(BlockModelGenerators.variant(new Variant(sideAlt0).with(VariantMutator.Y_ROT.withValue(Quadrant.R270))))
                 .with(BlockModelGenerators.variant(new Variant(sideAlt1).with(VariantMutator.Y_ROT.withValue(Quadrant.R270))));
 
@@ -324,11 +323,10 @@ public final class BlocksGenComplex {
     }
 
 
-
     /* ------------------------ Banana Cow Egg (AGE 0..2) ------------------------ */
     public static void bananaCowEggStates(BlockModelGenerators gen, Block egg) {
-        var id   = idOf(egg);
-        var ns   = id.getNamespace();
+        var id = idOf(egg);
+        var ns = id.getNamespace();
         var base = id.getPath();
 
         ResourceLocation[] free = {
@@ -351,9 +349,9 @@ public final class BlocksGenComplex {
                                 .select(false, 1, VariantMutator.MODEL.withValue(free[1]))
                                 .select(false, 2, VariantMutator.MODEL.withValue(free[2]))
                                 // attached = true
-                                .select(true,  0, VariantMutator.MODEL.withValue(stem[0]))
-                                .select(true,  1, VariantMutator.MODEL.withValue(stem[1]))
-                                .select(true,  2, VariantMutator.MODEL.withValue(stem[2]))
+                                .select(true, 0, VariantMutator.MODEL.withValue(stem[0]))
+                                .select(true, 1, VariantMutator.MODEL.withValue(stem[1]))
+                                .select(true, 2, VariantMutator.MODEL.withValue(stem[2]))
                         )
         );
     }
@@ -380,23 +378,25 @@ public final class BlocksGenComplex {
     public static void amethystLikeClusterAuto(BlockModelGenerators gen,
                                                Block small, Block medium, Block large, Block cluster) {
         // ---- Models (vanilla buds/clusters use a single CROSS texture)
-        ResourceLocation mSmall   = ModelTemplates.CROSS.create(
-                small,  new TextureMapping().put(TextureSlot.CROSS, texOf(small)),  gen.modelOutput);
-        ResourceLocation mMedium  = ModelTemplates.CROSS.create(
+        ResourceLocation mSmall = ModelTemplates.CROSS.create(
+                small, new TextureMapping().put(TextureSlot.CROSS, texOf(small)), gen.modelOutput);
+        ResourceLocation mMedium = ModelTemplates.CROSS.create(
                 medium, new TextureMapping().put(TextureSlot.CROSS, texOf(medium)), gen.modelOutput);
-        ResourceLocation mLarge   = ModelTemplates.CROSS.create(
-                large,  new TextureMapping().put(TextureSlot.CROSS, texOf(large)),  gen.modelOutput);
+        ResourceLocation mLarge = ModelTemplates.CROSS.create(
+                large, new TextureMapping().put(TextureSlot.CROSS, texOf(large)), gen.modelOutput);
         ResourceLocation mCluster = ModelTemplates.CROSS.create(
-                cluster,new TextureMapping().put(TextureSlot.CROSS, texOf(cluster)),gen.modelOutput);
+                cluster, new TextureMapping().put(TextureSlot.CROSS, texOf(cluster)), gen.modelOutput);
 
         // ---- Blockstates (FACING -> rotations), identical mapping for all four pieces
-        gen.blockStateOutput.accept(facingRotationsLikeVanillaAmethyst(small,   mSmall));
-        gen.blockStateOutput.accept(facingRotationsLikeVanillaAmethyst(medium,  mMedium));
-        gen.blockStateOutput.accept(facingRotationsLikeVanillaAmethyst(large,   mLarge));
+        gen.blockStateOutput.accept(facingRotationsLikeVanillaAmethyst(small, mSmall));
+        gen.blockStateOutput.accept(facingRotationsLikeVanillaAmethyst(medium, mMedium));
+        gen.blockStateOutput.accept(facingRotationsLikeVanillaAmethyst(large, mLarge));
         gen.blockStateOutput.accept(facingRotationsLikeVanillaAmethyst(cluster, mCluster));
     }
 
-    /** Matches vanilla amethyst buds/clusters FACING rotations (UP/DOWN/N/E/S/W). */
+    /**
+     * Matches vanilla amethyst buds/clusters FACING rotations (UP/DOWN/N/E/S/W).
+     */
     private static MultiVariantGenerator facingRotationsLikeVanillaAmethyst(Block block, ResourceLocation model) {
         return MultiVariantGenerator
                 .dispatch(block, BlockModelGenerators.variant(new Variant(model)))
@@ -426,5 +426,251 @@ public final class BlocksGenComplex {
                                         .then(VariantMutator.Y_ROT.withValue(Quadrant.R270)))
                 );
     }
+
+
+    // -------------------------------- Grass (WITH overlay via vanilla parent) --------------------------------
+    public static void grassAuto(net.minecraft.client.data.models.BlockModelGenerators gen,
+                                 net.minecraft.world.level.block.Block grass) {
+        var id   = net.anatomyworld.harambefmod.data.modelgen.ModelUtil.idOf(grass);
+        var ns   = id.getNamespace();
+        var name = id.getPath();
+
+        // Your textures
+        var side    = net.anatomyworld.harambefmod.data.modelgen.ModelUtil.texOf(grass);
+        var top     = net.anatomyworld.harambefmod.data.modelgen.ModelUtil.texOf(grass, "_top");
+        var bottom  = net.anatomyworld.harambefmod.data.modelgen.ModelUtil.texOf(net.minecraft.world.level.block.Blocks.DIRT);
+        var overlay = net.anatomyworld.harambefmod.data.modelgen.ModelUtil.rl("minecraft", "block/grass_block_side_overlay");
+
+        // Vanilla snowy model (reference only)
+        var vanillaSnow = net.anatomyworld.harambefmod.data.modelgen.ModelUtil.rl("minecraft", "block/grass_block_snow");
+
+        // Overlay texture slot (vanilla grass parent expects this key)
+        var OVERLAY = net.minecraft.client.data.models.model.TextureSlot.create(
+                "overlay", net.minecraft.client.data.models.model.TextureSlot.ALL);
+
+        // Parent: minecraft:block/grass_block  (requires: top, bottom, side, overlay)
+        var normalTemplate = new net.minecraft.client.data.models.model.ModelTemplate(
+                java.util.Optional.of(net.anatomyworld.harambefmod.data.modelgen.ModelUtil.blockModel("minecraft", "grass_block")),
+                java.util.Optional.empty(),
+                net.minecraft.client.data.models.model.TextureSlot.TOP,
+                net.minecraft.client.data.models.model.TextureSlot.BOTTOM,
+                net.minecraft.client.data.models.model.TextureSlot.SIDE,
+                OVERLAY
+        );
+
+        var normalMap = new net.minecraft.client.data.models.model.TextureMapping()
+                .put(net.minecraft.client.data.models.model.TextureSlot.TOP,    top)
+                .put(net.minecraft.client.data.models.model.TextureSlot.BOTTOM, bottom)
+                .put(net.minecraft.client.data.models.model.TextureSlot.SIDE,   side)
+                .put(OVERLAY, overlay);
+
+        // Write your normal model: assets/<ns>/models/block/<name>.json
+        var normalModel = normalTemplate.create(grass, normalMap, gen.modelOutput);
+
+        // 4 rotations for snowy=false (your model)
+        var v0   = new net.minecraft.client.renderer.block.model.Variant(normalModel);
+        var v90  = new net.minecraft.client.renderer.block.model.Variant(normalModel)
+                .with(net.minecraft.client.renderer.block.model.VariantMutator.Y_ROT.withValue(com.mojang.math.Quadrant.R90));
+        var v180 = new net.minecraft.client.renderer.block.model.Variant(normalModel)
+                .with(net.minecraft.client.renderer.block.model.VariantMutator.Y_ROT.withValue(com.mojang.math.Quadrant.R180));
+        var v270 = new net.minecraft.client.renderer.block.model.Variant(normalModel)
+                .with(net.minecraft.client.renderer.block.model.VariantMutator.Y_ROT.withValue(com.mojang.math.Quadrant.R270));
+        var baseList = net.minecraft.client.data.models.BlockModelGenerators.variants(v0, v90, v180, v270);
+
+        // Blockstate: false -> your 4 rotations, true -> vanilla snowy (single, no rotations)
+        gen.blockStateOutput.accept(
+                net.minecraft.client.data.models.blockstates.MultiVariantGenerator
+                        .dispatch(grass, baseList)
+                        .with(net.minecraft.client.data.models.blockstates.PropertyDispatch
+                                .modify(net.minecraft.world.level.block.state.properties.BlockStateProperties.SNOWY)
+                                .select(Boolean.FALSE, net.minecraft.client.data.models.BlockModelGenerators.NOP)
+                                .select(Boolean.TRUE,
+                                        net.minecraft.client.renderer.block.model.VariantMutator.MODEL.withValue(vanillaSnow))))
+        ;
+    }
+
+    // ------------------------------ Grass (NO overlay via cube_bottom_top) ------------------------------
+    public static void grassAutoNoOverlay(net.minecraft.client.data.models.BlockModelGenerators gen,
+                                          net.minecraft.world.level.block.Block grass) {
+        var id   = net.anatomyworld.harambefmod.data.modelgen.ModelUtil.idOf(grass);
+        var ns   = id.getNamespace();
+        var name = id.getPath();
+
+        // Your textures (no overlay)
+        var side   = net.anatomyworld.harambefmod.data.modelgen.ModelUtil.texOf(grass);
+        var top    = net.anatomyworld.harambefmod.data.modelgen.ModelUtil.texOf(grass, "_top");
+        var bottom = net.anatomyworld.harambefmod.data.modelgen.ModelUtil.texOf(net.minecraft.world.level.block.Blocks.DIRT);
+
+        // Vanilla snowy model (reference only)
+        var vanillaSnow = net.anatomyworld.harambefmod.data.modelgen.ModelUtil.rl("minecraft", "block/grass_block_snow");
+
+        // Parent: minecraft:block/cube_bottom_top  (requires: top, bottom, side)
+        var normalTemplate = new net.minecraft.client.data.models.model.ModelTemplate(
+                java.util.Optional.of(net.anatomyworld.harambefmod.data.modelgen.ModelUtil.blockModel("minecraft", "cube_bottom_top")),
+                java.util.Optional.empty(),
+                net.minecraft.client.data.models.model.TextureSlot.TOP,
+                net.minecraft.client.data.models.model.TextureSlot.BOTTOM,
+                net.minecraft.client.data.models.model.TextureSlot.SIDE
+        );
+
+        var normalMap = new net.minecraft.client.data.models.model.TextureMapping()
+                .put(net.minecraft.client.data.models.model.TextureSlot.TOP,    top)
+                .put(net.minecraft.client.data.models.model.TextureSlot.BOTTOM, bottom)
+                .put(net.minecraft.client.data.models.model.TextureSlot.SIDE,   side);
+
+        // Write your normal model: assets/<ns>/models/block/<name>.json
+        var normalModel = normalTemplate.create(grass, normalMap, gen.modelOutput);
+
+        // 4 rotations for snowy=false (your model)
+        var v0   = new net.minecraft.client.renderer.block.model.Variant(normalModel);
+        var v90  = new net.minecraft.client.renderer.block.model.Variant(normalModel)
+                .with(net.minecraft.client.renderer.block.model.VariantMutator.Y_ROT.withValue(com.mojang.math.Quadrant.R90));
+        var v180 = new net.minecraft.client.renderer.block.model.Variant(normalModel)
+                .with(net.minecraft.client.renderer.block.model.VariantMutator.Y_ROT.withValue(com.mojang.math.Quadrant.R180));
+        var v270 = new net.minecraft.client.renderer.block.model.Variant(normalModel)
+                .with(net.minecraft.client.renderer.block.model.VariantMutator.Y_ROT.withValue(com.mojang.math.Quadrant.R270));
+        var baseList = net.minecraft.client.data.models.BlockModelGenerators.variants(v0, v90, v180, v270);
+
+        // Blockstate: false -> your 4 rotations, true -> vanilla snowy (single, no rotations)
+        gen.blockStateOutput.accept(
+                net.minecraft.client.data.models.blockstates.MultiVariantGenerator
+                        .dispatch(grass, baseList)
+                        .with(net.minecraft.client.data.models.blockstates.PropertyDispatch
+                                .modify(net.minecraft.world.level.block.state.properties.BlockStateProperties.SNOWY)
+                                .select(Boolean.FALSE, net.minecraft.client.data.models.BlockModelGenerators.NOP)
+                                .select(Boolean.TRUE,
+                                        net.minecraft.client.renderer.block.model.VariantMutator.MODEL.withValue(vanillaSnow))))
+        ;
+    }
+
+
+    // ========================= Pillar with NATURAL end caps (base + stripped) =========================
+    public static void pillarNaturalCapAuto(net.minecraft.client.data.models.BlockModelGenerators gen,
+                                            net.minecraft.world.level.block.Block basePillar,
+                                            net.minecraft.world.level.block.Block strippedPillar) {
+        // Generate for BASE (expects NATURAL property on your custom class)
+        generatePillarWithOptionalNatural(gen, basePillar, /*expectNatural*/ true);
+
+        // Generate for STRIPPED (detect if it also has NATURAL; works either way)
+        boolean strippedHasNatural = hasBooleanProperty(strippedPillar, "natural");
+        generatePillarWithOptionalNatural(gen, strippedPillar, /*expectNatural*/ strippedHasNatural);
+    }
+
+    /* --------------------------------- helpers --------------------------------- */
+
+    private static void generatePillarWithOptionalNatural(net.minecraft.client.data.models.BlockModelGenerators gen,
+                                                          net.minecraft.world.level.block.Block pillar,
+                                                          boolean withNatural) {
+        var id   = net.anatomyworld.harambefmod.data.modelgen.ModelUtil.idOf(pillar);
+        var ns   = id.getNamespace();
+        var name = id.getPath();
+
+        // Textures
+        var side      = net.anatomyworld.harambefmod.data.modelgen.ModelUtil.texOf(pillar);            // e.g. <ns>:block/<name>.png  (bark / _log)
+        var endPlaced = net.anatomyworld.harambefmod.data.modelgen.ModelUtil.texOf(pillar, "_top");    // e.g. <ns>:block/<name>_top.png (rings)
+
+        // For NATURAL we want FULL BARK: end = side  (no custom _cap texture)
+        var endNatural = side;
+
+        // Texture maps
+        var placedMap = new net.minecraft.client.data.models.model.TextureMapping()
+                .put(net.minecraft.client.data.models.model.TextureSlot.SIDE, side)
+                .put(net.minecraft.client.data.models.model.TextureSlot.END,  endPlaced);
+
+        var naturalMap = new net.minecraft.client.data.models.model.TextureMapping()
+                .put(net.minecraft.client.data.models.model.TextureSlot.SIDE, side)
+                .put(net.minecraft.client.data.models.model.TextureSlot.END,  endNatural);
+
+        // Parents: cube_column (vertical) and cube_column_horizontal (horizontal)
+        var verticalPlaced = net.minecraft.client.data.models.model.ModelTemplates.CUBE_COLUMN
+                .create(pillar, placedMap, gen.modelOutput);
+        var horizPlaced = net.minecraft.client.data.models.model.ModelTemplates.CUBE_COLUMN_HORIZONTAL
+                .create(net.anatomyworld.harambefmod.data.modelgen.ModelUtil.rl(ns, "block/" + name + "_horizontal"),
+                        placedMap, gen.modelOutput);
+
+        // If withNatural, also create NATURAL models; otherwise reuse placed models
+        net.minecraft.resources.ResourceLocation verticalNatural = verticalPlaced;
+        net.minecraft.resources.ResourceLocation horizNatural    = horizPlaced;
+        if (withNatural) {
+            verticalNatural = net.minecraft.client.data.models.model.ModelTemplates.CUBE_COLUMN
+                    .create(net.anatomyworld.harambefmod.data.modelgen.ModelUtil.rl(ns, "block/" + name + "_natural"),
+                            naturalMap, gen.modelOutput);
+            horizNatural = net.minecraft.client.data.models.model.ModelTemplates.CUBE_COLUMN_HORIZONTAL
+                    .create(net.anatomyworld.harambefmod.data.modelgen.ModelUtil.rl(ns, "block/" + name + "_natural_horizontal"),
+                            naturalMap, gen.modelOutput);
+        }
+
+        // Variants for axis (rotations match vanilla logs)
+        var yPlaced  = new net.minecraft.client.renderer.block.model.Variant(verticalPlaced);
+        var xPlaced  = new net.minecraft.client.renderer.block.model.Variant(horizPlaced)
+                .with(net.minecraft.client.renderer.block.model.VariantMutator.X_ROT.withValue(com.mojang.math.Quadrant.R90))
+                .with(net.minecraft.client.renderer.block.model.VariantMutator.Y_ROT.withValue(com.mojang.math.Quadrant.R90));
+        var zPlaced  = new net.minecraft.client.renderer.block.model.Variant(horizPlaced)
+                .with(net.minecraft.client.renderer.block.model.VariantMutator.X_ROT.withValue(com.mojang.math.Quadrant.R90));
+
+        var yNatural = new net.minecraft.client.renderer.block.model.Variant(verticalNatural);
+        var xNatural = new net.minecraft.client.renderer.block.model.Variant(horizNatural)
+                .with(net.minecraft.client.renderer.block.model.VariantMutator.X_ROT.withValue(com.mojang.math.Quadrant.R90))
+                .with(net.minecraft.client.renderer.block.model.VariantMutator.Y_ROT.withValue(com.mojang.math.Quadrant.R90));
+        var zNatural = new net.minecraft.client.renderer.block.model.Variant(horizNatural)
+                .with(net.minecraft.client.renderer.block.model.VariantMutator.X_ROT.withValue(com.mojang.math.Quadrant.R90));
+
+        // ---- Blockstate emission
+        if (withNatural) {
+            // Use AXIS × NATURAL grid (complete coverage)
+            var naturalProp = findBooleanProperty(pillar, "natural"); // actual property instance on THIS block
+            gen.blockStateOutput.accept(
+                    net.minecraft.client.data.models.blockstates.MultiVariantGenerator
+                            .dispatch(pillar, net.minecraft.client.data.models.BlockModelGenerators.variant(yNatural)) // harmless default
+                            .with(net.minecraft.client.data.models.blockstates.PropertyDispatch
+                                    .modify(net.minecraft.world.level.block.RotatedPillarBlock.AXIS, naturalProp)
+                                    // NATURAL = true (worldgen -> full bark ends)
+                                    .select(net.minecraft.core.Direction.Axis.Y, true,  net.minecraft.client.renderer.block.model.VariantMutator.MODEL.withValue(verticalNatural))
+                                    .select(net.minecraft.core.Direction.Axis.X, true,  net.minecraft.client.renderer.block.model.VariantMutator.MODEL.withValue(horizNatural)
+                                            .then(net.minecraft.client.renderer.block.model.VariantMutator.X_ROT.withValue(com.mojang.math.Quadrant.R90))
+                                            .then(net.minecraft.client.renderer.block.model.VariantMutator.Y_ROT.withValue(com.mojang.math.Quadrant.R90)))
+                                    .select(net.minecraft.core.Direction.Axis.Z, true,  net.minecraft.client.renderer.block.model.VariantMutator.MODEL.withValue(horizNatural)
+                                            .then(net.minecraft.client.renderer.block.model.VariantMutator.X_ROT.withValue(com.mojang.math.Quadrant.R90)))
+                                    // NATURAL = false (player placed -> normal ringed ends)
+                                    .select(net.minecraft.core.Direction.Axis.Y, false, net.minecraft.client.renderer.block.model.VariantMutator.MODEL.withValue(verticalPlaced))
+                                    .select(net.minecraft.core.Direction.Axis.X, false, net.minecraft.client.renderer.block.model.VariantMutator.MODEL.withValue(horizPlaced)
+                                            .then(net.minecraft.client.renderer.block.model.VariantMutator.X_ROT.withValue(com.mojang.math.Quadrant.R90))
+                                            .then(net.minecraft.client.renderer.block.model.VariantMutator.Y_ROT.withValue(com.mojang.math.Quadrant.R90)))
+                                    .select(net.minecraft.core.Direction.Axis.Z, false, net.minecraft.client.renderer.block.model.VariantMutator.MODEL.withValue(horizPlaced)
+                                            .then(net.minecraft.client.renderer.block.model.VariantMutator.X_ROT.withValue(com.mojang.math.Quadrant.R90))))
+            );
+        } else {
+            // No NATURAL property -> classic AXIS-only mapping
+            gen.blockStateOutput.accept(
+                    net.minecraft.client.data.models.blockstates.MultiVariantGenerator
+                            .dispatch(pillar, net.minecraft.client.data.models.BlockModelGenerators.variant(yPlaced))
+                            .with(net.minecraft.client.data.models.blockstates.PropertyDispatch
+                                    .modify(net.minecraft.world.level.block.RotatedPillarBlock.AXIS)
+                                    .select(net.minecraft.core.Direction.Axis.Y, net.minecraft.client.renderer.block.model.VariantMutator.MODEL.withValue(verticalPlaced))
+                                    .select(net.minecraft.core.Direction.Axis.X, net.minecraft.client.renderer.block.model.VariantMutator.MODEL.withValue(horizPlaced)
+                                            .then(net.minecraft.client.renderer.block.model.VariantMutator.X_ROT.withValue(com.mojang.math.Quadrant.R90))
+                                            .then(net.minecraft.client.renderer.block.model.VariantMutator.Y_ROT.withValue(com.mojang.math.Quadrant.R90)))
+                                    .select(net.minecraft.core.Direction.Axis.Z, net.minecraft.client.renderer.block.model.VariantMutator.MODEL.withValue(horizPlaced)
+                                            .then(net.minecraft.client.renderer.block.model.VariantMutator.X_ROT.withValue(com.mojang.math.Quadrant.R90))))
+            );
+        }
+    }
+
+    /** true if the block has a boolean property with the given name. */
+    private static boolean hasBooleanProperty(net.minecraft.world.level.block.Block b, String name) {
+        return findBooleanProperty(b, name) != null;
+    }
+
+    /** Finds the actual BooleanProperty instance present on the block (by name), or null. */
+    private static net.minecraft.world.level.block.state.properties.BooleanProperty findBooleanProperty(
+            net.minecraft.world.level.block.Block b, String name) {
+        for (var p : b.getStateDefinition().getProperties()) {
+            if (p instanceof net.minecraft.world.level.block.state.properties.BooleanProperty bp && p.getName().equals(name)) {
+                return bp;
+            }
+        }
+        return null;
+    }
+
 }
 

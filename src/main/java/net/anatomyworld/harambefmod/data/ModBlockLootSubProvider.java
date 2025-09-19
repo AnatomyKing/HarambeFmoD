@@ -36,21 +36,67 @@ public final class ModBlockLootSubProvider extends BlockLootSubProvider {
     @Override
     protected void generate() {
         // Normal blocks
-        dropSelf(ModBlocks.BANANA_PEARL_BLOCK.get());
-        dropSelf(ModBlocks.BANANA_CREAM_STONE.get());
-        dropSelf(ModBlocks.VANILLA_CREAM_STONE.get());
-        dropSelf(ModBlocks.CHOCO_CREAM_STONE.get());
-        dropSelf(ModBlocks.STRAWBERRY_CREAM_STONE.get());
-        dropSelf(ModBlocks.MUSAVACCA_PLANKS.get());
-        dropSelf(ModBlocks.MUSAVACCA_STEM.get());
-        dropSelf(ModBlocks.STRIPPED_MUSAVACCA_STEM.get());
-        dropSelf(ModBlocks.MUSAVACCA_FLOWER.get());
-        dropSelf(ModBlocks.PEARLIDIAN.get());
-        dropSelf(ModBlocks.ANYTOMITHIUM_CHEST.get());
+        var selfDropping = new Block[] {
+                ModBlocks.BANANA_PEARL_BLOCK.get(),
+                ModBlocks.BANANA_CREAM_STONE.get(),
+                ModBlocks.VANILLA_CREAM_STONE.get(),
+                ModBlocks.CHOCO_CREAM_STONE.get(),
+                ModBlocks.STRAWBERRY_CREAM_STONE.get(),
+                ModBlocks.MUSAVACCA_PLANKS.get(),
+                ModBlocks.MUSAVACCA_STEM.get(),
+                ModBlocks.STRIPPED_MUSAVACCA_STEM.get(),
+                ModBlocks.MUSAVACCA_FLOWER.get(),
+                ModBlocks.PEARLIDIAN.get(),
+                ModBlocks.ANYTOMITHIUM_CHEST.get(),
+                ModBlocks.BELMONT_PLANKS.get(),
+                ModBlocks.DYNASTY_PLANKS.get(),
+                ModBlocks.IMPERIUM_PLANKS.get(),
+                ModBlocks.MISCHIEF_PLANKS.get(),
+                ModBlocks.STRIPPED_BELMONT_LOG.get(),
+                ModBlocks.BELMONT_LOG.get(),
+                ModBlocks.STRIPPED_DYNASTY_LOG.get(),
+                ModBlocks.DYNASTY_LOG.get(),
+                ModBlocks.STRIPPED_IMPERIUM_LOG.get(),
+                ModBlocks.IMPERIUM_LOG.get(),
+                ModBlocks.STRIPPED_MISCHIEF_LOG.get(),
+                ModBlocks.MISCHIEF_LOG.get()
+        };
+
+        for (Block b : selfDropping) {
+            dropSelf(b);
+        }
 
         add(ModBlocks.MUSAVACCA_LEAVES.get(),
                 createSilkTouchOrShearsDispatchTable(
                         ModBlocks.MUSAVACCA_LEAVES.get(),
+                        net.minecraft.world.level.storage.loot.entries.EmptyLootItem.emptyItem()
+                )
+        );
+
+        add(ModBlocks.BELMONT_LEAVES.get(),
+                createSilkTouchOrShearsDispatchTable(
+                        ModBlocks.BELMONT_LEAVES.get(),
+                        net.minecraft.world.level.storage.loot.entries.EmptyLootItem.emptyItem()
+                )
+        );
+
+        add(ModBlocks.DYNASTY_LEAVES.get(),
+                createSilkTouchOrShearsDispatchTable(
+                        ModBlocks.DYNASTY_LEAVES.get(),
+                        net.minecraft.world.level.storage.loot.entries.EmptyLootItem.emptyItem()
+                )
+        );
+
+        add(ModBlocks.IMPERIUM_LEAVES.get(),
+                createSilkTouchOrShearsDispatchTable(
+                        ModBlocks.IMPERIUM_LEAVES.get(),
+                        net.minecraft.world.level.storage.loot.entries.EmptyLootItem.emptyItem()
+                )
+        );
+
+        add(ModBlocks.MISCHIEF_LEAVES.get(),
+                createSilkTouchOrShearsDispatchTable(
+                        ModBlocks.MISCHIEF_LEAVES.get(),
                         net.minecraft.world.level.storage.loot.entries.EmptyLootItem.emptyItem()
                 )
         );
@@ -170,39 +216,77 @@ public final class ModBlockLootSubProvider extends BlockLootSubProvider {
                 )
         );
 
+        add(ModBlocks.BELMONT_GRASS_BLOCK.get(),
+                createSilkTouchDispatchTable(
+                        ModBlocks.BELMONT_GRASS_BLOCK.get(),
+                        LootItem.lootTableItem(Blocks.DIRT)
+                )
+        );
+
+        add(ModBlocks.DYNASTY_GRASS_BLOCK.get(),
+                createSilkTouchDispatchTable(
+                        ModBlocks.DYNASTY_GRASS_BLOCK.get(),
+                        LootItem.lootTableItem(Blocks.DIRT)
+                )
+        );
+
+        add(ModBlocks.IMPERIUM_GRASS_BLOCK.get(),
+                createSilkTouchDispatchTable(
+                        ModBlocks.IMPERIUM_GRASS_BLOCK.get(),
+                        LootItem.lootTableItem(Blocks.DIRT)
+                )
+        );
+
+
+        add(ModBlocks.MISCHIEF_GRASS_BLOCK.get(),
+                createSilkTouchDispatchTable(
+                        ModBlocks.MISCHIEF_GRASS_BLOCK.get(),
+                        LootItem.lootTableItem(Blocks.DIRT)
+                )
+        );
+
         // Egg uses custom spawnAfterBreak; keep empty to avoid double drops
         add(ModBlocks.BANANA_COW_EGG.get(), LootTable.lootTable());
 
+        addShortGrassLoot(
+                ModBlocks.CAROTENE_SHORT_GRASS.get(),
+                ModBlocks.BELMONT_SHORT_GRASS.get(),
+                ModBlocks.DYNASTY_SHORT_GRASS.get(),
+                ModBlocks.IMPERIUM_SHORT_GRASS.get(),
+                ModBlocks.MISCHIEF_SHORT_GRASS.get()
+        );
+    }
 
-        var itemLookup = this.registries.lookupOrThrow(net.minecraft.core.registries.Registries.ITEM);
-        var enchLookup = this.registries.lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
-        add(ModBlocks.CAROTENE_SHORT_GRASS.get(),
-                LootTable.lootTable()
-                        .withPool(LootPool.lootPool()
-                                .setRolls(ConstantValue.exactly(1))
-                                .add(AlternativesEntry.alternatives(
+
+        private void addShortGrassLoot(Block... blocks) {
+            var itemLookup = this.registries.lookupOrThrow(net.minecraft.core.registries.Registries.ITEM);
+            var enchLookup = this.registries.lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+
+            for (Block b : blocks) {
+                add(b, net.minecraft.world.level.storage.loot.LootTable.lootTable()
+                        .withPool(net.minecraft.world.level.storage.loot.LootPool.lootPool()
+                                .setRolls(net.minecraft.world.level.storage.loot.providers.number.ConstantValue.exactly(1))
+                                .add(net.minecraft.world.level.storage.loot.entries.AlternativesEntry.alternatives(
                                         // Shears -> drop itself
-                                        LootItem.lootTableItem(ModBlocks.CAROTENE_SHORT_GRASS.get())
-                                                .when(MatchTool.toolMatches(
+                                        net.minecraft.world.level.storage.loot.entries.LootItem.lootTableItem(b)
+                                                .when(net.minecraft.world.level.storage.loot.predicates.MatchTool.toolMatches(
                                                         net.minecraft.advancements.critereon.ItemPredicate.Builder.item()
-                                                                .of(itemLookup, Items.SHEARS)
+                                                                .of(itemLookup, net.minecraft.world.item.Items.SHEARS)
                                                 )),
 
-                                        // Otherwise -> 12.5% seeds, Fortune boosts (uniform bonus count *2), respects explosion decay
-                                        applyExplosionDecay(ModBlocks.CAROTENE_SHORT_GRASS.get(),
-                                                LootItem.lootTableItem(Items.WHEAT_SEEDS)
-                                                        .when(LootItemRandomChanceCondition.randomChance(0.125f))
-                                                        .apply(ApplyBonusCount.addUniformBonusCount(
-                                                                enchLookup.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.FORTUNE),
-                                                                2
+                                        // Otherwise -> 12.5% seeds, Fortune boosts (uniform bonus count *2), with explosion decay
+                                        applyExplosionDecay(b,
+                                                net.minecraft.world.level.storage.loot.entries.LootItem.lootTableItem(net.minecraft.world.item.Items.WHEAT_SEEDS)
+                                                        .when(net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition.randomChance(0.125f))
+                                                        .apply(net.minecraft.world.level.storage.loot.functions.ApplyBonusCount.addUniformBonusCount(
+                                                                enchLookup.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.FORTUNE), 2
                                                         ))
                                         )
                                 ))
                         )
-        );
-
-
-    }
+                );
+            }
+        }
 
     @Override
     protected Iterable<Block> getKnownBlocks() {

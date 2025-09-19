@@ -31,7 +31,15 @@ public final class ModModelProvider extends ModelProvider {
                 ModBlocks.CHOCO_CREAM_STONE.get(),
                 ModBlocks.STRAWBERRY_CREAM_STONE.get(),
                 ModBlocks.HONEY_CRYSTAL_BLOCK.get(),
-                ModBlocks.PEARLIDIAN.get()
+                ModBlocks.PEARLIDIAN.get(),
+                ModBlocks.BELMONT_PLANKS.get(),
+                ModBlocks.DYNASTY_PLANKS.get(),
+                ModBlocks.IMPERIUM_PLANKS.get(),
+                ModBlocks.MISCHIEF_PLANKS.get(),
+                ModBlocks.BELMONT_LEAVES.get(),
+                ModBlocks.DYNASTY_LEAVES.get(),
+                ModBlocks.IMPERIUM_LEAVES.get(),
+                ModBlocks.MISCHIEF_LEAVES.get()
         );
 
         BlocksGenSimple.simpleState(blockModels, ModBlocks.MUSAVACCA_LEAVES_CROWN.get(),
@@ -52,6 +60,29 @@ public final class ModModelProvider extends ModelProvider {
                 ModBlocks.STRIPPED_MUSAVACCA_STEM.get()
         );
 
+
+
+        BlocksGenComplex.pillarNaturalCapAuto(blockModels,
+                ModBlocks.DYNASTY_LOG.get(),
+                ModBlocks.STRIPPED_DYNASTY_LOG.get()
+        );
+
+        BlocksGenComplex.pillarNaturalCapAuto(blockModels,
+                ModBlocks.BELMONT_LOG.get(),
+                ModBlocks.STRIPPED_BELMONT_LOG.get()
+        );
+
+        BlocksGenComplex.pillarNaturalCapAuto(blockModels,
+                ModBlocks.IMPERIUM_LOG.get(),
+                ModBlocks.STRIPPED_IMPERIUM_LOG.get()
+        );
+
+        BlocksGenComplex.pillarNaturalCapAuto(blockModels,
+                ModBlocks.MISCHIEF_LOG.get(),
+                ModBlocks.STRIPPED_MISCHIEF_LOG.get()
+        );
+
+
         BlocksGenSimple.barrelAutoTrivial(blockModels,
                 ModBlocks.BANANA_BLOCK.get()
                 );
@@ -63,11 +94,20 @@ public final class ModModelProvider extends ModelProvider {
                 BlocksGenSimple.texOf(Blocks.DIRT)  // bottom
         );
 
+        BlocksGenComplex.grassAutoNoOverlay(blockModels, ModBlocks.BELMONT_GRASS_BLOCK.get());
+        BlocksGenComplex.grassAutoNoOverlay(blockModels, ModBlocks.DYNASTY_GRASS_BLOCK.get());
+        BlocksGenComplex.grassAutoNoOverlay(blockModels, ModBlocks.IMPERIUM_GRASS_BLOCK.get());
+        BlocksGenComplex.grassAutoNoOverlay(blockModels, ModBlocks.MISCHIEF_GRASS_BLOCK.get());
+
 
 
         BlocksGenSimple.cross(blockModels,
                 ModBlocks.MUSAVACCA_FLOWER.get(),
-                ModBlocks.CAROTENE_SHORT_GRASS.get()
+                ModBlocks.CAROTENE_SHORT_GRASS.get(),
+                ModBlocks.BELMONT_SHORT_GRASS.get(),
+                ModBlocks.DYNASTY_SHORT_GRASS.get(),
+                ModBlocks.IMPERIUM_SHORT_GRASS.get(),
+                ModBlocks.MISCHIEF_SHORT_GRASS.get()
         );
 
 

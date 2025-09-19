@@ -12,10 +12,11 @@ import net.anatomyworld.harambefmod.entity.boat.musavacca.clientmodel.MusavaccaB
 import net.anatomyworld.harambefmod.entity.boat.musavacca.clientmodel.MusavaccaBoatRenderer;
 import net.anatomyworld.harambefmod.entity.mob.bananacow.clientmodel.BananaCowModel;
 import net.anatomyworld.harambefmod.entity.mob.bananacow.clientmodel.BananaCowRenderer;
-import net.anatomyworld.harambefmod.event.CaroteneGrassBonemealHandler;
+import net.anatomyworld.harambefmod.event.*;
 import net.anatomyworld.harambefmod.item.ModCreativeTabs;
 import net.anatomyworld.harambefmod.item.ModItems;
 import net.anatomyworld.harambefmod.network.ModNetworking;
+import net.anatomyworld.harambefmod.worldgen.ModFeatures;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.core.BlockPos;
@@ -50,6 +51,7 @@ public final class HarambeCore {
         ModCreativeTabs.register(modBus);
         ModNetworking.register(modBus);
         ModAttachments.register(modBus);
+        ModFeatures.FEATURES.register(modBus);
 
         // Common + datagen
         modBus.addListener(this::commonSetup);
@@ -58,9 +60,14 @@ public final class HarambeCore {
 
         EVENT_BUS.addListener(net.anatomyworld.harambefmod.cosmetic.CosmeticSets::addServerReloaders);
         EVENT_BUS.addListener(net.anatomyworld.harambefmod.cosmetic.CosmeticSets::onDatapackSync);
-        EVENT_BUS.addListener(
-                CaroteneGrassBonemealHandler::onBonemeal
-        );
+        EVENT_BUS.addListener(CaroteneGrassBonemealHandler::onBonemeal);
+        EVENT_BUS.addListener(BelmontGrassBonemealHandler::onBonemeal);
+        EVENT_BUS.addListener(DynastyGrassBonemealHandler::onBonemeal);
+        EVENT_BUS.addListener(ImperiumGrassBonemealHandler::onBonemeal);
+        EVENT_BUS.addListener(MischiefGrassBonemealHandler::onBonemeal);
+
+        EVENT_BUS.addListener(CrossDimPortalHandler::register);
+
 
         // Client listeners (no @OnlyIn, no Bus enum needed)
         if (FMLLoader.getDist() == Dist.CLIENT) {

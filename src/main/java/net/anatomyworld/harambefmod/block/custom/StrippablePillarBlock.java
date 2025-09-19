@@ -30,3 +30,6 @@ public class StrippablePillarBlock extends RotatedPillarBlock {
         return super.getToolModifiedState(state, ctx, ability, simulate);
     }
 }
+
+
+

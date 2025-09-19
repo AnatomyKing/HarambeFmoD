@@ -2,7 +2,7 @@
   "type": "minecraft:overworld",
   "generator": {
     "type": "minecraft:noise",
-    "settings": "minecraft:amplified",
+    "settings": "harambefmod:settings_overworldnew_amplified_fixed",
     "biome_source": {
       "type": "minecraft:multi_noise",
       "preset": "minecraft:overworld"

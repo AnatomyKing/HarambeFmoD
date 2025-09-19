@@ -1,49 +1,114 @@
 package net.anatomyworld.harambefmod.worldgen;
 
 import net.anatomyworld.harambefmod.block.ModBlocks;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 
-/**
- * One profile = one dimension's "patch recipe".
- * - coreTop: inner patch block
- * - edgeTop: outer/dither ring block
- * - underBlock: 1-layer under both core/edge
- * - shortGrassSwap: replaces vanilla SHORT_GRASS on those surfaces
- * - large/amplified: passed to NoiseGeneratorSettings.overworld(ctx, large, amplified)
- */
 public final class PatchProfiles {
+
+    /** Tree builders you can pick per profile (or set to null to disable trees). */
+    public enum TreeStyle { BELMONT, DYNASTY, IMPERIUM, MISCHIEF }
 
     public record Profile(
             String suffix,
+
+            // patch surface palette
             Block coreTop,
             Block edgeTop,
             Block underBlock,
             Block shortGrassSwap,
-            boolean largeOverworld,
-            boolean amplified
+
+            // --- TREE CONFIG (all optional-ish) ---
+            TreeStyle treeStyle,     // NULL => no trees on patches
+            int treeRarity,          // average once every N chunks (<=0 disables)
+            int treeCountPerRun,     // how many to try per placement run (<=0 disables)
+
+            // --- RED SAND OVERLAY CONFIG ---
+            boolean enableSandyRedSand, // toggle the beach/desert red-sand overlay on patches
+            Block sandyRedSandBlock,    // which block to use when enabled (e.g., Blocks.RED_SAND)
+
+            // Optional: if non-null, use this noise settings id as-is for the LevelStem
+            ResourceLocation customNoiseSettingsId
     ) {}
 
-    /** Example for your first dimension ("overworldnew"). */
+
     public static final Profile OVERWORLDNEW = new Profile(
             "overworldnew",
-            ModBlocks.CAROTENE_GRASS_BLOCK.get(), // core top
-            Blocks.PODZOL,                        // edge (ring + dither)
-            ModBlocks.CHOCO_CREAM_STONE.get(),    // underlay
-            ModBlocks.CAROTENE_SHORT_GRASS.get(), // short-grass swap
-            false,                                // largeOverworld (false = normal)
-            false                                 // amplified (true for amplified terrain)
+            ModBlocks.CAROTENE_GRASS_BLOCK.get(),
+            Blocks.PODZOL,
+            ModBlocks.CHOCO_CREAM_STONE.get(),
+            ModBlocks.CAROTENE_SHORT_GRASS.get(),
+            null, 0, 0,
+
+            // red sand overlay enabled, using vanilla red sand
+            true, Blocks.RED_SAND,
+
+            // noise settings: null => build NORMAL overworld + prepend our surface rules
+            null
     );
 
-    // TODO: Add up to 3 more profiles for your other dimensions:
-    // public static final Profile DIM2 = new Profile(...);
-    // public static final Profile DIM3 = new Profile(...);
-    // public static final Profile DIM4 = new Profile(...);
+    public static final Profile BELMONTNEW = new Profile(
+            "belmontnew",
+            ModBlocks.BELMONT_GRASS_BLOCK.get(),
+            ModBlocks.BELMONT_GRASS_BLOCK.get(),
+            Blocks.DIRT,
+            ModBlocks.BELMONT_SHORT_GRASS.get(),
+            TreeStyle.BELMONT, 21, 1,
 
-    public static final Profile[] ALL = new Profile[] {
-            OVERWORLDNEW
-            // , DIM2, DIM3, DIM4
-    };
+            // red sand overlay enabled, using vanilla red sand
+            true, Blocks.LIME_CONCRETE_POWDER,
+
+            // noise settings: null => build NORMAL overworld + prepend our surface rules
+            null
+    );
+
+    public static final Profile DYNASTYNEW = new Profile(
+            "dynastynew",
+            ModBlocks.DYNASTY_GRASS_BLOCK.get(),
+            ModBlocks.DYNASTY_GRASS_BLOCK.get(),
+            Blocks.DIRT,
+            ModBlocks.DYNASTY_SHORT_GRASS.get(),
+            TreeStyle.DYNASTY, 20, 1,
+
+            // red sand overlay enabled, using vanilla red sand
+            true, Blocks.BLACK_CONCRETE_POWDER,
+
+            // noise settings: null => build NORMAL overworld + prepend our surface rules
+            null
+    );
+
+    public static final Profile IMPERIUMNEW = new Profile(
+            "imperiumnew",
+            ModBlocks.IMPERIUM_GRASS_BLOCK.get(),
+            ModBlocks.IMPERIUM_GRASS_BLOCK.get(),
+            Blocks.DIRT,
+            ModBlocks.IMPERIUM_SHORT_GRASS.get(),
+            TreeStyle.IMPERIUM, 18, 1,
+
+            // red sand overlay enabled, using vanilla red sand
+            true, Blocks.BLUE_CONCRETE_POWDER,
+
+            // noise settings: null => build NORMAL overworld + prepend our surface rules
+            null
+    );
+
+    public static final Profile MISCHIEFNEW = new Profile(
+            "mischiefnew",
+            ModBlocks.MISCHIEF_GRASS_BLOCK.get(),
+            ModBlocks.MISCHIEF_GRASS_BLOCK.get(),
+            Blocks.DIRT,
+            ModBlocks.MISCHIEF_SHORT_GRASS.get(),
+            TreeStyle.MISCHIEF, 24, 1,
+
+            // red sand overlay enabled, using vanilla red sand
+            true, Blocks.PURPLE_CONCRETE_POWDER,
+
+            // noise settings: null => build NORMAL overworld + prepend our surface rules
+            null
+    );
+
+    public static final Profile[] ALL = new Profile[] { OVERWORLDNEW, BELMONTNEW, DYNASTYNEW, IMPERIUMNEW, MISCHIEFNEW };
 
     private PatchProfiles() {}
 }

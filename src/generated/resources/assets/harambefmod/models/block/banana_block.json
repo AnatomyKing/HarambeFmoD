@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/cube_bottom_top",
-  "textures": {
-    "bottom": "harambefmod:block/banana_block_bottom",
-    "side": "harambefmod:block/banana_block",
-    "top": "harambefmod:block/banana_block_top"
-  }
-}

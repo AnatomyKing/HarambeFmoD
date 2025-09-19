@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/cube_bottom_top",
-  "textures": {
-    "bottom": "minecraft:block/dirt",
-    "side": "harambefmod:block/carotene_grass_block",
-    "top": "harambefmod:block/carotene_grass_block_top"
-  }
-}

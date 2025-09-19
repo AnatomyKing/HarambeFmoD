@@ -28,7 +28,20 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
                 ModBlocks.MUSAVACCA_STEM.get(),
                 ModBlocks.STRIPPED_MUSAVACCA_STEM.get(),
                 ModBlocks.BANANA_BLOCK.get(),
-                ModBlocks.MUSAVACCA_PLANKS.get()
+                ModBlocks.MUSAVACCA_PLANKS.get(),
+                ModBlocks.STRIPPED_BELMONT_LOG.get(),
+                ModBlocks.BELMONT_LOG.get(),
+                ModBlocks.BELMONT_PLANKS.get(),
+                ModBlocks.STRIPPED_DYNASTY_LOG.get(),
+                ModBlocks.DYNASTY_LOG.get(),
+                ModBlocks.DYNASTY_PLANKS.get(),
+                ModBlocks.STRIPPED_IMPERIUM_LOG.get(),
+                ModBlocks.IMPERIUM_LOG.get(),
+                ModBlocks.IMPERIUM_PLANKS.get(),
+                ModBlocks.STRIPPED_MISCHIEF_LOG.get(),
+                ModBlocks.MISCHIEF_LOG.get(),
+                ModBlocks.MISCHIEF_PLANKS.get()
+
         );
         tag(net.minecraft.tags.BlockTags.MINEABLE_WITH_HOE).add(
                 ModBlocks.MUSAVACCA_FLOWER.get(),
@@ -47,22 +60,57 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
         // leaves/logs/planks
         tag(net.minecraft.tags.BlockTags.LEAVES).add(
                 ModBlocks.MUSAVACCA_LEAVES.get(),
-                ModBlocks.MUSAVACCA_LEAVES_CROWN.get()
+                ModBlocks.MUSAVACCA_LEAVES_CROWN.get(),
+                ModBlocks.BELMONT_LEAVES.get(),
+                ModBlocks.DYNASTY_LEAVES.get(),
+                ModBlocks.IMPERIUM_LEAVES.get(),
+                ModBlocks.MISCHIEF_LEAVES.get()
         );
 
         tag(BlockTags.MOSS_REPLACEABLE).add(
-                ModBlocks.CAROTENE_GRASS_BLOCK.get()
+                ModBlocks.CAROTENE_GRASS_BLOCK.get(),
+                ModBlocks.BELMONT_GRASS_BLOCK.get(),
+                ModBlocks.DYNASTY_GRASS_BLOCK.get(),
+                ModBlocks.IMPERIUM_GRASS_BLOCK.get(),
+                ModBlocks.MISCHIEF_GRASS_BLOCK.get()
         );
 
         tag(net.minecraft.tags.BlockTags.LOGS).add(
                 ModBlocks.MUSAVACCA_STEM.get(),
-                ModBlocks.STRIPPED_MUSAVACCA_STEM.get()
+                ModBlocks.STRIPPED_MUSAVACCA_STEM.get(),
+
+                ModBlocks.STRIPPED_BELMONT_LOG.get(),
+                ModBlocks.BELMONT_LOG.get(),
+                ModBlocks.STRIPPED_DYNASTY_LOG.get(),
+                ModBlocks.DYNASTY_LOG.get(),
+                ModBlocks.STRIPPED_IMPERIUM_LOG.get(),
+                ModBlocks.IMPERIUM_LOG.get(),
+                ModBlocks.STRIPPED_MISCHIEF_LOG.get(),
+                ModBlocks.MISCHIEF_LOG.get()
         );
         tag(net.minecraft.tags.BlockTags.LOGS_THAT_BURN).add(
                 ModBlocks.MUSAVACCA_STEM.get(),
-                ModBlocks.STRIPPED_MUSAVACCA_STEM.get()
+                ModBlocks.STRIPPED_MUSAVACCA_STEM.get(),
+
+                ModBlocks.STRIPPED_BELMONT_LOG.get(),
+                ModBlocks.BELMONT_LOG.get(),
+                ModBlocks.STRIPPED_DYNASTY_LOG.get(),
+                ModBlocks.DYNASTY_LOG.get(),
+                ModBlocks.STRIPPED_IMPERIUM_LOG.get(),
+                ModBlocks.IMPERIUM_LOG.get(),
+                ModBlocks.STRIPPED_MISCHIEF_LOG.get(),
+                ModBlocks.MISCHIEF_LOG.get()
         );
-        tag(BlockTags.PLANKS).add(ModBlocks.MUSAVACCA_PLANKS.get());
+        tag(BlockTags.PLANKS).add(
+                ModBlocks.MUSAVACCA_PLANKS.get(),
+                ModBlocks.BELMONT_PLANKS.get(),
+                ModBlocks.DYNASTY_PLANKS.get(),
+                ModBlocks.IMPERIUM_PLANKS.get(),
+                ModBlocks.MISCHIEF_PLANKS.get()
+
+
+                );
+
 
         // crops / saplings
         tag(BlockTags.CROPS).add(ModBlocks.MUSAVACCA_PLANT.get());
@@ -86,9 +134,14 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
         // Inter-dimensional frame blocks (empty by default — add via datapack or here later)
         tag(ModTags.Blocks.BANANA_PORTAL_FRAME_INTER).add(ModBlocks.PEARLIDIAN.get());
 
-        tag(net.minecraft.tags.BlockTags.DIRT).add(ModBlocks.CAROTENE_GRASS_BLOCK.get());
 
-        tag(BlockTags.DIRT).add(ModBlocks.CAROTENE_GRASS_BLOCK.get());
+        tag(BlockTags.DIRT).add(
+                ModBlocks.CAROTENE_GRASS_BLOCK.get(),
+                ModBlocks.BELMONT_GRASS_BLOCK.get(),
+                ModBlocks.DYNASTY_GRASS_BLOCK.get(),
+                ModBlocks.IMPERIUM_GRASS_BLOCK.get(),
+                ModBlocks.MISCHIEF_GRASS_BLOCK.get()
+                );
 
     }
 }

@@ -3,11 +3,10 @@ package net.anatomyworld.harambefmod.block;
 import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.block.custom.*;
 import net.anatomyworld.harambefmod.block.custom.CaroteneGrassBlock;
+import net.anatomyworld.harambefmod.block.custom.NyliumGrassBlock;
+import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.RotatedPillarBlock;
-import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.UntintedParticleLeavesBlock;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
@@ -68,6 +67,43 @@ public final class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .pushReaction(PushReaction.NORMAL)));
 
+    public static final DeferredBlock<Block> BELMONT_PLANKS =
+            BLOCKS.registerBlock("belmont_planks",
+                    props -> new Block(props
+                            .mapColor(MapColor.COLOR_LIGHT_GREEN)
+                            .strength(1.5F, 6.0F)
+                            .sound(SoundType.WOOD)
+                            .requiresCorrectToolForDrops()
+                            .pushReaction(PushReaction.NORMAL)));
+
+    public static final DeferredBlock<Block> DYNASTY_PLANKS =
+            BLOCKS.registerBlock("dynasty_planks",
+                    props -> new Block(props
+                            .mapColor(MapColor.COLOR_RED)
+                            .strength(1.5F, 6.0F)
+                            .sound(SoundType.WOOD)
+                            .requiresCorrectToolForDrops()
+                            .pushReaction(PushReaction.NORMAL)));
+
+    public static final DeferredBlock<Block> IMPERIUM_PLANKS =
+            BLOCKS.registerBlock("imperium_planks",
+                    props -> new Block(props
+                            .mapColor(MapColor.COLOR_BLUE)
+                            .strength(1.5F, 6.0F)
+                            .sound(SoundType.WOOD)
+                            .requiresCorrectToolForDrops()
+                            .pushReaction(PushReaction.NORMAL)));
+
+    public static final DeferredBlock<Block> MISCHIEF_PLANKS =
+            BLOCKS.registerBlock("mischief_planks",
+                    props -> new Block(props
+                            .mapColor(MapColor.COLOR_PURPLE)
+                            .strength(1.5F, 6.0F)
+                            .sound(SoundType.WOOD)
+                            .requiresCorrectToolForDrops()
+                            .pushReaction(PushReaction.NORMAL)));
+
+
     public static final DeferredBlock<UntintedParticleLeavesBlock> MUSAVACCA_LEAVES =
             BLOCKS.registerBlock("musavacca_leaves",
                     props -> new UntintedParticleLeavesBlock(
@@ -81,6 +117,71 @@ public final class ModBlocks {
                                     .isViewBlocking((s, l, p) -> false)
                                     .pushReaction(PushReaction.DESTROY)));
 
+    public static final DeferredBlock<UntintedParticleLeavesBlock> BELMONT_LEAVES =
+            BLOCKS.registerBlock("belmont_leaves",
+                    props -> new UntintedParticleLeavesBlock(
+                            0.08F,
+                            ColorParticleOption.create(ParticleTypes.TINTED_LEAVES, 0x4DEE20),
+                            props.mapColor(MapColor.PLANT)
+                                    .strength(0.2F)
+                                    .randomTicks()
+                                    .sound(SoundType.GRASS)
+                                    .noOcclusion()
+                                    .isSuffocating((s,l,p) -> false)
+                                    .isViewBlocking((s,l,p) -> false)
+                                    .pushReaction(PushReaction.DESTROY)
+                    )
+            );
+
+    public static final DeferredBlock<UntintedParticleLeavesBlock> DYNASTY_LEAVES =
+            BLOCKS.registerBlock("dynasty_leaves",
+                    props -> new UntintedParticleLeavesBlock(
+                            0.08F,
+                            ColorParticleOption.create(ParticleTypes.TINTED_LEAVES, 0x871413),
+                            props.mapColor(MapColor.PLANT)
+                                    .strength(0.2F)
+                                    .randomTicks()
+                                    .sound(SoundType.GRASS)
+                                    .noOcclusion()
+                                    .isSuffocating((s,l,p) -> false)
+                                    .isViewBlocking((s,l,p) -> false)
+                                    .pushReaction(PushReaction.DESTROY)
+                    )
+            );
+
+    public static final DeferredBlock<UntintedParticleLeavesBlock> IMPERIUM_LEAVES =
+            BLOCKS.registerBlock("imperium_leaves",
+                    props -> new UntintedParticleLeavesBlock(
+                            0.08F,
+                            ColorParticleOption.create(ParticleTypes.TINTED_LEAVES, 0x2C55A7),
+                            props.mapColor(MapColor.PLANT)
+                                    .strength(0.2F)
+                                    .randomTicks()
+                                    .sound(SoundType.GRASS)
+                                    .noOcclusion()
+                                    .isSuffocating((s,l,p) -> false)
+                                    .isViewBlocking((s,l,p) -> false)
+                                    .pushReaction(PushReaction.DESTROY)
+                    )
+            );
+
+    public static final DeferredBlock<UntintedParticleLeavesBlock> MISCHIEF_LEAVES =
+            BLOCKS.registerBlock("mischief_leaves",
+                    props -> new UntintedParticleLeavesBlock(
+                            0.08F,
+                            ColorParticleOption.create(ParticleTypes.TINTED_LEAVES, 0x86347E),
+                            props.mapColor(MapColor.PLANT)
+                                    .strength(0.2F)
+                                    .randomTicks()
+                                    .sound(SoundType.GRASS)
+                                    .noOcclusion()
+                                    .isSuffocating((s,l,p) -> false)
+                                    .isViewBlocking((s,l,p) -> false)
+                                    .pushReaction(PushReaction.DESTROY)
+                    )
+            );
+
+
     public static final DeferredBlock<UntintedParticleLeavesBlock> MUSAVACCA_LEAVES_CROWN =
             BLOCKS.registerBlock("musavacca_leaves_crown",
                     props -> new UntintedParticleLeavesBlock(
@@ -93,6 +194,8 @@ public final class ModBlocks {
                                     .isSuffocating((s, l, p) -> false)
                                     .isViewBlocking((s, l, p) -> false)
                                     .pushReaction(PushReaction.DESTROY)));
+
+//
 
     /** Custom fire block with BE tint. */
     public static final DeferredBlock<PearlFireBlock> PEARL_FIRE =
@@ -190,6 +293,120 @@ public final class ModBlocks {
                             props.strength(2.0F).sound(SoundType.STEM),
                             STRIPPED_MUSAVACCA_STEM));
 
+    public static final DeferredBlock<RotatedPillarBlock> STRIPPED_BELMONT_LOG =
+            BLOCKS.registerBlock("stripped_belmont_log",
+                    props -> new RotatedPillarBlock(props
+                            .strength(2.0F)
+                            .sound(SoundType.STEM)));
+
+    public static final DeferredBlock<RotatedPillarBlock> BELMONT_LOG =
+            BLOCKS.registerBlock("belmont_log",
+                    props -> new StrippableNatrualPillarBlock(
+                            props.strength(2.0F).sound(SoundType.WOOD),
+                            STRIPPED_BELMONT_LOG));
+
+    public static final DeferredBlock<RotatedPillarBlock> STRIPPED_DYNASTY_LOG =
+            BLOCKS.registerBlock("stripped_dynasty_log",
+                    props -> new RotatedPillarBlock(props
+                            .strength(2.0F)
+                            .sound(SoundType.STEM)));
+
+    public static final DeferredBlock<RotatedPillarBlock> DYNASTY_LOG =
+            BLOCKS.registerBlock("dynasty_log",
+                    props -> new StrippableNatrualPillarBlock(
+                            props.strength(2.0F).sound(SoundType.WOOD),
+                            STRIPPED_DYNASTY_LOG));
+
+    public static final DeferredBlock<RotatedPillarBlock> STRIPPED_IMPERIUM_LOG =
+            BLOCKS.registerBlock("stripped_imperium_log",
+                    props -> new RotatedPillarBlock(props
+                            .strength(2.0F)
+                            .sound(SoundType.STEM)));
+
+    public static final DeferredBlock<RotatedPillarBlock> IMPERIUM_LOG =
+            BLOCKS.registerBlock("imperium_log",
+                    props -> new StrippableNatrualPillarBlock(
+                            props.strength(2.0F).sound(SoundType.WOOD),
+                            STRIPPED_IMPERIUM_LOG));
+
+    public static final DeferredBlock<RotatedPillarBlock> STRIPPED_MISCHIEF_LOG =
+            BLOCKS.registerBlock("stripped_mischief_log",
+                    props -> new RotatedPillarBlock(props
+                            .strength(2.0F)
+                            .sound(SoundType.STEM)));
+
+    public static final DeferredBlock<RotatedPillarBlock> MISCHIEF_LOG =
+            BLOCKS.registerBlock("mischief_log",
+                    props -> new StrippableNatrualPillarBlock(
+                            props.strength(2.0F).sound(SoundType.WOOD),
+                            STRIPPED_MISCHIEF_LOG));
+
+
+    public static final DeferredBlock<RotatedPillarBlock> STRIPPED_MUSAVACCA_PSEUDOSTEM =
+            BLOCKS.registerBlock("stripped_musavacca_pseudostem",
+                    props -> new RotatedPillarBlock(props
+                            .strength(2.0F)
+                            .sound(SoundType.STEM)));
+
+    public static final DeferredBlock<RotatedPillarBlock> MUSAVACCA_PSEUDOSTEM =
+            BLOCKS.registerBlock("musavacca_pseudostem",
+                    props -> new StrippablePillarBlock(
+                            props.strength(2.0F).sound(SoundType.STEM),
+                            STRIPPED_MUSAVACCA_PSEUDOSTEM));
+
+
+    public static final DeferredBlock<RotatedPillarBlock> STRIPPED_BELMONT_WOOD =
+            BLOCKS.registerBlock("stripped_belmont_wood",
+                    props -> new RotatedPillarBlock(props
+                            .strength(2.0F)
+                            .sound(SoundType.WOOD)));
+
+    public static final DeferredBlock<RotatedPillarBlock> BELMONT_WOOD =
+            BLOCKS.registerBlock("belmont_wood",
+                    props -> new StrippablePillarBlock(
+                            props.strength(2.0F).sound(SoundType.WOOD),
+                            STRIPPED_BELMONT_WOOD));
+
+    public static final DeferredBlock<RotatedPillarBlock> STRIPPED_DYNASTY_WOOD =
+            BLOCKS.registerBlock("stripped_dynasty_wood",
+                    props -> new RotatedPillarBlock(props
+                            .strength(2.0F)
+                            .sound(SoundType.WOOD)));
+
+    public static final DeferredBlock<RotatedPillarBlock> DYNASTY_WOOD =
+            BLOCKS.registerBlock("dynasty_wood",
+                    props -> new StrippablePillarBlock(
+                            props.strength(2.0F).sound(SoundType.WOOD),
+                            STRIPPED_DYNASTY_WOOD));
+
+    public static final DeferredBlock<RotatedPillarBlock> STRIPPED_IMPERIUM_WOOD =
+            BLOCKS.registerBlock("stripped_imperium_wood",
+                    props -> new RotatedPillarBlock(props
+                            .strength(2.0F)
+                            .sound(SoundType.WOOD)));
+
+    public static final DeferredBlock<RotatedPillarBlock> IMPERIUM_WOOD =
+            BLOCKS.registerBlock("imperium_wood",
+                    props -> new StrippablePillarBlock(
+                            props.strength(2.0F).sound(SoundType.WOOD),
+                            STRIPPED_IMPERIUM_WOOD));
+
+    public static final DeferredBlock<RotatedPillarBlock> STRIPPED_MISCHIEF_WOOD =
+            BLOCKS.registerBlock("stripped_mischief_wood",
+                    props -> new RotatedPillarBlock(props
+                            .strength(2.0F)
+                            .sound(SoundType.WOOD)));
+
+    public static final DeferredBlock<RotatedPillarBlock> MISCHIEF_WOOD =
+            BLOCKS.registerBlock("mischief_wood",
+                    props -> new StrippablePillarBlock(
+                            props.strength(2.0F).sound(SoundType.WOOD),
+                            STRIPPED_MISCHIEF_WOOD));
+
+
+
+
+
     public static final DeferredBlock<MusavaccaPlantCropBlock> MUSAVACCA_PLANT =
             BLOCKS.registerBlock("musavacca_plant",
                     props -> new MusavaccaPlantCropBlock(props
@@ -215,13 +432,55 @@ public final class ModBlocks {
                             props.mapColor(MapColor.GRASS)
                                     .strength(0.6F)
                                     .sound(SoundType.GRASS)
-                                    .randomTicks() // optional: matches many ground blocks
+                                    .randomTicks()
                                     .pushReaction(PushReaction.NORMAL)
                     ));
 
-    public static final DeferredBlock<CaroteneShortGrassBlock> CAROTENE_SHORT_GRASS =
+
+    public static final DeferredBlock<NyliumGrassBlock>  BELMONT_GRASS_BLOCK =
+            BLOCKS.registerBlock("belmont_grass_block",
+                    props -> new NyliumGrassBlock(
+                            props.mapColor(MapColor.TERRACOTTA_LIGHT_GREEN)
+                                    .strength(0.6F)
+                                    .sound(SoundType.GRASS)
+                                    .randomTicks()
+                                    .pushReaction(PushReaction.NORMAL)
+                    ));
+
+    public static final DeferredBlock<NyliumGrassBlock>  DYNASTY_GRASS_BLOCK =
+            BLOCKS.registerBlock("dynasty_grass_block",
+                    props -> new NyliumGrassBlock(
+                            props.mapColor(MapColor.TERRACOTTA_RED)
+                                    .strength(0.6F)
+                                    .sound(SoundType.GRASS)
+                                    .randomTicks()
+                                    .pushReaction(PushReaction.NORMAL)
+                    ));
+
+
+    public static final DeferredBlock<NyliumGrassBlock>  IMPERIUM_GRASS_BLOCK =
+            BLOCKS.registerBlock("imperium_grass_block",
+                    props -> new NyliumGrassBlock(
+                            props.mapColor(MapColor.TERRACOTTA_BLUE)
+                                    .strength(0.6F)
+                                    .sound(SoundType.GRASS)
+                                    .randomTicks()
+                                    .pushReaction(PushReaction.NORMAL)
+                    ));
+
+    public static final DeferredBlock<NyliumGrassBlock>  MISCHIEF_GRASS_BLOCK =
+            BLOCKS.registerBlock("mischief_grass_block",
+                    props -> new NyliumGrassBlock(
+                            props.mapColor(MapColor.TERRACOTTA_PURPLE)
+                                    .strength(0.6F)
+                                    .sound(SoundType.GRASS)
+                                    .randomTicks()
+                                    .pushReaction(PushReaction.NORMAL)
+                    ));
+
+    public static final DeferredBlock<TallGrassBlock> CAROTENE_SHORT_GRASS =
             BLOCKS.registerBlock("carotene_short_grass",
-                    props -> new CaroteneShortGrassBlock(
+                    props -> new TallGrassBlock(
                             props.noCollission()
                                     .instabreak()
                                     .offsetType(BlockBehaviour.OffsetType.XZ)
@@ -230,6 +489,55 @@ public final class ModBlocks {
                                     .pushReaction(PushReaction.DESTROY)
                     )
             );
+
+    public static final DeferredBlock<TallGrassBlock> BELMONT_SHORT_GRASS =
+            BLOCKS.registerBlock("belmont_short_grass",
+                    props -> new TallGrassBlock(
+                            props.noCollission()
+                                    .instabreak()
+                                    .offsetType(BlockBehaviour.OffsetType.XZ)
+                                    .mapColor(MapColor.GRASS)
+                                    .sound(SoundType.GRASS)
+                                    .pushReaction(PushReaction.DESTROY)
+                    )
+            );
+
+    public static final DeferredBlock<TallGrassBlock> DYNASTY_SHORT_GRASS =
+            BLOCKS.registerBlock("dynasty_short_grass",
+                    props -> new TallGrassBlock(
+                            props.noCollission()
+                                    .instabreak()
+                                    .offsetType(BlockBehaviour.OffsetType.XZ)
+                                    .mapColor(MapColor.GRASS)
+                                    .sound(SoundType.GRASS)
+                                    .pushReaction(PushReaction.DESTROY)
+                    )
+            );
+
+    public static final DeferredBlock<TallGrassBlock> IMPERIUM_SHORT_GRASS =
+            BLOCKS.registerBlock("imperium_short_grass",
+                    props -> new TallGrassBlock(
+                            props.noCollission()
+                                    .instabreak()
+                                    .offsetType(BlockBehaviour.OffsetType.XZ)
+                                    .mapColor(MapColor.GRASS)
+                                    .sound(SoundType.GRASS)
+                                    .pushReaction(PushReaction.DESTROY)
+                    )
+            );
+
+    public static final DeferredBlock<TallGrassBlock> MISCHIEF_SHORT_GRASS =
+            BLOCKS.registerBlock("mischief_short_grass",
+                    props -> new TallGrassBlock(
+                            props.noCollission()
+                                    .instabreak()
+                                    .offsetType(BlockBehaviour.OffsetType.XZ)
+                                    .mapColor(MapColor.GRASS)
+                                    .sound(SoundType.GRASS)
+                                    .pushReaction(PushReaction.DESTROY)
+                    )
+            );
+
 
 
 

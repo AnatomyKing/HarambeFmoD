@@ -19,14 +19,17 @@ import net.neoforged.neoforge.client.model.DelegateBlockStateModel;
 import java.util.*;
 
 /**
- * Forces specific blocks to render on a chosen ChunkSectionLayer (CUTOUT/TRANSLUCENT)
- * for NeoForge 1.21.8, purely in code by wrapping BlockStateModels during
- * ModelEvent.ModifyBakingResult. This does not create transparency by itself —
- * your quads must have alpha in their textures or be custom-rendered.
+ * Forces specific blocks onto chosen ChunkSectionLayers AND/OR disables Ambient Occlusion (AO)
+ * by wrapping BlockStateModels during ModelEvent.ModifyBakingResult (NeoForge 1.21.8).
+ *
+ * Notes:
+ * - Layer forcing relies on NeoForge's model extension: parts can declare a specific ChunkSectionLayer.
+ * - AO control uses the BlockModelPart extension method that returns a TriState for ambient occlusion.
+ *   (TriState.FALSE disables AO for that part.)
  */
 public final class HarambeRenderLayers {
 
-    // Choose which blocks should be on which layer:
+    // 1) CUTOUT blocks (foliage, plants, clusters, etc.)
     private static final Set<Block> CUTOUT_BLOCKS = Sets.newHashSet(
             ModBlocks.MUSAVACCA_FLOWER.get(),
             ModBlocks.MUSAVACCA_LEAVES.get(),
@@ -38,17 +41,37 @@ public final class HarambeRenderLayers {
             ModBlocks.SMALL_HONEY_CRYSTAL_BUD.get(),
             ModBlocks.MEDIUM_HONEY_CRYSTAL_BUD.get(),
             ModBlocks.LARGE_HONEY_CRYSTAL_BUD.get(),
-            ModBlocks.HONEY_CRYSTAL_CLUSTER.get()
+            ModBlocks.HONEY_CRYSTAL_CLUSTER.get(),
+            ModBlocks.CAROTENE_SHORT_GRASS.get(),
+            ModBlocks.BELMONT_SHORT_GRASS.get(),
+            ModBlocks.DYNASTY_SHORT_GRASS.get(),
+            ModBlocks.IMPERIUM_SHORT_GRASS.get(),
+            ModBlocks.MISCHIEF_SHORT_GRASS.get(),
+            ModBlocks.BELMONT_LEAVES.get(),
+            ModBlocks.DYNASTY_LEAVES.get(),
+            ModBlocks.IMPERIUM_LEAVES.get(),
+            ModBlocks.MISCHIEF_LEAVES.get()
 
     );
 
+    // 2) TRANSLUCENT blocks (portals, tinted glass-like, etc.)
     private static final Set<Block> TRANSLUCENT_BLOCKS = Sets.newHashSet(
             ModBlocks.BANANA_PORTAL.get()
     );
 
+
+    private static final Set<Block> NO_AO_BLOCKS = Sets.newHashSet(
+            ModBlocks.CAROTENE_SHORT_GRASS.get(),
+            ModBlocks.BELMONT_SHORT_GRASS.get(),
+            ModBlocks.DYNASTY_SHORT_GRASS.get(),
+            ModBlocks.IMPERIUM_SHORT_GRASS.get(),
+            ModBlocks.MISCHIEF_SHORT_GRASS.get()
+
+    );
+
     private HarambeRenderLayers() {}
 
-    /** Register this on the MOD bus (client-only). */
+    /** Register this on the MOD bus (client-only): modEventBus.addListener(HarambeRenderLayers::onModifyBakingResult) */
     public static void onModifyBakingResult(ModelEvent.ModifyBakingResult event) {
         Map<BlockState, BlockStateModel> models = event.getBakingResult().blockStateModels();
         if (models.isEmpty()) return;
@@ -58,56 +81,69 @@ public final class HarambeRenderLayers {
             BlockStateModel original = e.getValue();
             Block b = state.getBlock();
 
+            // Decide the forced layer (or keep default if null)
+            ChunkSectionLayer forcedLayer = null;
             if (CUTOUT_BLOCKS.contains(b)) {
-                e.setValue(new ForceLayerStateModel(original, ChunkSectionLayer.CUTOUT));
+                forcedLayer = ChunkSectionLayer.CUTOUT;
             } else if (TRANSLUCENT_BLOCKS.contains(b)) {
-                e.setValue(new ForceLayerStateModel(original, ChunkSectionLayer.TRANSLUCENT));
+                forcedLayer = ChunkSectionLayer.TRANSLUCENT;
+            }
+
+            // Decide AO override (TriState.FALSE disables AO; DEFAULT keeps vanilla/model behavior)
+            TriState forcedAO = NO_AO_BLOCKS.contains(b) ? TriState.FALSE : TriState.DEFAULT;
+
+            // Only wrap if we need to force something; otherwise keep the original model
+            if (forcedLayer != null || forcedAO != TriState.DEFAULT) {
+                e.setValue(new ForcePropsStateModel(original, forcedLayer, forcedAO));
             }
         }
     }
 
-    /** Wrap a BlockStateModel and swap its parts with layer-forcing proxies. */
-    private static final class ForceLayerStateModel extends DelegateBlockStateModel {
-        private final ChunkSectionLayer layer;
+    /** Wraps a BlockStateModel and replaces its parts with proxies that can force layer and/or AO. */
+    private static final class ForcePropsStateModel extends DelegateBlockStateModel {
+        private final ChunkSectionLayer forcedLayerOrNull; // null = preserve base getRenderType
+        private final TriState forcedAO; // TriState.DEFAULT = preserve, FALSE/TRUE = override
 
-        ForceLayerStateModel(BlockStateModel delegate, ChunkSectionLayer layer) {
+        ForcePropsStateModel(BlockStateModel delegate, ChunkSectionLayer forcedLayerOrNull, TriState forcedAO) {
             super(delegate);
-            this.layer = layer;
+            this.forcedLayerOrNull = forcedLayerOrNull;
+            this.forcedAO = forcedAO;
         }
 
         @Override
         public void collectParts(BlockAndTintGetter level, BlockPos pos, BlockState state,
                                  RandomSource random, List<BlockModelPart> out) {
-            // Get the original parts
             List<BlockModelPart> original = new ArrayList<>();
             this.delegate.collectParts(level, pos, state, random, original);
 
-            // Preserve the particle icon behavior of the base model
             TextureAtlasSprite particle = this.particleIcon(level, pos, state);
 
             for (BlockModelPart part : original) {
-                out.add(new ForceLayerPart(part, particle, layer));
+                out.add(new ForcePropsPart(part, particle, forcedLayerOrNull, forcedAO));
             }
         }
     }
 
     /**
-     * Minimal proxy for BlockModelPart that forwards everything to the base part,
-     * but forces the chosen ChunkSectionLayer via the NeoForge extension hook.
-     * Also implements the TriState AO method to avoid deprecation warnings.
+     * Minimal proxy that:
+     * - Delegates quads & particle icon
+     * - Forces a chosen ChunkSectionLayer if provided
+     * - Forces ambient occlusion via TriState if requested
      */
-    private record ForceLayerPart(BlockModelPart base,
-                                  TextureAtlasSprite particle,
-                                  ChunkSectionLayer forcedLayer) implements BlockModelPart {
+    private record ForcePropsPart(
+            BlockModelPart base,
+            TextureAtlasSprite particle,
+            ChunkSectionLayer forcedLayerOrNull,
+            TriState forcedAO
+    ) implements BlockModelPart {
 
-        // --- BlockModelPart (vanilla) ---
-
+        // --- Vanilla methods ---
         @Override
         public List<net.minecraft.client.renderer.block.model.BakedQuad> getQuads(Direction face) {
             return base.getQuads(face);
         }
 
-        /** Deprecated but still required by the interface (delegated). */
+        /** Deprecated but required; keep vanilla behavior. */
         @Override
         public boolean useAmbientOcclusion() {
             return base.useAmbientOcclusion();
@@ -118,18 +154,25 @@ public final class HarambeRenderLayers {
             return (particle != null) ? particle : base.particleIcon();
         }
 
-        // --- NeoForge extension methods on BlockModelPartExtension ---
+        // --- NeoForge extension methods on BlockModelPart (present at runtime) ---
 
-        /** Future-proof AO: return DEFAULT (use the model’s normal AO behavior). */
+        /** AO override: FALSE disables, TRUE forces on, DEFAULT preserves base value. */
         @Override
         public TriState ambientOcclusion() {
-            return TriState.DEFAULT;
+            if (forcedAO != null && forcedAO != TriState.DEFAULT) {
+                return forcedAO;
+            }
+            // Preserve the base model part's AO decision if available
+            return base.ambientOcclusion();
         }
 
-        /** Force which chunk layer this part should be buffered into. */
+        /** Render layer override: when null, preserve base; otherwise force the chosen layer. */
         @Override
         public ChunkSectionLayer getRenderType(BlockState state) {
-            return forcedLayer;
+            if (forcedLayerOrNull != null) {
+                return forcedLayerOrNull;
+            }
+            return base.getRenderType(state);
         }
     }
 }
