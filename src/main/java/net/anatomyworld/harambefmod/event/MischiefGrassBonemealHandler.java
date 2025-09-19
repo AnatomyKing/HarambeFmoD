@@ -1,5 +1,6 @@
 package net.anatomyworld.harambefmod.event;
 
+import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.block.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -11,8 +12,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.BonemealEvent;
 
+@EventBusSubscriber(modid = HarambeCore.MOD_ID)
 public final class MischiefGrassBonemealHandler {
     private MischiefGrassBonemealHandler() {}
 

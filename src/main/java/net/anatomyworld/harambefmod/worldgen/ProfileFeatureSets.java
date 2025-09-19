@@ -8,23 +8,23 @@ public final class ProfileFeatureSets {
 
     /** Which feature “bases” to inject per profile suffix. */
     public static final Map<String, List<String>> BY_SUFFIX = Map.of(
-            PatchProfiles.OVERWORLDNEW.suffix(), List.of(
+            PatchProfiles.HARAMBE_DEFAULT.suffix(), List.of(
                     "swap_short_grass",
                     "patch_tree"
             ),
-            PatchProfiles.BELMONTNEW.suffix(), List.of(
+            PatchProfiles.BELNADES_DEFAULT.suffix(), List.of(
                     "swap_short_grass",
                     "patch_tree"
             ),
-            PatchProfiles.DYNASTYNEW.suffix(), List.of(
+            PatchProfiles.DYNASTIRIUM_DEFAULT.suffix(), List.of(
                     "swap_short_grass",
                     "patch_tree"
             ),
-            PatchProfiles.IMPERIUMNEW.suffix(), List.of(
+            PatchProfiles.IMPERO_DEFAULT.suffix(), List.of(
                     "swap_short_grass",
                     "patch_tree"
             ),
-            PatchProfiles.MISCHIEFNEW.suffix(), List.of(
+            PatchProfiles.MARCHELUS_DEFAULT.suffix(), List.of(
                     "swap_short_grass",
                     "patch_tree"
             )

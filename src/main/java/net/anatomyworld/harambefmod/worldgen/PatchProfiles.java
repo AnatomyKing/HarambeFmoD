@@ -33,8 +33,8 @@ public final class PatchProfiles {
     ) {}
 
 
-    public static final Profile OVERWORLDNEW = new Profile(
-            "overworldnew",
+    public static final Profile HARAMBE_DEFAULT = new Profile(
+            "harambe_default",
             ModBlocks.CAROTENE_GRASS_BLOCK.get(),
             Blocks.PODZOL,
             ModBlocks.CHOCO_CREAM_STONE.get(),
@@ -48,8 +48,8 @@ public final class PatchProfiles {
             null
     );
 
-    public static final Profile BELMONTNEW = new Profile(
-            "belmontnew",
+    public static final Profile BELNADES_DEFAULT = new Profile(
+            "belnades_default",
             ModBlocks.BELMONT_GRASS_BLOCK.get(),
             ModBlocks.BELMONT_GRASS_BLOCK.get(),
             Blocks.DIRT,
@@ -63,8 +63,8 @@ public final class PatchProfiles {
             null
     );
 
-    public static final Profile DYNASTYNEW = new Profile(
-            "dynastynew",
+    public static final Profile DYNASTIRIUM_DEFAULT = new Profile(
+            "dynastirium_default",
             ModBlocks.DYNASTY_GRASS_BLOCK.get(),
             ModBlocks.DYNASTY_GRASS_BLOCK.get(),
             Blocks.DIRT,
@@ -78,8 +78,8 @@ public final class PatchProfiles {
             null
     );
 
-    public static final Profile IMPERIUMNEW = new Profile(
-            "imperiumnew",
+    public static final Profile IMPERO_DEFAULT = new Profile(
+            "impero_default",
             ModBlocks.IMPERIUM_GRASS_BLOCK.get(),
             ModBlocks.IMPERIUM_GRASS_BLOCK.get(),
             Blocks.DIRT,
@@ -90,11 +90,11 @@ public final class PatchProfiles {
             true, Blocks.BLUE_CONCRETE_POWDER,
 
             // noise settings: null => build NORMAL overworld + prepend our surface rules
-            null
+            ResourceLocation.fromNamespaceAndPath("harambefmod", "amplified_impero_carotene_merged")
     );
 
-    public static final Profile MISCHIEFNEW = new Profile(
-            "mischiefnew",
+    public static final Profile MARCHELUS_DEFAULT = new Profile(
+            "marchelus_default",
             ModBlocks.MISCHIEF_GRASS_BLOCK.get(),
             ModBlocks.MISCHIEF_GRASS_BLOCK.get(),
             Blocks.DIRT,
@@ -108,7 +108,7 @@ public final class PatchProfiles {
             null
     );
 
-    public static final Profile[] ALL = new Profile[] { OVERWORLDNEW, BELMONTNEW, DYNASTYNEW, IMPERIUMNEW, MISCHIEFNEW };
+    public static final Profile[] ALL = new Profile[] {HARAMBE_DEFAULT, BELNADES_DEFAULT, DYNASTIRIUM_DEFAULT, IMPERO_DEFAULT, MARCHELUS_DEFAULT};
 
     private PatchProfiles() {}
 }

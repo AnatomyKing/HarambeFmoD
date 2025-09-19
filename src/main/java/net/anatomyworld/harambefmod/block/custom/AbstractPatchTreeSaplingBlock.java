@@ -59,12 +59,8 @@ public abstract class AbstractPatchTreeSaplingBlock extends VegetationBlock impl
     // ---------- Vanilla-ish placement rules ----------
     @Override
     protected boolean mayPlaceOn(BlockState ground, BlockGetter level, BlockPos pos) {
-        return ground.is(Blocks.DIRT)
-                || ground.is(Blocks.GRASS_BLOCK)
-                || ground.is(Blocks.PODZOL)
-                || ground.is(Blocks.COARSE_DIRT)
-                || ground.is(Blocks.FARMLAND)
-                || ground.is(Blocks.MOSS_BLOCK);
+        // Vanilla saplings use the dirt tag. Covers dirt, grass, podzol, coarse dirt, farmland, moss, etc.
+        return ground.is(BlockTags.DIRT);
     }
 
     // If you also set .randomTicks() in registration, keep this true so Minecraft calls randomTick.

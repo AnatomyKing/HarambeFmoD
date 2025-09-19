@@ -28,14 +28,16 @@ public final class CustomGrassSelfBonemealHandler {
 
         // Which grass did we bonemeal and which short-grass should we place?
         BlockState shortGrass = null;
-        if (state.is(ModBlocks.BELMONT_GRASS_BLOCK.get())) {
-            shortGrass = ModBlocks.BELMONT_SHORT_GRASS.get().defaultBlockState();
+        if (state.is(ModBlocks.CAROTENE_GRASS_BLOCK.get())) {
+            shortGrass = ModBlocks.CAROTENE_SHORT_GRASS.get().defaultBlockState();
         } else if (state.is(ModBlocks.DYNASTY_GRASS_BLOCK.get())) {
             shortGrass = ModBlocks.DYNASTY_SHORT_GRASS.get().defaultBlockState();
         } else if (state.is(ModBlocks.IMPERIUM_GRASS_BLOCK.get())) {
             shortGrass = ModBlocks.IMPERIUM_SHORT_GRASS.get().defaultBlockState();
-        } else if (state.is(ModBlocks.CAROTENE_GRASS_BLOCK.get())) {
-            shortGrass = ModBlocks.CAROTENE_SHORT_GRASS.get().defaultBlockState();
+        } else if (state.is(ModBlocks.BELMONT_GRASS_BLOCK.get())) {
+            shortGrass = ModBlocks.BELMONT_SHORT_GRASS.get().defaultBlockState();
+        } else if (state.is(ModBlocks.MISCHIEF_GRASS_BLOCK.get())) {
+            shortGrass = ModBlocks.MISCHIEF_SHORT_GRASS.get().defaultBlockState();
         } else {
             return; // not our grass → let vanilla handle it
         }
