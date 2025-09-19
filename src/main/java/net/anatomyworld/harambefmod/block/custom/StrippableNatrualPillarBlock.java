@@ -1,24 +1,20 @@
 // StrippableNatrualPillarBlock.java (NeoForge 1.21.8)
+// Drop-in replacement: safe property copy when stripping.
 package net.anatomyworld.harambefmod.block.custom;
 
 import net.minecraft.core.Direction;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.item.context.BlockPlaceContext;
-import net.neoforged.neoforge.common.ItemAbility;
 import net.neoforged.neoforge.common.ItemAbilities;
+import net.neoforged.neoforge.common.ItemAbility;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Supplier;
 
-/**
- * Log-like pillar that:
- * - adds a 'natural' boolean blockstate (true for worldgen / false for player-placed)
- * - preserves AXIS + NATURAL when stripping
- */
 public class StrippableNatrualPillarBlock extends RotatedPillarBlock {
     public static final BooleanProperty NATURAL = BooleanProperty.create("natural");
 
@@ -47,16 +43,26 @@ public class StrippableNatrualPillarBlock extends RotatedPillarBlock {
         return base.setValue(NATURAL, Boolean.FALSE);
     }
 
-    /** Preserve AXIS + NATURAL when stripping. */
+    /** Strip safely: copy AXIS (and only copy NATURAL if the target actually defines it). */
     @Override
     public @Nullable BlockState getToolModifiedState(BlockState state,
                                                      UseOnContext ctx,
                                                      ItemAbility ability,
                                                      boolean simulate) {
         if (ability == ItemAbilities.AXE_STRIP) {
-            return stripped.get().defaultBlockState()
-                    .setValue(AXIS, state.getValue(AXIS))
-                    .setValue(NATURAL, state.getValue(NATURAL));
+            BlockState out = stripped.get().defaultBlockState();
+
+            // Always preserve axis if present on the stripped block (vanilla stripped logs do).
+            if (out.hasProperty(AXIS)) {
+                out = out.setValue(AXIS, state.getValue(AXIS));
+            }
+
+            // Only copy NATURAL if the stripped block ALSO declares it (your case: it does not).
+            if (out.hasProperty(NATURAL)) {
+                out = out.setValue(NATURAL, state.getValue(NATURAL));
+            }
+
+            return out;
         }
         return super.getToolModifiedState(state, ctx, ability, simulate);
     }

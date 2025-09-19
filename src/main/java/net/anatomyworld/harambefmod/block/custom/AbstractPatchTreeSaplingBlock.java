@@ -14,17 +14,31 @@ import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.VegetationBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /**
- * Small base for “tree-builder” saplings.
- * - Random tick growth + bonemeal growth
- * - Light, vanilla-style clearance check (keeps nearby leaves/vines replacable)
- * - Removes the sapling before try; if placement fails, restores it
+ * Vanilla-style base for "tree-builder" saplings.
+ * - Random tick growth + bonemeal pacing like vanilla saplings
+ * - Two-stage system (stage: 0 -> 1 -> tree)
+ * - Lightweight clearance check (soft blocks are allowed)
+ *
+ * Subclasses only need to provide:
+ *   - builder()
+ *   - estMaxHeight()
+ *   - estNearRadius()
+ *   - codec()
  */
 public abstract class AbstractPatchTreeSaplingBlock extends VegetationBlock implements BonemealableBlock {
 
+    /** Matches vanilla's 2-stage sapling approach. */
+    public static final IntegerProperty STAGE = BlockStateProperties.STAGE; // 0..1
+
     protected AbstractPatchTreeSaplingBlock(BlockBehaviour.Properties props) {
         super(props);
+        // default: stage 0
+        this.registerDefaultState(this.stateDefinition.any().setValue(STAGE, 0));
     }
 
     /** Subclasses provide the tree generator. */
@@ -36,6 +50,12 @@ public abstract class AbstractPatchTreeSaplingBlock extends VegetationBlock impl
     /** Small near-trunk radius to nudge obvious obstructions (not the full canopy size). */
     protected abstract int estNearRadius();
 
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
+        builder.add(STAGE);
+    }
+
     // ---------- Vanilla-ish placement rules ----------
     @Override
     protected boolean mayPlaceOn(BlockState ground, BlockGetter level, BlockPos pos) {
@@ -43,7 +63,8 @@ public abstract class AbstractPatchTreeSaplingBlock extends VegetationBlock impl
                 || ground.is(Blocks.GRASS_BLOCK)
                 || ground.is(Blocks.PODZOL)
                 || ground.is(Blocks.COARSE_DIRT)
-                || ground.is(Blocks.FARMLAND);
+                || ground.is(Blocks.FARMLAND)
+                || ground.is(Blocks.MOSS_BLOCK);
     }
 
     // If you also set .randomTicks() in registration, keep this true so Minecraft calls randomTick.
@@ -51,19 +72,37 @@ public abstract class AbstractPatchTreeSaplingBlock extends VegetationBlock impl
 
     @Override
     public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource rng) {
-        // Basic vanilla pacing
+        // Vanilla pacing: needs light and a luck roll
         if (level.getRawBrightness(pos.above(), 0) >= 9 && rng.nextInt(7) == 0) {
-            tryGrow(level, pos);
+            int stage = state.getValue(STAGE);
+            if (stage == 0) {
+                // advance to stage 1 (no tree yet)
+                level.setBlock(pos, state.setValue(STAGE, 1), 4);
+            } else {
+                // at stage 1 → attempt to grow the full tree
+                tryGrow(level, pos);
+            }
         }
     }
 
     // ---------- BonemealableBlock ----------
     @Override public boolean isValidBonemealTarget(LevelReader level, BlockPos pos, BlockState state) { return true; }
+
+    // Return true so bonemeal is consumed like vanilla; success/advance is decided in performBonemeal().
     @Override public boolean isBonemealSuccess(Level level, RandomSource random, BlockPos pos, BlockState state) { return true; }
 
     @Override
     public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
-        tryGrow(level, pos);
+        // Vanilla-like feel: bonemeal often needs a couple of clicks.
+        // Use a moderate chance to advance; otherwise, bonemeal is consumed with no visible result.
+        if (random.nextFloat() < 0.45f) { // ≈ vanilla feel; tweak if desired
+            int stage = state.getValue(STAGE);
+            if (stage == 0) {
+                level.setBlock(pos, state.setValue(STAGE, 1), 4);
+            } else {
+                tryGrow(level, pos);
+            }
+        }
     }
 
     // ---------- Growth ----------

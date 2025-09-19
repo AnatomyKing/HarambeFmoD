@@ -151,7 +151,13 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
 
         // crops / saplings
         tag(BlockTags.CROPS).add(ModBlocks.MUSAVACCA_PLANT.get());
-        tag(BlockTags.SAPLINGS).add(ModBlocks.MUSAVACCA_SAPLING.get());
+        tag(BlockTags.SAPLINGS).add(
+                ModBlocks.MUSAVACCA_SAPLING.get(),
+                ModBlocks.BELMONT_SAPLING.get(),
+                ModBlocks.DYNASTY_SAPLING.get(),
+                ModBlocks.IMPERIUM_SAPLING.get(),
+                ModBlocks.MISCHIEF_SAPLING.get()
+        );
 
         // existing custom example
         tag(ModTags.Blocks.BANANA_COW_GROWTH).add(
