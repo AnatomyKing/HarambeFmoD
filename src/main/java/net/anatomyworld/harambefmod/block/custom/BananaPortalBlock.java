@@ -54,7 +54,9 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
     private static final String TAG_IN_ANCHOR = "harambefmod:in_anchor";    // last anchor (optional)
 
     private static final long   COOLDOWN_TICKS = 10L;          // short, nether-like feel
-    private static final double EJECT          = 0.125D;       // 2 px outward
+
+    // Outward micro-eject: keep very small so the AABB doesn't intersect walls placed right at the exit plane.
+    private static final double EJECT = 0.03125D;  // 0.5 px
 
     // Flow-through feel
     private static final double MIN_OUT_WALK   = 0.04;  // tiny nudge when walking
@@ -68,6 +70,15 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
     // Post-teleport easing
     private static final int SMOOTH_STEPS = 3;
     private static final double[] SMOOTH_FACTORS = { 0.60, 0.85, 1.00 };
+
+    // NEW: Ultra-safe exit search parameters (robust in enclosed builds)
+    private static final double STEP_N = 1.0 / 16.0;  // step along normal
+    private static final double STEP_V = 1.0 / 8.0;   // step vertical
+    private static final double STEP_L = 1.0 / 8.0;   // step lateral (within lane)
+    private static final double MAX_OUTWARD_SEARCH  = 3.0;   // search up to 3 blocks out
+    private static final double MAX_BACKWARD_SEARCH = 1.25;  // search ~1.25 blocks back (into plane)
+    private static final double MAX_VERTICAL_SEARCH = 2.0;   // search +/- 2 blocks vertically
+    private static final double LATERAL_WIGGLE      = 0.5;   // small lane wiggle to escape corners
 
     public BananaPortalBlock(BlockBehaviour.Properties props) {
         super(props.noOcclusion()
@@ -189,7 +200,8 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
 
         // World-space destination (bottom anchored)
         Vec3 tgtBase = new Vec3(tgtAnchor.getX() + 0.5, tgtAnchor.getY(), tgtAnchor.getZ() + 0.5);
-        Vec3 outPos  = tgtBase.add(rDst.scale(Ld)).add(0, Vd, 0).add(nDstOut.scale(EJECT));
+        Vec3 laneCenter = tgtBase.add(rDst.scale(Ld)).add(0, Vd, 0);
+        Vec3 outPos  = laneCenter.add(nDstOut.scale(EJECT)); // gentle micro-eject
 
         // Edge-aware first moment: kill components that would push into walls/ceiling
         double vLat = vOut.dot(rDst);
@@ -222,7 +234,10 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         // Ensure the initial exit position is collision-free (in destination if cross-dim)
         ServerLevel destinationLevel = crossDim ? server.getServer().getLevel(target.dim) : server;
         if (destinationLevel == null) return;
-        Vec3 safeOut = findSafeExit(destinationLevel, entity, outPos, nDstOut, tgtAnchor, rDst, dstW, dstH);
+
+        Vec3 safeOut = findUltraSafeExit(
+                destinationLevel, entity, outPos, laneCenter, nDstOut, rDst, tgtAnchor, dstW, dstH
+        );
 
         // Common post-teleport state
         final Vec3  vOutTarget   = vOut;
@@ -232,7 +247,7 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         final boolean elytraFlag = wasElytra;
 
         if (crossDim) {
-            // === CROSS-DIMENSIONAL: use teleportTo(...) with Relative flags for players & other entities
+            // === CROSS-DIMENSIONAL ===
             Set<Relative> rel = EnumSet.noneOf(Relative.class); // all absolute
 
             if (entity instanceof ServerPlayer sp) {
@@ -244,6 +259,8 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
                 sp.setYBodyRot(yawTarget);
                 sp.setYHeadRot(yawTarget);
                 sp.setXRot(pitchTarget);
+                // Immediate same-tick sanity (avoid 1-tick suffocation)
+                ensureFreeNow(destinationLevel, sp, nDstOut, rDst, tgtAnchor, dstW, dstH);
             } else {
                 entity.teleportTo(destinationLevel, safeOut.x, safeOut.y, safeOut.z, rel, yawTarget, pitchTarget, false);
                 entity.setDeltaMovement(vOutTarget);
@@ -253,9 +270,10 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
                     le.setYBodyRot(yawTarget);
                     le.setYHeadRot(yawTarget);
                 }
+                ensureFreeNow(destinationLevel, entity, nDstOut, rDst, tgtAnchor, dstW, dstH);
             }
 
-            // Smooth easing for a couple of ticks on the destination level
+            // Smooth easing with continuous safety enforcement
             for (int i = 0; i < SMOOTH_STEPS; i++) {
                 final int step = i;
                 Vec3 finalRDst = rDst;
@@ -288,8 +306,8 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
                         }
                     }
 
-                    // Keep inside safe lane
-                    clampInsideDestination(destinationLevel, entity, finalRDst, up, tgtAnchor, target.axis, dstW, dstH);
+                    // Keep it free & in-lane every tick
+                    keepUltraSafe(destinationLevel, entity, nDstOut, finalRDst, tgtAnchor, target.axis, dstW, dstH);
                     entity.resetFallDistance();
                 });
             }
@@ -300,11 +318,12 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
                 entity.resetFallDistance();
             });
 
-            return; // cross-dim path completes here
+            return;
         }
 
-        // === INTRA-DIMENSIONAL: ultra-smooth handoff (same dimension) ===
+        // === INTRA-DIMENSIONAL ===
         final Vec3 finalOutPos = safeOut;
+        Vec3 finalRDst1 = rDst;
         runNextTick(server, () -> {
             if (entity.isRemoved()) return;
             if (entity instanceof ServerPlayer sp) {
@@ -315,6 +334,7 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
                 sp.setYBodyRot(yawTarget);
                 sp.setYHeadRot(yawTarget);
                 sp.setXRot(pitchTarget);
+                ensureFreeNow(server, sp, nDstOut, finalRDst1, tgtAnchor, dstW, dstH);
             } else {
                 entity.teleportTo(finalOutPos.x, finalOutPos.y, finalOutPos.z);
                 entity.setYRot(yawTarget);
@@ -325,6 +345,7 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
                     le.setYBodyRot(yawTarget);
                     le.setYHeadRot(yawTarget);
                 }
+                ensureFreeNow(server, entity, nDstOut, finalRDst1, tgtAnchor, dstW, dstH);
             }
         });
 
@@ -361,8 +382,8 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
                     }
                 }
 
-                // Keep inside safe lane
-                clampInsideDestination(server, entity, finalRDst, up, tgtAnchor, target.axis, dstW, dstH);
+                // Keep it free & in-lane every tick
+                keepUltraSafe(server, entity, nDstOut, finalRDst, tgtAnchor, target.axis, dstW, dstH);
                 entity.resetFallDistance();
             });
         }
@@ -444,7 +465,59 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
         s.getServer().execute(() -> runTicksLater(s, ticks - 1, r));
     }
 
-    /** Micro-correction to keep entity center safely inside destination lane even if physics nudged it. */
+    /** Micro-correction to keep entity center safely inside destination lane even if physics nudged it and ensure not in-wall. */
+    private static void keepUltraSafe(ServerLevel server, Entity e, Vec3 nDstOut, Vec3 rDst,
+                                      BlockPos tgtAnchor, Direction.Axis axis, int dstW, int dstH) {
+        // First, clamp lateral/vertical into safe lane
+        clampInsideDestination(server, e, rDst, new Vec3(0, 1, 0), tgtAnchor, axis, dstW, dstH);
+        // Then, if somehow inside wall (tight enclosures), immediately repair
+        if (!isFreeAt(server, e, e.position())) {
+            Vec3 tgtBase = new Vec3(tgtAnchor.getX() + 0.5, tgtAnchor.getY(), tgtAnchor.getZ() + 0.5);
+            Vec3 rel     = e.position().subtract(tgtBase);
+            double L = rel.dot(rDst);
+            double V = rel.y;
+            Vec3 laneCenter = tgtBase.add(rDst.scale(L)).add(0, V, 0);
+            Vec3 fixed = findUltraSafeExit(server, e, laneCenter.add(nDstOut.scale(EJECT)), laneCenter,
+                    nDstOut, rDst, tgtAnchor, dstW, dstH);
+            if (e instanceof ServerPlayer sp) {
+                sp.connection.teleport(fixed.x, fixed.y, fixed.z, sp.getYHeadRot(), sp.getXRot());
+            } else {
+                e.teleportTo(fixed.x, fixed.y, fixed.z);
+            }
+            e.resetFallDistance();
+        }
+    }
+
+    /** Same-tick safety after teleport to eliminate 1-tick suffocation. */
+    private static void ensureFreeNow(ServerLevel level, Entity e, Vec3 nDstOut, Vec3 rDst,
+                                      BlockPos tgtAnchor, int dstW, int dstH) {
+        if (!isFreeAt(level, e, e.position())) {
+            Vec3 tgtBase = new Vec3(tgtAnchor.getX() + 0.5, tgtAnchor.getY(), tgtAnchor.getZ() + 0.5);
+            Vec3 rel     = e.position().subtract(tgtBase);
+            // Project into lane
+            double L = rel.dot(rDst);
+            double V = rel.y;
+            // Clamp to legal lane
+            double halfW = e.getBbWidth() / 2.0;
+            double minLd = (halfW + WALL_PAD) - 0.5;
+            double maxLd = (dstW - 1.0) - ((halfW + WALL_PAD) - 0.5);
+            double maxVd = Math.max(0.0, dstH - e.getBbHeight() - CEIL_PAD);
+            if (minLd <= maxLd) L = Mth.clamp(L, minLd, maxLd);
+            V = Mth.clamp(V, 0.0, maxVd);
+
+            Vec3 laneCenter = tgtBase.add(rDst.scale(L)).add(0, V, 0);
+            Vec3 fixed = findUltraSafeExit(level, e, laneCenter.add(nDstOut.scale(EJECT)), laneCenter,
+                    nDstOut, rDst, tgtAnchor, dstW, dstH);
+            if (e instanceof ServerPlayer sp) {
+                sp.connection.teleport(fixed.x, fixed.y, fixed.z, sp.getYHeadRot(), sp.getXRot());
+            } else {
+                e.teleportTo(fixed.x, fixed.y, fixed.z);
+            }
+            e.resetFallDistance();
+        }
+    }
+
+    /** Micro-correction to keep entity center safely inside destination lane (no frame contact). */
     private static void clampInsideDestination(ServerLevel server, Entity e, Vec3 rDst, Vec3 up, BlockPos tgtAnchor, Direction.Axis axis, int dstW, int dstH) {
         double halfW = e.getBbWidth() / 2.0;
         double minLd = (halfW + WALL_PAD) - 0.5;
@@ -471,43 +544,74 @@ public final class BananaPortalBlock extends Block implements EntityBlock {
     }
 
     /**
-     * Search along the outward normal for a position where the entity's AABB doesn't collide.
-     * Also tries tiny vertical nudges. Keeps the entity inside the portal lane if everything is blocked.
+     * Robust 3D search for a collision-free exit.
+     * 1) Try the requested position.
+     * 2) Sweep forward up to 3 blocks.
+     * 3) If blocked, sweep backward (into the plane) up to ~1.25 blocks.
+     * 4) For each normal offset, try vertical band (+/- 2 blocks) and small lateral wiggles within the lane.
+     * 5) If EVERYTHING is blocked, stay inside the portal lane center with tiny negative normal bias.
      */
-    private static Vec3 findSafeExit(ServerLevel level, Entity e, Vec3 desired, Vec3 outNormal,
-                                     BlockPos tgtAnchor, Vec3 rDst, int dstW, int dstH) {
+    private static Vec3 findUltraSafeExit(ServerLevel level, Entity e, Vec3 desired, Vec3 laneCenter,
+                                          Vec3 outNormal, Vec3 rDst, BlockPos tgtAnchor, int dstW, int dstH) {
 
-        // First, if desired is already free, use it.
+        // If desired is free, done.
         if (isFreeAt(level, e, desired)) return desired;
 
-        // Try stepping outward up to ~0.9 blocks ahead.
-        for (double d = 0.0625; d <= 0.9375; d += 0.0625) {
-            Vec3 cand = desired.add(outNormal.scale(d));
-            if (isFreeAt(level, e, cand)) return cand;
-        }
-
-        // Try slight vertical adjustments (down a bit, then up), with small outward bias.
-        for (double dv = -0.25; dv <= 0.25; dv += 0.0625) {
-            Vec3 cand = desired.add(0, dv, 0).add(outNormal.scale(0.0625));
-            if (isFreeAt(level, e, cand)) return cand;
-        }
-
-        // Everything blocked – fall back to staying just inside the portal skin on the destination side.
+        // Precompute lane limits
         double halfW = e.getBbWidth() / 2.0;
         double minLd = (halfW + WALL_PAD) - 0.5;
         double maxLd = (dstW - 1.0) - ((halfW + WALL_PAD) - 0.5);
         double maxVd = Math.max(0.0, dstH - e.getBbHeight() - CEIL_PAD);
 
         Vec3 base = new Vec3(tgtAnchor.getX() + 0.5, tgtAnchor.getY(), tgtAnchor.getZ() + 0.5);
-        Vec3 rel  = desired.subtract(base);
+        Vec3 rel  = laneCenter.subtract(base);
+        double L0 = rel.dot(rDst);
+        double V0 = rel.y;
+        if (minLd <= maxLd) L0 = Mth.clamp(L0, minLd, maxLd);
+        V0 = Mth.clamp(V0, 0.0, maxVd);
 
-        double L = rel.dot(rDst);
-        double V = rel.y;
+        // Helper to build a candidate inside lane with offsets
+        java.util.function.BiFunction<Double, Double, Vec3> lanePos = (l, v) ->
+                base.add(rDst.scale(l)).add(0, v, 0);
 
-        if (minLd <= maxLd) L = Mth.clamp(L, minLd, maxLd);
-        V = Mth.clamp(V, 0.0, maxVd);
+        // Search order:
+        // A. Forward along normal (0 -> +3.0)
+        for (double dn = 0.0; dn <= MAX_OUTWARD_SEARCH + 1e-6; dn += STEP_N) {
+            // Vertical band around V0
+            for (double dv = -MAX_VERTICAL_SEARCH; dv <= MAX_VERTICAL_SEARCH + 1e-6; dv += STEP_V) {
+                // Small lateral wiggles
+                for (double dl = -LATERAL_WIGGLE; dl <= LATERAL_WIGGLE + 1e-6; dl += STEP_L) {
+                    double L = L0 + dl;
+                    double V = V0 + dv;
+                    if (minLd <= maxLd) L = Mth.clamp(L, minLd, maxLd);
+                    V = Mth.clamp(V, 0.0, maxVd);
 
-        return base.add(rDst.scale(L)).add(0, V, 0).add(outNormal.scale(0.03125));
+                    Vec3 candLane = lanePos.apply(L, V);
+                    Vec3 cand = candLane.add(outNormal.scale(EJECT + dn));
+                    if (isFreeAt(level, e, cand)) return cand;
+                }
+            }
+        }
+
+        // B. Backward (into/behind the plane) to avoid walls placed flush on exit side
+        for (double dn = STEP_N; dn <= MAX_BACKWARD_SEARCH + 1e-6; dn += STEP_N) {
+            for (double dv = -MAX_VERTICAL_SEARCH; dv <= MAX_VERTICAL_SEARCH + 1e-6; dv += STEP_V) {
+                for (double dl = -LATERAL_WIGGLE; dl <= LATERAL_WIGGLE + 1e-6; dl += STEP_L) {
+                    double L = L0 + dl;
+                    double V = V0 + dv;
+                    if (minLd <= maxLd) L = Mth.clamp(L, minLd, maxLd);
+                    V = Mth.clamp(V, 0.0, maxVd);
+
+                    Vec3 candLane = lanePos.apply(L, V);
+                    Vec3 cand = candLane.subtract(outNormal.scale(dn)); // negative normal
+                    if (isFreeAt(level, e, cand)) return cand;
+                }
+            }
+        }
+
+        // C. Absolute fallback: center of lane, tiny negative bias to avoid flush exit-wall collision
+        Vec3 center = lanePos.apply((minLd + maxLd) * 0.5, V0);
+        return center.subtract(outNormal.scale(0.0625));
     }
 
     /** AABB collision check at an arbitrary position (without moving the entity yet). */
