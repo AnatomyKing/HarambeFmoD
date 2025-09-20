@@ -1,4 +1,3 @@
-// src/main/java/net/anatomyworld/harambefmod/event/PortalCompat.java
 package net.anatomyworld.harambefmod.event;
 
 import net.minecraft.BlockUtil;
@@ -6,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Relative;
 import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.portal.PortalForcer;
 
@@ -14,63 +14,72 @@ import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
 
+/** Compatibility helpers. Defaults to RAW (non-portal) teleports to avoid vanilla portal side effects. */
 final class PortalCompat {
     private PortalCompat() {}
 
     /**
-     * Cross-dimension teleport using the best-available signature.
-     * Prefers the portal-aware overload (… yaw, pitch, boolean viaPortal) on 1.21.x,
-     * and falls back to the older 7-arg signature when needed.
+     * Cross-dimension teleport with explicit control over the "viaPortal" flag.
+     * Use viaPortal=false for custom reroutes to avoid vanilla's portal state machine nudging placement.
      */
-    static boolean crossDimTeleport(Entity e, ServerLevel dest, double x, double y, double z, float yaw, float pitch) {
-        // Mojmap 1.21+: Relative enum; some environments still expose RelativeMovement
-        Class<?> relativeEnum = tryClass("net.minecraft.world.entity.Relative");
-        if (relativeEnum == null) relativeEnum = tryClass("net.minecraft.world.entity.RelativeMovement");
-        if (relativeEnum == null) return false;
-
-        @SuppressWarnings({"rawtypes","unchecked"})
-        Set flags = EnumSet.noneOf((Class) relativeEnum);
-
-        // 1) Try portal-aware overload:
-        //    teleportTo(ServerLevel, double, double, double, Set<Relative>, float, float, boolean viaPortal)
+    static boolean crossDimTeleport(Entity e, ServerLevel dest, double x, double y, double z, float yaw, float pitch, boolean viaPortal) {
+        // Preferred: typed 1.21.x API
         try {
+            Set<Relative> flags = EnumSet.noneOf(Relative.class); // absolute pos/rot
+            if (e instanceof net.minecraft.server.level.ServerPlayer sp) {
+                sp.teleportTo(dest, x, y, z, flags, yaw, pitch, viaPortal);
+                return true;
+            } else {
+                e.teleportTo(dest, x, y, z, flags, yaw, pitch, viaPortal);
+                return true;
+            }
+        } catch (Throwable ignore) {
+            // fall back to reflection for odd mapping environments
+        }
+
+        // Reflection fallback: portal-aware overload
+        try {
+            Class<?> rel = Class.forName("net.minecraft.world.entity.Relative");
+            @SuppressWarnings({"rawtypes","unchecked"})
+            Set flags = EnumSet.noneOf((Class) rel);
+
             Method m = e.getClass().getMethod(
                     "teleportTo",
                     ServerLevel.class, double.class, double.class, double.class, Set.class, float.class, float.class, boolean.class
             );
-            Object ok = m.invoke(e, dest, x, y, z, flags, yaw, pitch, /*viaPortal*/ true);
+            Object ok = m.invoke(e, dest, x, y, z, flags, yaw, pitch, viaPortal);
             return !(ok instanceof Boolean) || (Boolean) ok;
-        } catch (NoSuchMethodException ignore) {
-            // continue to 7-arg fallback
-        } catch (Throwable t) {
-            return false;
-        }
-
-        // 2) Fallback: 7-arg signature (no viaPortal flag)
-        try {
-            Method m = e.getClass().getMethod(
-                    "teleportTo",
-                    ServerLevel.class, double.class, double.class, double.class, Set.class, float.class, float.class
-            );
-            Object ok = m.invoke(e, dest, x, y, z, flags, yaw, pitch);
-            return !(ok instanceof Boolean) || (Boolean) ok;
-        } catch (Throwable t) {
-            // 3) Last chance: some environments require resolving against Entity.class
+        } catch (NoSuchMethodException ex) {
+            // Older-style 7-arg fallback (no viaPortal param)
             try {
-                Class<?> entityCls = Class.forName("net.minecraft.world.entity.Entity");
-                Method m = entityCls.getMethod(
+                Class<?> rel = Class.forName("net.minecraft.world.entity.RelativeMovement");
+                @SuppressWarnings({"rawtypes","unchecked"})
+                Set flags = EnumSet.noneOf((Class) rel);
+
+                Method m = e.getClass().getMethod(
                         "teleportTo",
                         ServerLevel.class, double.class, double.class, double.class, Set.class, float.class, float.class
                 );
                 Object ok = m.invoke(e, dest, x, y, z, flags, yaw, pitch);
                 return !(ok instanceof Boolean) || (Boolean) ok;
-            } catch (Throwable ignore) {
+            } catch (Throwable ignore2) {
                 return false;
             }
+        } catch (Throwable t) {
+            return false;
         }
     }
 
-    /** findClosestPortalPosition / getPortalPos across mapping variants. */
+    /** Convenience: RAW by default (no vanilla portal behavior). */
+    static boolean crossDimTeleportRaw(Entity e, ServerLevel dest, double x, double y, double z, float yaw, float pitch) {
+        return crossDimTeleport(e, dest, x, y, z, yaw, pitch, /* viaPortal */ false);
+    }
+
+    /** Convenience: vanilla-portal semantics when explicitly wanted. */
+    static boolean crossDimTeleportViaPortal(Entity e, ServerLevel dest, double x, double y, double z, float yaw, float pitch) {
+        return crossDimTeleport(e, dest, x, y, z, yaw, pitch, /* viaPortal */ true);
+    }
+
     @SuppressWarnings("unchecked")
     static Optional<BlockPos> findClosestPortal(PortalForcer forcer, BlockPos search, boolean destIsNether, WorldBorder border) {
         try {
@@ -88,24 +97,13 @@ final class PortalCompat {
         }
     }
 
-    /** Create a portal rectangle (vanilla-style). */
     static Optional<BlockUtil.FoundRectangle> createPortal(PortalForcer forcer, BlockPos search, Direction.Axis axis) {
-        try {
-            return forcer.createPortal(search, axis);
-        } catch (Throwable t) {
-            return Optional.empty();
-        }
+        try { return forcer.createPortal(search, axis); }
+        catch (Throwable t) { return Optional.empty(); }
     }
 
-    /** Optional: try to apply a portal cooldown after teleport. */
+    /** Intentionally NO vanilla portal cooldown; custom callers should guard re-entry themselves. */
     static void trySetPortalCooldown(Entity e) {
-        try {
-            Method m = e.getClass().getMethod("setPortalCooldown");
-            m.invoke(e);
-        } catch (Throwable ignored) {}
-    }
-
-    private static Class<?> tryClass(String fqcn) {
-        try { return Class.forName(fqcn); } catch (Throwable t) { return null; }
+        // NO-OP on purpose to avoid cross-system side effects
     }
 }

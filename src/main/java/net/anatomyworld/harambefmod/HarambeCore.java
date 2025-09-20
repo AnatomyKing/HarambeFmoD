@@ -18,6 +18,7 @@ import net.anatomyworld.harambefmod.item.ModItems;
 import net.anatomyworld.harambefmod.network.ModNetworking;
 import net.anatomyworld.harambefmod.worldgen.ModFeatures;
 import net.minecraft.client.Minecraft;
+import net.anatomyworld.harambefmod.item.custom.ModArmorMaterials;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockAndTintGetter;
@@ -68,6 +69,9 @@ public final class HarambeCore {
 
         CrossDimPortalHandler.register();
         PortalIgnitionHandler.register();
+        SleepSkipCommandFallback.register();
+
+
 
 
         // Client listeners (no @OnlyIn, no Bus enum needed)
@@ -91,16 +95,24 @@ public final class HarambeCore {
     }
 
     public static final class ClientEvents {
+
+
+
+
         public static void layerDefs(EntityRenderersEvent.RegisterLayerDefinitions e) {
             // Banana Cow model
             e.registerLayerDefinition(BananaCowModel.LAYER_LOCATION, BananaCowModel::createBodyLayer);
 
             // Musavacca Boat model
             e.registerLayerDefinition(MusavaccaBoatModel.LAYER, MusavaccaBoatModel::createBodyLayer);
+
+
         }
 
         public static void clientSetup(FMLClientSetupEvent e) {
             e.enqueueWork(() -> {
+
+
                 // entity renderer
                 e.enqueueWork(() -> {
                     // Banana Cow renderer

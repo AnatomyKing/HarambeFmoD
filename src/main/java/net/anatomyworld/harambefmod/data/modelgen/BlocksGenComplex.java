@@ -1,9 +1,12 @@
 package net.anatomyworld.harambefmod.data.modelgen;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.mojang.math.Quadrant;
 import net.anatomyworld.harambefmod.block.custom.BananaCowEggBlock;
 import net.anatomyworld.harambefmod.block.custom.MusavaccaPlantCropBlock;
 import net.minecraft.client.data.models.BlockModelGenerators;
+import net.minecraft.client.data.models.ItemModelGenerators;
 import net.minecraft.client.data.models.blockstates.MultiPartGenerator;
 import net.minecraft.client.data.models.blockstates.MultiVariantGenerator;
 import net.minecraft.client.data.models.blockstates.PropertyDispatch;
@@ -655,6 +658,142 @@ public final class BlocksGenComplex {
             );
         }
     }
+
+    public static void wallBannerStatesExternal(BlockModelGenerators gen, Block banner, ResourceLocation externalModel) {
+        // Base variant: your model, uvlock true
+        Variant base = new Variant(externalModel).with(VariantMutator.UV_LOCK.withValue(true));
+
+        // Detect which property the block actually has
+        boolean hasFacing =
+                banner.getStateDefinition().getProperties().contains(BlockStateProperties.FACING);
+        boolean hasHoriz =
+                banner.getStateDefinition().getProperties().contains(BlockStateProperties.HORIZONTAL_FACING);
+
+        if (hasFacing) {
+            // 6-way (DirectionalBlock: FACING)
+            gen.blockStateOutput.accept(
+                    MultiVariantGenerator
+                            .dispatch(banner, BlockModelGenerators.variant(base)) // default SOUTH (0°)
+                            .with(PropertyDispatch.modify(BlockStateProperties.FACING)
+                                    .select(Direction.SOUTH, BlockModelGenerators.NOP) // keep base
+                                    .select(Direction.NORTH, VariantMutator.Y_ROT.withValue(Quadrant.R180))
+                                    .select(Direction.EAST,  VariantMutator.Y_ROT.withValue(Quadrant.R90))
+                                    .select(Direction.WEST,  VariantMutator.Y_ROT.withValue(Quadrant.R270))
+                                    // For UP/DOWN we just rotate the same externalModel; your scaled 6-way
+                                    // generator will later overwrite with the dedicated _up/_down if you use it.
+                                    .select(Direction.UP,    VariantMutator.X_ROT.withValue(Quadrant.R270))
+                                    .select(Direction.DOWN,  VariantMutator.X_ROT.withValue(Quadrant.R90))
+                            )
+            );
+        } else if (hasHoriz) {
+            // 4-way (HorizontalDirectionalBlock: HORIZONTAL_FACING)
+            gen.blockStateOutput.accept(
+                    MultiVariantGenerator
+                            .dispatch(banner, BlockModelGenerators.variant(base)) // default SOUTH (0°)
+                            .with(PropertyDispatch.modify(BlockStateProperties.HORIZONTAL_FACING)
+                                    .select(Direction.SOUTH, BlockModelGenerators.NOP)
+                                    .select(Direction.NORTH, VariantMutator.Y_ROT.withValue(Quadrant.R180))
+                                    .select(Direction.EAST,  VariantMutator.Y_ROT.withValue(Quadrant.R90))
+                                    .select(Direction.WEST,  VariantMutator.Y_ROT.withValue(Quadrant.R270))
+                            )
+            );
+        } else {
+            throw new IllegalStateException("Banner block " + banner + " has neither FACING nor HORIZONTAL_FACING");
+        }
+    }
+
+    public static void wallBannerScaled6Way(BlockModelGenerators gen,
+                                            ItemModelGenerators items,
+                                            Block banner,
+                                            ResourceLocation baseModel,
+                                            float uniformScale,
+                                            float pivotX, float pivotY, float pivotZ,
+                                            float wallTx, float wallTy, float wallTz,
+                                            float upTranslateY,
+                                            float downTranslateY,
+                                            boolean emitItemFixed) {
+        var id = idOf(banner);
+        String ns = id.getNamespace();
+        String name = id.getPath();
+
+        ResourceLocation wallId = rl(ns, "block/" + name + "_wall");
+        ResourceLocation upId   = rl(ns, "block/" + name + "_up");
+        ResourceLocation downId = rl(ns, "block/" + name + "_down");
+
+        // World-placed wrappers → use scaled transform
+        gen.modelOutput.accept(wallId,
+                () -> transformJson(baseModel, uniformScale, wallTx, wallTy, wallTz, pivotX, pivotY, pivotZ));
+
+        gen.modelOutput.accept(upId,
+                () -> transformJson(baseModel, uniformScale, 0f, upTranslateY, 0f, pivotX, pivotY, pivotZ));
+
+        gen.modelOutput.accept(downId,
+                () -> transformJson(baseModel, uniformScale, 0f, downTranslateY, 0f, pivotX, pivotY, pivotZ));
+
+        // --- Blockstate: FACING ---
+        var base = new net.minecraft.client.renderer.block.model.Variant(wallId); // scaled wall wrapper
+
+        gen.blockStateOutput.accept(
+                net.minecraft.client.data.models.blockstates.MultiVariantGenerator
+                        .dispatch(banner, net.minecraft.client.data.models.BlockModelGenerators.variant(base))
+                        .with(net.minecraft.client.data.models.blockstates.PropertyDispatch
+                                .modify(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING)
+                                .select(Direction.NORTH, net.minecraft.client.data.models.BlockModelGenerators.NOP)
+                                .select(Direction.SOUTH,
+                                        net.minecraft.client.renderer.block.model.VariantMutator.Y_ROT.withValue(com.mojang.math.Quadrant.R180))
+                                .select(Direction.EAST,
+                                        net.minecraft.client.renderer.block.model.VariantMutator.Y_ROT.withValue(com.mojang.math.Quadrant.R90))
+                                .select(Direction.WEST,
+                                        net.minecraft.client.renderer.block.model.VariantMutator.Y_ROT.withValue(com.mojang.math.Quadrant.R270))
+                                // (optional) ceiling/floor variants, still scaled
+                                .select(Direction.UP,
+                                        net.minecraft.client.renderer.block.model.VariantMutator.MODEL.withValue(upId)
+                                                .then(net.minecraft.client.renderer.block.model.VariantMutator.X_ROT.withValue(com.mojang.math.Quadrant.R270)))
+                                .select(Direction.DOWN,
+                                        net.minecraft.client.renderer.block.model.VariantMutator.MODEL.withValue(downId)
+                                                .then(net.minecraft.client.renderer.block.model.VariantMutator.X_ROT.withValue(com.mojang.math.Quadrant.R90)))
+                        )
+        );
+
+        // --- Item model: use the *base model*, no scaling ---
+        if (emitItemFixed) {
+            ResourceLocation itemModelId = rl(ns, "item/" + name);
+
+            items.modelOutput.accept(itemModelId, () -> {
+                JsonObject j = new JsonObject();
+                j.addProperty("parent", baseModel.toString()); // base, NOT scaled wrapper
+                return j;
+            });
+
+            items.itemModelOutput.accept(
+                    banner.asItem(),
+                    new net.minecraft.client.renderer.item.BlockModelWrapper.Unbaked(itemModelId, java.util.List.of())
+            );
+        }
+    }
+
+    /** Builds the JSON for your custom loader.
+     * translate is (tx, ty, tz) in *pixels*. We only vary Y for up/down variants.
+     */
+    private static JsonObject transformJson(ResourceLocation baseModel,
+                                            float uniformScale,
+                                            float tx, float ty, float tz,
+                                            float px, float py, float pz) {
+        JsonObject j = new JsonObject();
+        j.addProperty("loader", "harambefmod:transform");
+        j.addProperty("model", baseModel.toString());
+
+        JsonArray s = new JsonArray(); s.add(uniformScale); s.add(uniformScale); s.add(uniformScale);
+        JsonArray t = new JsonArray(); t.add(tx); t.add(ty); t.add(tz);
+        JsonArray p = new JsonArray(); p.add(px); p.add(py); p.add(pz);
+
+        j.add("scale", s);
+        j.add("translate", t);
+        j.add("pivot", p);
+        return j;
+    }
+
+
 
     /** true if the block has a boolean property with the given name. */
     private static boolean hasBooleanProperty(net.minecraft.world.level.block.Block b, String name) {

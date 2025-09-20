@@ -1,4 +1,3 @@
-// src/main/java/net/anatomyworld/harambefmod/event/PortalIgnitionHandler.java
 package net.anatomyworld.harambefmod.event;
 
 import net.minecraft.core.BlockPos;
@@ -42,9 +41,12 @@ public final class PortalIgnitionHandler {
         BlockPos target = e.getPos().relative(e.getFace());
         if (!level.getBlockState(target).canBeReplaced()) return;
 
+        // Axis from player yaw -> better than hardcoding X then Z
+        Direction.Axis yawAxis = Direction.fromYRot(e.getEntity().getYRot()).getAxis();
+
         Optional<PortalShape> shape =
-                tryFindEmptyPortal(level, target, Direction.Axis.X)
-                        .or(() -> tryFindEmptyPortal(level, target, Direction.Axis.Z));
+                tryFindEmptyPortal(level, target, yawAxis)
+                        .or(() -> tryFindEmptyPortal(level, target, (yawAxis == Direction.Axis.X) ? Direction.Axis.Z : Direction.Axis.X));
         if (shape.isEmpty()) return;
 
         // cancel vanilla fire and report success so client animates
@@ -72,6 +74,7 @@ public final class PortalIgnitionHandler {
         catch (Throwable t) { return Optional.empty(); }
     }
 
+    // Works across minor mapping changes (createPortalBlocks vs placePortalBlocks)
     private static void placePortalBlocks(PortalShape shape, Level level) {
         try {
             PortalShape.class.getMethod("createPortalBlocks", LevelAccessor.class).invoke(shape, level);

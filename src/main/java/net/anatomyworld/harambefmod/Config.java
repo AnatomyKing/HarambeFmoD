@@ -1,4 +1,3 @@
-// src/main/java/net/anatomyworld/harambefmod/Config.java
 package net.anatomyworld.harambefmod;
 
 import net.minecraft.core.registries.Registries;
@@ -30,7 +29,11 @@ public final class Config {
                                 "harambefmod:dynastirium",
                                 "harambefmod:belandes",
                                 "harambefmod:impero",
-                                "harambefmod:marchelus"
+                                "harambefmod:marchelus",
+                                "harambefmod:dynastirium_default",
+                                "harambefmod:belnades_default",
+                                "harambefmod:impero_default",
+                                "harambefmod:marchelus_default"
                         ),
                         () -> "minecraft:overworld",
                         o -> (o instanceof String s) && ResourceLocation.tryParse(s) != null

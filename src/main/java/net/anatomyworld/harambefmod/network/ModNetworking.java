@@ -1,5 +1,7 @@
 package net.anatomyworld.harambefmod.network;
 
+import net.anatomyworld.harambefmod.attachment.CosmeticWardrobe;
+import net.anatomyworld.harambefmod.attachment.ModAttachments;
 import net.anatomyworld.harambefmod.block.ModBlocks;
 import net.anatomyworld.harambefmod.block.entity.PearlFireBlockEntity;
 import net.anatomyworld.harambefmod.client.portal.BananaPortalTintCache;
@@ -34,14 +36,16 @@ public final class ModNetworking {
         // bump this if you change payload formats
         PayloadRegistrar reg = evt.registrar("1");
 
-        // C -> S: place colored pearl fire
+        /* ---------------- C -> S ---------------- */
+
+        // place colored pearl fire
         reg.playToServer(
                 PlaceFirePayload.TYPE,
                 PlaceFirePayload.STREAM_CODEC,
                 (payload, ctx) -> ctx.enqueueWork(() -> handlePlaceFire(payload, ctx))
         );
 
-        // C -> S: save flame color selected in the UI onto the held item
+        // save flame color selected in the UI onto the held item
         reg.playToServer(
                 SyncColorPayload.TYPE,
                 SyncColorPayload.STREAM_CODEC,
@@ -60,34 +64,57 @@ public final class ModNetworking {
                 })
         );
 
-        // S -> C: cosmetic sets list
-        reg.playToClient(
-                net.anatomyworld.harambefmod.network.SyncCosmeticSetsPayload.TYPE,
-                net.anatomyworld.harambefmod.network.SyncCosmeticSetsPayload.STREAM_CODEC,
-                (payload, ctx) -> ctx.enqueueWork(() ->
-                        net.anatomyworld.harambefmod.cosmetic.client.ClientCosmeticSets.accept(payload)
-                )
-        );
-
-
-        reg.playToServer(SelectCosmeticSetPayload.TYPE, SelectCosmeticSetPayload.STREAM_CODEC,
+        // select a cosmetic set
+        reg.playToServer(
+                SelectCosmeticSetPayload.TYPE,
+                SelectCosmeticSetPayload.STREAM_CODEC,
                 (payload, ctx) -> ctx.enqueueWork(() -> {
-                    if (!(ctx instanceof net.neoforged.neoforge.network.handling.ServerPayloadContext s)) return;
+                    if (!(ctx instanceof ServerPayloadContext s)) return;
                     var player = s.player(); if (player == null) return;
 
                     var set = net.anatomyworld.harambefmod.cosmetic.CosmeticSets.get(payload.id());
                     if (set == null) return;
 
-                    // Apply to attachment (server-authoritative)
-                    var ward = player.getData(net.anatomyworld.harambefmod.attachment.ModAttachments.COSMETIC_WARDROBE.get());
-                    set.head().ifPresentOrElse(ward::setHead, ()->ward.setHead(null));
-                    set.chest().ifPresentOrElse(ward::setChest, ()->ward.setChest(null));
-                    set.legs().ifPresentOrElse(ward::setLegs, ()->ward.setLegs(null));
-                    set.feet().ifPresentOrElse(ward::setFeet, ()->ward.setFeet(null));
-                    player.setData(net.anatomyworld.harambefmod.attachment.ModAttachments.COSMETIC_WARDROBE.get(), ward); // triggers sync
-                }));
+                    var ward = player.getData(ModAttachments.COSMETIC_WARDROBE.get());
+                    set.head().ifPresentOrElse(ward::setHead, () -> ward.setHead(null));
+                    set.chest().ifPresentOrElse(ward::setChest, () -> ward.setChest(null));
+                    set.legs().ifPresentOrElse(ward::setLegs, () -> ward.setLegs(null));
+                    set.feet().ifPresentOrElse(ward::setFeet, () -> ward.setFeet(null));
+                    player.setData(ModAttachments.COSMETIC_WARDROBE.get(), ward); // triggers sync
+                })
+        );
 
-        // S -> C: pre-tint the whole portal interior on clients
+        // ✅ NEW: clear cosmetic wardrobe (client button -> server)
+        reg.playToServer(
+                ClearCosmeticWardrobePayload.TYPE,
+                ClearCosmeticWardrobePayload.STREAM_CODEC,
+                (payload, ctx) -> ctx.enqueueWork(() -> {
+                    if (!(ctx instanceof ServerPayloadContext s)) return;
+                    ServerPlayer player = s.player(); if (player == null) return;
+
+                    CosmeticWardrobe ward = player.getData(ModAttachments.COSMETIC_WARDROBE.get());
+                    ward.setHead(null);
+                    ward.setChest(null);
+                    ward.setLegs(null);
+                    ward.setFeet(null);
+
+                    // setData -> attachment has .sync(...) so clients update automatically
+                    player.setData(ModAttachments.COSMETIC_WARDROBE.get(), ward);
+                })
+        );
+
+        /* ---------------- S -> C ---------------- */
+
+        // cosmetics list to clients
+        reg.playToClient(
+                SyncCosmeticSetsPayload.TYPE,
+                SyncCosmeticSetsPayload.STREAM_CODEC,
+                (payload, ctx) -> ctx.enqueueWork(() ->
+                        net.anatomyworld.harambefmod.cosmetic.client.ClientCosmeticSets.accept(payload)
+                )
+        );
+
+        // pre-tint portal interior on clients
         reg.playToClient(
                 SyncPortalTintPayload.TYPE,
                 SyncPortalTintPayload.STREAM_CODEC,
@@ -95,8 +122,6 @@ public final class ModNetworking {
                         payload.anchor(), payload.axis(), payload.width(), payload.height(), payload.rgb()
                 ))
         );
-
-
     }
 
     private static void handlePlaceFire(PlaceFirePayload payload, IPayloadContext ctx) {
@@ -104,8 +129,7 @@ public final class ModNetworking {
         ServerPlayer player = serverCtx.player();
         if (player == null) return;
 
-        // 1.21.8: use Entity#level() and cast on the server
-        ServerLevel level = (ServerLevel) player.level(); // Entity has a Level field; we're on the server. :contentReference[oaicite:2]{index=2}
+        ServerLevel level = (ServerLevel) player.level();
 
         BlockPos pos   = payload.pos();
         Direction face = Direction.values()[payload.face()];
@@ -121,15 +145,12 @@ public final class ModNetworking {
         level.playSound(null, pos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F,
                 level.getRandom().nextFloat() * 0.4F + 0.8F);
 
-        // Use a non-ambiguous hurtAndBreak overload (hand/slot):
         InteractionHand hand = payload.mainHand() ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
         ItemStack stack = player.getItemInHand(hand);
 
         if (!stack.isEmpty() && stack.getItem() instanceof FlintAndPearlItem) {
-            // Either version is fine; pick one and import the matching enum.
             EquipmentSlot slot = payload.mainHand() ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
-            stack.hurtAndBreak(1, player, slot); // avoids null/overload ambiguity. :contentReference[oaicite:3]{index=3}
-            // Alternatively: stack.hurtAndBreak(1, player, hand);  // also valid in 1.21.8. :contentReference[oaicite:4]{index=4}
+            stack.hurtAndBreak(1, player, slot);
         }
     }
 

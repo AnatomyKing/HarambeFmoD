@@ -73,7 +73,11 @@ public final class ModBlockLootSubProvider extends BlockLootSubProvider {
                 ModBlocks.BELMONT_SAPLING.get(),
                 ModBlocks.DYNASTY_SAPLING.get(),
                 ModBlocks.IMPERIUM_SAPLING.get(),
-                ModBlocks.MISCHIEF_SAPLING.get()
+                ModBlocks.MISCHIEF_SAPLING.get(),
+                ModBlocks.BIG_BELMONT_BANNER.get(),
+                ModBlocks.BIG_DYNASTY_BANNER.get(),
+                ModBlocks.BIG_IMPERIUM_BANNER.get(),
+                ModBlocks.BIG_MISCHIEF_BANNER.get()
         };
 
         for (Block b : selfDropping) {
@@ -87,33 +91,12 @@ public final class ModBlockLootSubProvider extends BlockLootSubProvider {
                 )
         );
 
-        add(ModBlocks.BELMONT_LEAVES.get(),
-                createSilkTouchOrShearsDispatchTable(
-                        ModBlocks.BELMONT_LEAVES.get(),
-                        net.minecraft.world.level.storage.loot.entries.EmptyLootItem.emptyItem()
-                )
-        );
+        leavesLike(ModBlocks.BELMONT_LEAVES.get(),  ModBlocks.BELMONT_SAPLING.get());
+        leavesLike(ModBlocks.DYNASTY_LEAVES.get(),  ModBlocks.DYNASTY_SAPLING.get());
+        leavesLike(ModBlocks.IMPERIUM_LEAVES.get(), ModBlocks.IMPERIUM_SAPLING.get());
+        leavesLike(ModBlocks.MISCHIEF_LEAVES.get(), ModBlocks.MISCHIEF_SAPLING.get());
 
-        add(ModBlocks.DYNASTY_LEAVES.get(),
-                createSilkTouchOrShearsDispatchTable(
-                        ModBlocks.DYNASTY_LEAVES.get(),
-                        net.minecraft.world.level.storage.loot.entries.EmptyLootItem.emptyItem()
-                )
-        );
 
-        add(ModBlocks.IMPERIUM_LEAVES.get(),
-                createSilkTouchOrShearsDispatchTable(
-                        ModBlocks.IMPERIUM_LEAVES.get(),
-                        net.minecraft.world.level.storage.loot.entries.EmptyLootItem.emptyItem()
-                )
-        );
-
-        add(ModBlocks.MISCHIEF_LEAVES.get(),
-                createSilkTouchOrShearsDispatchTable(
-                        ModBlocks.MISCHIEF_LEAVES.get(),
-                        net.minecraft.world.level.storage.loot.entries.EmptyLootItem.emptyItem()
-                )
-        );
 
         add(ModBlocks.MUSAVACCA_LEAVES_CROWN.get(),
                 createSilkTouchOrShearsDispatchTable(
@@ -301,6 +284,13 @@ public final class ModBlockLootSubProvider extends BlockLootSubProvider {
                 );
             }
         }
+
+
+
+    private void leavesLike(Block leaves, Block sapling) {
+        // Uses NORMAL_LEAVES_SAPLING_CHANCES internally; also adds stick pool automatically.
+        add(leaves, createLeavesDrops(leaves, sapling, NORMAL_LEAVES_SAPLING_CHANCES));
+    }
 
     @Override
     protected Iterable<Block> getKnownBlocks() {

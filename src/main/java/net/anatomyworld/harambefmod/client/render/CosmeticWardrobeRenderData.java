@@ -12,6 +12,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.equipment.Equippable;
 import net.neoforged.neoforge.client.renderstate.RegisterRenderStateModifiersEvent;
 
+import javax.annotation.Nullable;
+
 public final class CosmeticWardrobeRenderData {
 
     public static final ContextKey<ItemStack> COS_HEAD  =
@@ -25,25 +27,30 @@ public final class CosmeticWardrobeRenderData {
 
     private CosmeticWardrobeRenderData() {}
 
-    /** MOD bus — push stacks from the player's attachment into the PlayerRenderState. */
+    /** MOD bus — push stacks into PlayerRenderState: cosmetic if present, else *real armor*. */
     public static void onRegisterStateMods(RegisterRenderStateModifiersEvent e) {
-        // PlayerRenderer has no generics, so we can use the Class<?> overload safely.
         e.registerEntityModifier(
                 net.minecraft.client.renderer.entity.player.PlayerRenderer.class,
                 (AbstractClientPlayer player, net.minecraft.client.renderer.entity.state.PlayerRenderState state) -> {
                     var w = player.getData(ModAttachments.COSMETIC_WARDROBE.get());
                     if (w == null) return;
 
-                    state.setRenderData(COS_HEAD,  stackFor(w.head(),  EquipmentSlot.HEAD));
-                    state.setRenderData(COS_CHEST, stackFor(w.chest(), EquipmentSlot.CHEST));
-                    state.setRenderData(COS_LEGS,  stackFor(w.legs(),  EquipmentSlot.LEGS));
-                    state.setRenderData(COS_FEET,  stackFor(w.feet(),  EquipmentSlot.FEET));
+                    state.setRenderData(COS_HEAD,  cosmeticOrReal(w.head(),  EquipmentSlot.HEAD,  player));
+                    state.setRenderData(COS_CHEST, cosmeticOrReal(w.chest(), EquipmentSlot.CHEST, player));
+                    state.setRenderData(COS_LEGS,  cosmeticOrReal(w.legs(),  EquipmentSlot.LEGS,  player));
+                    state.setRenderData(COS_FEET,  cosmeticOrReal(w.feet(),  EquipmentSlot.FEET,  player));
                 }
         );
     }
 
+    /** If cosmetic id is present and valid for the slot, build that stack; else return the player's real armor. */
+    private static ItemStack cosmeticOrReal(@Nullable ResourceLocation id, EquipmentSlot slot, AbstractClientPlayer player) {
+        ItemStack cosmetic = stackFor(id, slot);
+        return cosmetic.isEmpty() ? player.getItemBySlot(slot) : cosmetic;
+    }
+
     /** Build an ItemStack for an id and ensure it’s equippable for the expected slot. */
-    private static ItemStack stackFor(ResourceLocation id, EquipmentSlot slot) {
+    private static ItemStack stackFor(@Nullable ResourceLocation id, EquipmentSlot slot) {
         if (id == null) return ItemStack.EMPTY;
         Item item = BuiltInRegistries.ITEM.getOptional(id).orElse(null);
         if (item == null) return ItemStack.EMPTY;
@@ -51,6 +58,6 @@ public final class CosmeticWardrobeRenderData {
         ItemStack stack = new ItemStack(item);
         Equippable eq = stack.get(DataComponents.EQUIPPABLE);
         if (eq == null || eq.slot() != slot) return ItemStack.EMPTY;
-        return stack; // EquipmentLayerRenderer reads client info from this stack.
+        return stack; // EquipmentLayerRenderer reads client info (asset) from this stack.
     }
 }

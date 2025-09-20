@@ -12,6 +12,7 @@ import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 
@@ -38,15 +39,40 @@ public final class ModRecipeProvider extends RecipeProvider {
 
         /* ---------- Shapeless ---------- */
 
-//        dsl.shapeless(RecipeCategory.MISC, ModItems.RAW_ANYTOMITHIUM.get())
-//                .requires(Items.RAW_IRON, Items.PRISMARINE_CRYSTALS, Items.AMETHYST_SHARD)
-//                .unlockedByHas(Items.AMETHYST_SHARD)
-//                .save("raw_anytomithium");
+        dsl.shapeless(RecipeCategory.MISC, ModItems.RAW_ANYTOMITHIUM.get())
+                .requires(Items.RAW_IRON, Items.PRISMARINE_CRYSTALS, Items.AMETHYST_SHARD)
+                .unlockedByHas(Items.AMETHYST_SHARD)
+                .save("raw_anytomithium");
+
+
+        dsl.shapeless(RecipeCategory.MISC, ModItems.BELMONT_BANNER_PATTERN.get())
+                .requires(Items.PAPER, ModBlocks.BELMONT_PLANKS)
+                .unlockedByHas(ModBlocks.BELMONT_PLANKS)
+                .save("faction/belmont_banner_pattern");
+
+// Dynasty Banner Pattern
+        dsl.shapeless(RecipeCategory.MISC, ModItems.DYNASTY_BANNER_PATTERN.get())
+                .requires(Items.PAPER, ModBlocks.DYNASTY_PLANKS)
+                .unlockedByHas(ModBlocks.DYNASTY_PLANKS)
+                .save("faction/dynasty_banner_pattern");
+
+// Imperium Banner Pattern
+        dsl.shapeless(RecipeCategory.MISC, ModItems.IMPERIUM_BANNER_PATTERN.get())
+                .requires(Items.PAPER, ModBlocks.IMPERIUM_PLANKS)
+                .unlockedByHas(ModBlocks.IMPERIUM_PLANKS)
+                .save("faction/imperium_banner_pattern");
+
+// Mischief Banner Pattern
+        dsl.shapeless(RecipeCategory.MISC, ModItems.MISCHIEF_BANNER_PATTERN.get())
+                .requires(Items.PAPER, ModBlocks.MISCHIEF_PLANKS)
+                .unlockedByHas(ModBlocks.MISCHIEF_PLANKS)
+                .save("faction/mischief_banner_pattern");
 
         dsl.shapeless(RecipeCategory.MISC, ModItems.FLINT_AND_PEARL.get())
                 .requires(Items.FLINT, ModItems.BANANA_PEARL.get())
                 .unlockedByHas(Items.FLINT, ModItems.BANANA_PEARL.get())
-                .save("banana/flint_and_pearl");
+                .save("faction/banana/flint_and_pearl");
+
 
 
 //        dsl.shapeless(RecipeCategory.MISC, ModItems.HONEY_CRYSTALLINE.get(), 1)
@@ -83,6 +109,42 @@ public final class ModRecipeProvider extends RecipeProvider {
                 "musavacca/strip_stem_to_plank"
         );
 
+        dsl.shapelessCountToCount(
+                RecipeCategory.MISC,
+                ModBlocks.MUSAVACCA_PSEUDOSTEM.get(), 3,
+                ModBlocks.MUSAVACCA_STEM.get(), 4,
+                "musavacca/stem_to_pseudo"
+        );
+
+        dsl.shapelessCountToCount(
+                RecipeCategory.MISC,
+                ModBlocks.BELMONT_PLANKS.get(), 4,
+                ModBlocks.BELMONT_LOG.get(), 1,
+                "faction/belmont_to_plank"
+        );
+        dsl.shapelessCountToCount(
+                RecipeCategory.MISC,
+                ModBlocks.DYNASTY_PLANKS.get(), 4,
+                ModBlocks.DYNASTY_LOG.get(), 1,
+                "faction/dynasty_to_plank"
+        );
+
+        dsl.shapelessCountToCount(
+                RecipeCategory.MISC,
+                ModBlocks.IMPERIUM_PLANKS, 4,
+                ModBlocks.IMPERIUM_LOG.get(), 1,
+                "faction/imperium_to_plank"
+        );
+
+        dsl.shapelessCountToCount(
+                RecipeCategory.MISC,
+                ModBlocks.MISCHIEF_PLANKS,4,
+                ModBlocks.MISCHIEF_LOG.get(), 1,
+                "faction/mischief_to_plank"
+        );
+
+
+
 
 //        dsl.shapelessCountToCount(
 //                RecipeCategory.MISC,
@@ -94,35 +156,36 @@ public final class ModRecipeProvider extends RecipeProvider {
 
         /* ---------- Smelting / Blasting ---------- */
 
-//        ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> SMELT_KEY =
-//                ResourceKey.create(Registries.RECIPE,
-//                        ResourceLocation.fromNamespaceAndPath(HarambeCore.MOD_ID, "anytomithium_ingot_smelting"));
-//        ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> BLAST_KEY =
-//                ResourceKey.create(Registries.RECIPE,
-//                        ResourceLocation.fromNamespaceAndPath(HarambeCore.MOD_ID, "anytomithium_ingot_blasting"));
-//
-//        dsl.cook().smelt(Ingredient.of(ModItems.RAW_ANYTOMITHIUM.get()),
-//                        RecipeCategory.MISC, ModItems.ANYTOMITHIUM_INGOT.get(), 0.7F, 300)
-//                .unlockedByHas(ModItems.RAW_ANYTOMITHIUM.get())
-//                .save(SMELT_KEY);
-//
-//        dsl.cook().blast(Ingredient.of(ModItems.RAW_ANYTOMITHIUM.get()),
-//                        RecipeCategory.MISC, ModItems.ANYTOMITHIUM_INGOT.get(), 0.7F, 150)
-//                .unlockedByHas(ModItems.RAW_ANYTOMITHIUM.get())
-//                .save(BLAST_KEY);
+        ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> SMELT_KEY =
+                ResourceKey.create(Registries.RECIPE,
+                        ResourceLocation.fromNamespaceAndPath(HarambeCore.MOD_ID, "anytomithium_ingot_smelting"));
+        ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> BLAST_KEY =
+                ResourceKey.create(Registries.RECIPE,
+                        ResourceLocation.fromNamespaceAndPath(HarambeCore.MOD_ID, "anytomithium_ingot_blasting"));
+
+        dsl.cook().smelt(Ingredient.of(ModItems.RAW_ANYTOMITHIUM.get()),
+                        RecipeCategory.MISC, ModItems.PURPISH_ANYTOMITHIUM_INGOT.get(), 0.7F, 300)
+                .unlockedByHas(ModItems.RAW_ANYTOMITHIUM.get())
+                .save(SMELT_KEY);
+
+        dsl.cook().blast(Ingredient.of(ModItems.RAW_ANYTOMITHIUM.get()),
+                        RecipeCategory.MISC, ModItems.TEALISH_ANYTOMITHIUM_INGOT.get(), 0.7F, 150)
+                .unlockedByHas(ModItems.RAW_ANYTOMITHIUM.get())
+               .save(BLAST_KEY);
 
         /* ---------- Shaped ---------- */
 
-//        dsl.shaped(RecipeCategory.MISC, ModItems.ANYPHONE.get())
-//                .pattern("xcx")
-//                .pattern("xgx")
-//                .pattern("xrx")
-//                .define('x', ModItems.ANYTOMITHIUM_INGOT.get())
-//                .define('c', Items.COMPASS)
-//                .define('g', Items.LIGHT_BLUE_STAINED_GLASS_PANE)
-//                .define('r', Items.REPEATER)
-//                .unlockedByHas(ModItems.ANYTOMITHIUM_INGOT.get())
-//                .save("anyphone");
+        dsl.shaped(RecipeCategory.MISC, ModItems.ANYPHONE.get())
+                .pattern("ttr")
+                .pattern("pgp")
+                .pattern("pcp")
+                .define('p', ModItems.PURPISH_ANYTOMITHIUM_INGOT.get())
+                .define('t', ModItems.TEALISH_ANYTOMITHIUM_INGOT.get())
+                .define('c', Items.COMPASS)
+                .define('g', Items.LIGHT_BLUE_STAINED_GLASS_PANE)
+                .define('r', Items.REPEATER)
+                .unlockedByHas(ModItems.PURPISH_ANYTOMITHIUM_INGOT.get())
+                .save("anyphone");
 
 
         dsl.shaped(RecipeCategory.MISC, ModItems.BANANA_PEARL.get())
@@ -134,8 +197,63 @@ public final class ModRecipeProvider extends RecipeProvider {
                 .unlockedByHas(ModBlocks.BANANA_PEARL_BLOCK.get())
                 .save("banana/banana_to_pearl");
 
+        // Big Belmont Banner
+// Big Belmont Banner
+        dsl.shaped(RecipeCategory.DECORATIONS, ModBlocks.BIG_BELMONT_BANNER.get())
+                .pattern("SFS")
+                .pattern("WBW")
+                .pattern("WMW")
+                .define('S', ItemTags.WOODEN_SLABS)      // any wooden slab
+                .define('F', ItemTags.WOODEN_FENCES)     // any wooden fence
+                .define('W', ItemTags.WOOL)              // any wool
+                .define('B', ItemTags.BANNERS)           // any banner
+                .define('M', ModItems.BELMONT_BANNER_PATTERN.get())
+                .unlockedByHas(ModItems.BELMONT_BANNER_PATTERN.get())
+                .save("faction/big_belmont_banner");
 
-                dsl.shaped(RecipeCategory.MISC, ModBlocks.PEARLIDIAN.get())
+// Big Dynasty Banner
+        dsl.shaped(RecipeCategory.DECORATIONS, ModBlocks.BIG_DYNASTY_BANNER.get())
+                .pattern("SFS")
+                .pattern("WBW")
+                .pattern("WMW")
+                .define('S', ItemTags.WOODEN_SLABS)
+                .define('F', ItemTags.WOODEN_FENCES)
+                .define('W', ItemTags.WOOL)
+                .define('B', ItemTags.BANNERS)
+                .define('M', ModItems.DYNASTY_BANNER_PATTERN.get())
+                .unlockedByHas(ModItems.DYNASTY_BANNER_PATTERN.get())
+                .save("faction/big_dynasty_banner");
+
+// Big Imperium Banner
+        dsl.shaped(RecipeCategory.DECORATIONS, ModBlocks.BIG_IMPERIUM_BANNER.get())
+                .pattern("SFS")
+                .pattern("WBW")
+                .pattern("WMW")
+                .define('S', ItemTags.WOODEN_SLABS)
+                .define('F', ItemTags.WOODEN_FENCES)
+                .define('W', ItemTags.WOOL)
+                .define('B', ItemTags.BANNERS)
+                .define('M', ModItems.IMPERIUM_BANNER_PATTERN.get())
+                .unlockedByHas(ModItems.IMPERIUM_BANNER_PATTERN.get())
+                .save("faction/big_imperium_banner");
+
+// Big Mischief Banner
+        dsl.shaped(RecipeCategory.DECORATIONS, ModBlocks.BIG_MISCHIEF_BANNER.get())
+                .pattern("SFS")
+                .pattern("WBW")
+                .pattern("WMW")
+                .define('S', ItemTags.WOODEN_SLABS)
+                .define('F', ItemTags.WOODEN_FENCES)
+                .define('W', ItemTags.WOOL)
+                .define('B', ItemTags.BANNERS)
+                .define('M', ModItems.MISCHIEF_BANNER_PATTERN.get())
+                .unlockedByHas(ModItems.MISCHIEF_BANNER_PATTERN.get())
+                .save("faction/big_mischief_banner");
+
+
+
+
+        dsl.shaped(RecipeCategory.MISC, ModBlocks.PEARLIDIAN.get())
                 .pattern("xxx")
                 .pattern("xox")
                 .pattern("xxx")

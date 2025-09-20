@@ -8,7 +8,7 @@ import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 
-/** Randomly swap SHORT_GRASS → carotene variant, but only on your patch tops. */
+/** Randomly swap SHORT_GRASS → profile short-grass variant, but only on your patch tops. */
 public final class SwapShortGrassFeature extends Feature<NoneFeatureConfiguration> {
     public SwapShortGrassFeature() { super(NoneFeatureConfiguration.CODEC); }
 
@@ -25,8 +25,8 @@ public final class SwapShortGrassFeature extends Feature<NoneFeatureConfiguratio
 
             var belowState = level.getBlockState(pos.below());
             for (var p : PatchProfiles.ALL) {
-                if (belowState.is(p.coreTop()) || belowState.is(p.edgeTop())) {
-                    level.setBlock(pos, p.shortGrassSwap().defaultBlockState(), 2);
+                if (belowState.is(p.patchCoreTop()) || belowState.is(p.patchEdgeTop())) {
+                    level.setBlock(pos, p.shortGrassVariant().defaultBlockState(), 2);
                     if (ctx.random().nextFloat() < 0.20f) return true;
                     break;
                 }

@@ -13,6 +13,7 @@ import net.minecraft.util.TriState;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.model.DelegateBlockStateModel;
 
@@ -54,7 +55,11 @@ public final class HarambeRenderLayers {
             ModBlocks.BELMONT_SAPLING.get(),
             ModBlocks.DYNASTY_SAPLING.get(),
             ModBlocks.IMPERIUM_SAPLING.get(),
-            ModBlocks.MISCHIEF_SAPLING.get()
+            ModBlocks.MISCHIEF_SAPLING.get(),
+            ModBlocks.BIG_BELMONT_BANNER.get(),
+            ModBlocks.BIG_DYNASTY_BANNER.get(),
+            ModBlocks.BIG_IMPERIUM_BANNER.get(),
+            ModBlocks.BIG_MISCHIEF_BANNER.get()
 
     );
 

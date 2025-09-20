@@ -30,11 +30,9 @@ public final class PlacePatchTreeFeature extends Feature<NoneFeatureConfiguratio
             if (level.getBlockState(pos).is(Blocks.WATER)) continue;
 
             for (var p : PatchProfiles.ALL) {
-                if (!(belowState.is(p.coreTop()) || belowState.is(p.edgeTop()))) continue;
+                if (!(belowState.is(p.patchCoreTop()) || belowState.is(p.patchEdgeTop()))) continue;
 
-                // Style may be null (disabled)
                 if (p.treeStyle() == null) continue;
-
                 var builder = BY_STYLE.get(p.treeStyle());
                 if (builder != null && builder.place(level, pos, rand)) {
                     any = true;

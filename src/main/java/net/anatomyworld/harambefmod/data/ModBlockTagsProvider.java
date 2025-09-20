@@ -2,9 +2,11 @@ package net.anatomyworld.harambefmod.data;
 
 import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.block.ModBlocks;
+import net.anatomyworld.harambefmod.item.ModItems;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.ItemTags;
 import net.neoforged.neoforge.common.data.BlockTagsProvider;
 import org.jetbrains.annotations.NotNull;
 
@@ -19,6 +21,7 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
     @Override
     protected void addTags(@NotNull HolderLookup.Provider provider) {
         /* ---------- your existing vanilla tags ---------- */
+
 
         // tools
         tag(net.minecraft.tags.BlockTags.MINEABLE_WITH_PICKAXE).add(ModBlocks.BANANA_PEARL_BLOCK.get());
@@ -187,6 +190,7 @@ public final class ModBlockTagsProvider extends BlockTagsProvider {
                 ModBlocks.IMPERIUM_GRASS_BLOCK.get(),
                 ModBlocks.MISCHIEF_GRASS_BLOCK.get()
                 );
+
 
     }
 }

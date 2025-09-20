@@ -408,7 +408,7 @@
                   "type": "minecraft:noise_threshold",
                   "max_threshold": 0.6,
                   "min_threshold": -0.15,
-                  "noise": "harambefmod:carotene_gate_impero_default"
+                  "noise": "harambefmod:patch_gate_impero_default"
                 },
                 "then_run": {
                   "type": "minecraft:condition",
@@ -432,7 +432,7 @@
                           "type": "minecraft:noise_threshold",
                           "max_threshold": 0.22,
                           "min_threshold": -0.22,
-                          "noise": "harambefmod:carotene_patches_impero_default"
+                          "noise": "harambefmod:patch_mask_impero_default"
                         },
                         "then_run": {
                           "type": "minecraft:condition",
@@ -457,7 +457,7 @@
                           "type": "minecraft:noise_threshold",
                           "max_threshold": -0.22,
                           "min_threshold": -0.38,
-                          "noise": "harambefmod:carotene_patches_impero_default"
+                          "noise": "harambefmod:patch_mask_impero_default"
                         },
                         "then_run": {
                           "type": "minecraft:condition",
@@ -482,7 +482,7 @@
                           "type": "minecraft:noise_threshold",
                           "max_threshold": 0.38,
                           "min_threshold": 0.22,
-                          "noise": "harambefmod:carotene_patches_impero_default"
+                          "noise": "harambefmod:patch_mask_impero_default"
                         },
                         "then_run": {
                           "type": "minecraft:condition",
@@ -507,7 +507,7 @@
                           "type": "minecraft:noise_threshold",
                           "max_threshold": -0.38,
                           "min_threshold": -0.5,
-                          "noise": "harambefmod:carotene_patches_impero_default"
+                          "noise": "harambefmod:patch_mask_impero_default"
                         },
                         "then_run": {
                           "type": "minecraft:condition",
@@ -532,7 +532,7 @@
                           "type": "minecraft:noise_threshold",
                           "max_threshold": 0.5,
                           "min_threshold": 0.38,
-                          "noise": "harambefmod:carotene_patches_impero_default"
+                          "noise": "harambefmod:patch_mask_impero_default"
                         },
                         "then_run": {
                           "type": "minecraft:condition",
@@ -576,7 +576,7 @@
                   "type": "minecraft:noise_threshold",
                   "max_threshold": 0.6,
                   "min_threshold": -0.15,
-                  "noise": "harambefmod:carotene_gate_impero_default"
+                  "noise": "harambefmod:patch_gate_impero_default"
                 },
                 "then_run": {
                   "type": "minecraft:condition",
@@ -603,7 +603,7 @@
                           "type": "minecraft:noise_threshold",
                           "max_threshold": 0.22,
                           "min_threshold": -0.22,
-                          "noise": "harambefmod:carotene_patches_impero_default"
+                          "noise": "harambefmod:patch_mask_impero_default"
                         },
                         "then_run": {
                           "type": "minecraft:sequence",
@@ -652,7 +652,7 @@
                           "type": "minecraft:noise_threshold",
                           "max_threshold": -0.22,
                           "min_threshold": -0.38,
-                          "noise": "harambefmod:carotene_patches_impero_default"
+                          "noise": "harambefmod:patch_mask_impero_default"
                         },
                         "then_run": {
                           "type": "minecraft:sequence",
@@ -663,7 +663,7 @@
                                 "type": "minecraft:noise_threshold",
                                 "max_threshold": 1.7976931348623157e+308,
                                 "min_threshold": 0.05,
-                                "noise": "harambefmod:carotene_dither_impero_default"
+                                "noise": "harambefmod:patch_dither_impero_default"
                               },
                               "then_run": {
                                 "type": "minecraft:sequence",
@@ -750,7 +750,7 @@
                           "type": "minecraft:noise_threshold",
                           "max_threshold": 0.38,
                           "min_threshold": 0.22,
-                          "noise": "harambefmod:carotene_patches_impero_default"
+                          "noise": "harambefmod:patch_mask_impero_default"
                         },
                         "then_run": {
                           "type": "minecraft:sequence",
@@ -761,7 +761,7 @@
                                 "type": "minecraft:noise_threshold",
                                 "max_threshold": 1.7976931348623157e+308,
                                 "min_threshold": 0.05,
-                                "noise": "harambefmod:carotene_dither_impero_default"
+                                "noise": "harambefmod:patch_dither_impero_default"
                               },
                               "then_run": {
                                 "type": "minecraft:sequence",
@@ -848,7 +848,7 @@
                           "type": "minecraft:noise_threshold",
                           "max_threshold": -0.38,
                           "min_threshold": -0.5,
-                          "noise": "harambefmod:carotene_patches_impero_default"
+                          "noise": "harambefmod:patch_mask_impero_default"
                         },
                         "then_run": {
                           "type": "minecraft:sequence",
@@ -897,7 +897,7 @@
                           "type": "minecraft:noise_threshold",
                           "max_threshold": 0.5,
                           "min_threshold": 0.38,
-                          "noise": "harambefmod:carotene_patches_impero_default"
+                          "noise": "harambefmod:patch_mask_impero_default"
                         },
                         "then_run": {
                           "type": "minecraft:sequence",

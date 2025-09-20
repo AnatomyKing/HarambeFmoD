@@ -60,14 +60,15 @@ public final class WorldgenBootstrap {
         return ResourceKey.create(Registries.LEVEL_STEM, id(suffix));
     }
 
-    /* ---------- noises for your surface rules ---------- */
+    /* ---------- patch noises (renamed, generic) ---------- */
     public static void bootstrapNoises(BootstrapContext<NormalNoise.NoiseParameters> ctx) {
         for (var p : ALL) {
-            ctx.register(keyNoise(p.suffix(), "carotene_patches"),
+            // Keep parameters as before; sizing/coverage are applied via thresholds.
+            ctx.register(keyNoise(p.suffix(), "patch_mask"),
                     new NormalNoise.NoiseParameters(-8, List.of(1.0, 1.0, 1.0, 1.0)));
-            ctx.register(keyNoise(p.suffix(), "carotene_dither"),
+            ctx.register(keyNoise(p.suffix(), "patch_dither"),
                     new NormalNoise.NoiseParameters(0, List.of(1.0, 0.5, 0.25)));
-            ctx.register(keyNoise(p.suffix(), "carotene_gate"),
+            ctx.register(keyNoise(p.suffix(), "patch_gate"),
                     new NormalNoise.NoiseParameters(-10, List.of(1.0, 0.5, 0.25)));
         }
     }
@@ -83,8 +84,8 @@ public final class WorldgenBootstrap {
 
             // Build overlay sequence conditionally
             List<SurfaceRules.RuleSource> overlay = new ArrayList<>();
-            if (p.enableSandyRedSand()) overlay.add(redSandInsideFootprint(p));
-            overlay.add(threeBandPatch(p));
+            if (p.enableBeachRedSand()) overlay.add(sandOverlayInsidePatch(p));
+            overlay.add(patchSurfaceBands(p));
 
             var patches = SurfaceRules.sequence(overlay.toArray(SurfaceRules.RuleSource[]::new));
             var top = SurfaceRules.sequence(patches, baseNormal.surfaceRule());
@@ -118,12 +119,10 @@ public final class WorldgenBootstrap {
                 params.getOrThrow(MultiNoiseBiomeSourceParameterLists.OVERWORLD);
 
         for (var p : ALL) {
-            final Holder<NoiseGeneratorSettings> chosen;
-            if (p.customNoiseSettingsId() == null) {
-                chosen = settings.getOrThrow(keySettings(p.suffix()));
-            } else {
-                chosen = settings.getOrThrow(ResourceKey.create(Registries.NOISE_SETTINGS, p.customNoiseSettingsId()));
-            }
+            final Holder<NoiseGeneratorSettings> chosen =
+                    settings.getOrThrow(p.customNoiseSettingsId() == null
+                            ? keySettings(p.suffix())
+                            : ResourceKey.create(Registries.NOISE_SETTINGS, p.customNoiseSettingsId()));
 
             var biomeSource = MultiNoiseBiomeSource.createFromPreset(overworldParams);
             var chunkGen = new NoiseBasedChunkGenerator(biomeSource, chosen);
@@ -136,7 +135,7 @@ public final class WorldgenBootstrap {
         HolderGetter<Feature<?>> features = ctx.lookup(Registries.FEATURE);
 
         for (var p : ALL) {
-            // --- swap_short_grass (always) ---
+            // swap_short_grass (always)
             {
                 @SuppressWarnings("unchecked")
                 Feature<NoneFeatureConfiguration> feat =
@@ -148,7 +147,7 @@ public final class WorldgenBootstrap {
                 );
             }
 
-            // --- optional: patch_tree ---
+            // optional: patch_tree
             boolean treesEnabled = p.treeStyle() != null && p.treeRarity() > 0 && p.treeCountPerRun() > 0;
             if (treesEnabled) {
                 @SuppressWarnings("unchecked")
@@ -167,7 +166,10 @@ public final class WorldgenBootstrap {
         final HolderGetter<ConfiguredFeature<?, ?>> configured = ctx.lookup(Registries.CONFIGURED_FEATURE);
 
         for (var p : ALL) {
-            // grass swap — fixed-ish density (tweak if you want)
+            // Scale the grass swap pass density with patchCoverage (simple & intuitive)
+            int base = 96;
+            int count = Math.max(4, Math.round(base * clamp(p.patchCoverage(), 0.50f, 1.50f)));
+
             ctx.register(
                     keyPlacedFeature(p.suffix(), "swap_short_grass"),
                     new PlacedFeature(
@@ -175,13 +177,13 @@ public final class WorldgenBootstrap {
                             List.of(
                                     InSquarePlacement.spread(),
                                     PlacementUtils.HEIGHTMAP_WORLD_SURFACE,
-                                    CountPlacement.of(96),
+                                    CountPlacement.of(count),
                                     BiomeFilter.biome()
                             )
                     )
             );
 
-            // trees — per-profile rarity + count
+            // trees — per-profile rarity + count (unchanged)
             boolean treesEnabled = p.treeStyle() != null && p.treeRarity() > 0 && p.treeCountPerRun() > 0;
             if (treesEnabled) {
                 ctx.register(
@@ -201,7 +203,7 @@ public final class WorldgenBootstrap {
         }
     }
 
-    /* ---------- biome modifiers: inject the placed features that actually exist ---------- */
+    /* ---------- biome modifiers: inject the placed features ---------- */
     public static void bootstrapBiomeModifiers(BootstrapContext<net.neoforged.neoforge.common.world.BiomeModifier> ctx) {
         final HolderGetter<Biome> biomes = ctx.lookup(Registries.BIOME);
         final HolderGetter<PlacedFeature> placed = ctx.lookup(Registries.PLACED_FEATURE);
@@ -227,9 +229,40 @@ public final class WorldgenBootstrap {
         }
     }
 
-    /* ---------- your SURFACE RULES (shared) ---------- */
+    /* ---------- Patch maths & surface rules ---------- */
 
-    public static SurfaceRules.RuleSource redSandInsideFootprint(PatchProfiles.Profile p) {
+    private static float clamp(float v, float lo, float hi) { return Math.max(lo, Math.min(hi, v)); }
+
+    private record Windows(double core, double ditherStart, double ditherEnd, double ringStart, double ringEnd,
+                           double gateMin, double gateMax) {}
+
+    /** Compute thresholds from two knobs. */
+    private static Windows computeWindows(PatchProfiles.Profile p) {
+        // Size scaling (how thick the bands are). Clamp to a safe range.
+        double s = clamp(p.patchSize(), 0.60f, 1.60f);
+
+        // Coverage scaling (how wide the gate window is). Clamp to safe range.
+        double c = clamp(p.patchCoverage(), 0.50f, 1.50f);
+
+        // Base (old) breakpoints:
+        // core = 0.22; dither = 0.22..0.38; ring = 0.38..0.50
+        double core = 0.22 * s;
+        double ditherStart = 0.22 * s;
+        double ditherEnd   = 0.38 * s;
+        double ringStart   = 0.38 * s;
+        double ringEnd     = 0.50 * s;
+
+        // Gate center ~ 0.225, half width ~0.375. Scale half-width by coverage.
+        double gateCenter = 0.225;
+        double halfBase   = 0.375 * c;
+        double gateMin    = Math.max(-1.0, gateCenter - halfBase);
+        double gateMax    = Math.min( 1.0, gateCenter + halfBase);
+
+        return new Windows(core, ditherStart, ditherEnd, ringStart, ringEnd, gateMin, gateMax);
+    }
+
+    /** Beach/desert red-sand overlay inside patch footprint. */
+    public static SurfaceRules.RuleSource sandOverlayInsidePatch(PatchProfiles.Profile p) {
         var onFloor    = SurfaceRules.stoneDepthCheck(0, false, CaveSurface.FLOOR);
         var aboveWater = SurfaceRules.waterStartCheck(0, 0);
         var sandyBiomes = SurfaceRules.isBiome(
@@ -241,17 +274,18 @@ public final class WorldgenBootstrap {
                 net.minecraft.world.level.biome.Biomes.DESERT
         );
 
-        var mask = keyNoise(p.suffix(), "carotene_patches");
-        var gate = keyNoise(p.suffix(), "carotene_gate");
+        var mask = keyNoise(p.suffix(), "patch_mask");
+        var gate = keyNoise(p.suffix(), "patch_gate");
+        var w = computeWindows(p);
 
-        var inGate   = SurfaceRules.noiseCondition(gate, -0.15D, 0.60D);
-        var core     = SurfaceRules.noiseCondition(mask, -0.22D,  0.22D);
-        var ditherLo = SurfaceRules.noiseCondition(mask, -0.38D, -0.22D);
-        var ditherHi = SurfaceRules.noiseCondition(mask,  0.22D,  0.38D);
-        var ringLo   = SurfaceRules.noiseCondition(mask, -0.50D, -0.38D);
-        var ringHi   = SurfaceRules.noiseCondition(mask,  0.38D,  0.50D);
+        var inGate   = SurfaceRules.noiseCondition(gate, w.gateMin, w.gateMax);
+        var core     = SurfaceRules.noiseCondition(mask, -w.core,  w.core);
+        var ditherLo = SurfaceRules.noiseCondition(mask, -w.ditherEnd,  -w.ditherStart);
+        var ditherHi = SurfaceRules.noiseCondition(mask,  w.ditherStart,  w.ditherEnd);
+        var ringLo   = SurfaceRules.noiseCondition(mask, -w.ringEnd,     -w.ringStart);
+        var ringHi   = SurfaceRules.noiseCondition(mask,  w.ringStart,    w.ringEnd);
 
-        var sandBlock = (p.sandyRedSandBlock() != null ? p.sandyRedSandBlock() : Blocks.RED_SAND).defaultBlockState();
+        var sandBlock = (p.beachRedSandBlock() != null ? p.beachRedSandBlock() : Blocks.RED_SAND).defaultBlockState();
         var redSand = SurfaceRules.state(sandBlock);
 
         return SurfaceRules.ifTrue(
@@ -272,27 +306,29 @@ public final class WorldgenBootstrap {
         );
     }
 
-    public static SurfaceRules.RuleSource threeBandPatch(PatchProfiles.Profile p) {
+    /** Generic three-band patch surface (core/dither/ring) with per-profile tuning. */
+    public static SurfaceRules.RuleSource patchSurfaceBands(PatchProfiles.Profile p) {
         var onFloor    = SurfaceRules.stoneDepthCheck(0, false, CaveSurface.FLOOR);
         var floor1     = SurfaceRules.stoneDepthCheck(1, false, CaveSurface.FLOOR);
         var aboveWater = SurfaceRules.waterStartCheck(0, 0);
 
-        var mask   = keyNoise(p.suffix(), "carotene_patches");
-        var dither = keyNoise(p.suffix(), "carotene_dither");
-        var gate   = keyNoise(p.suffix(), "carotene_gate");
+        var mask   = keyNoise(p.suffix(), "patch_mask");
+        var dither = keyNoise(p.suffix(), "patch_dither");
+        var gate   = keyNoise(p.suffix(), "patch_gate");
+        var w = computeWindows(p);
 
-        var inGate   = SurfaceRules.noiseCondition(gate, -0.15D, 0.60D);
-        var core     = SurfaceRules.noiseCondition(mask, -0.22D,  0.22D);
-        var ditherLo = SurfaceRules.noiseCondition(mask, -0.38D, -0.22D);
-        var ditherHi = SurfaceRules.noiseCondition(mask,  0.22D,  0.38D);
-        var ringLo   = SurfaceRules.noiseCondition(mask, -0.50D, -0.38D);
-        var ringHi   = SurfaceRules.noiseCondition(mask,  0.38D,  0.50D);
+        var inGate   = SurfaceRules.noiseCondition(gate, w.gateMin, w.gateMax);
+        var core     = SurfaceRules.noiseCondition(mask, -w.core,  w.core);
+        var ditherLo = SurfaceRules.noiseCondition(mask, -w.ditherEnd,  -w.ditherStart);
+        var ditherHi = SurfaceRules.noiseCondition(mask,  w.ditherStart,  w.ditherEnd);
+        var ringLo   = SurfaceRules.noiseCondition(mask, -w.ringEnd,     -w.ringStart);
+        var ringHi   = SurfaceRules.noiseCondition(mask,  w.ringStart,    w.ringEnd);
 
         var ditherFavorCore = SurfaceRules.noiseCondition(dither, 0.05D, Double.MAX_VALUE);
 
-        var coreTop   = SurfaceRules.state(p.coreTop().defaultBlockState());
-        var edgeTop   = SurfaceRules.state(p.edgeTop().defaultBlockState());
-        var underLay  = SurfaceRules.state(p.underBlock().defaultBlockState());
+        var coreTop   = SurfaceRules.state(p.patchCoreTop().defaultBlockState());
+        var edgeTop   = SurfaceRules.state(p.patchEdgeTop().defaultBlockState());
+        var underLay  = SurfaceRules.state(p.patchUnderlay().defaultBlockState());
 
         var coreRule = SurfaceRules.sequence(
                 SurfaceRules.ifTrue(onFloor, coreTop),

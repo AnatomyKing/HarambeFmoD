@@ -1,4 +1,3 @@
-// src/main/java/net/anatomyworld/harambefmod/event/CrossDimPortalHandler.java
 package net.anatomyworld.harambefmod.event;
 
 import net.minecraft.BlockUtil;
@@ -11,9 +10,9 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.border.WorldBorder;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.portal.PortalForcer;
-
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityTravelToDimensionEvent;
@@ -26,10 +25,21 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static net.anatomyworld.harambefmod.HarambeCore.LOGGER;
 
+/**
+ * Vanilla-like Nether portal linking with Overworld pass-through:
+ *
+ * - Only runs if the entity is intersecting a NETHER_PORTAL block (so Banana Portals are never touched).
+ * - Entering Nether from an overworld-like: remember that source dim.
+ * - Leaving Nether -> Overworld:
+ *      * If remembered == minecraft:overworld    -> let VANILLA handle it (no cancel).
+ *      * If remembered == other overworld-like   -> CANCEL vanilla and route to that dimension.
+ *      * If no memory                           -> let VANILLA handle it (no cancel).
+ *
+ * Uses vanilla PortalForcer search/creation and DimensionType teleportation scale.
+ */
 public final class CrossDimPortalHandler {
     private CrossDimPortalHandler() {}
 
-    /** Small guard to avoid reprocessing the same entity multiple times in a couple ticks. */
     private static final Map<UUID, Integer> LAST_REROUTE_TICK = new ConcurrentHashMap<>();
 
     /** Call once during mod init. */
@@ -38,7 +48,7 @@ public final class CrossDimPortalHandler {
         if (LOGGER.isDebugEnabled()) LOGGER.debug("[harambefmod] CrossDimPortalHandler registered");
     }
 
-    /** Remember legit arrivals to overworld-like dims (covers commands/other mods). */
+    /** When a player legitimately arrives in any overworld-like, remember it (helps command/other-mod moves too). */
     @SubscribeEvent
     public static void onPlayerChangedDim(PlayerEvent.PlayerChangedDimensionEvent e) {
         if (!(e.getEntity() instanceof ServerPlayer sp)) return;
@@ -48,141 +58,114 @@ public final class CrossDimPortalHandler {
                 LOGGER.debug("[harambefmod] rememberIfOverworldLike: {} -> {}",
                         sp.getGameProfile().getName(), e.getTo().location());
             }
-        } else if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("[harambefmod] onPlayerChangedDim: {} arrived in non-overworld-like {}",
-                    sp.getGameProfile().getName(), e.getTo().location());
         }
     }
 
-    /**
-     * All-entity logic:
-     * - Into Nether FROM an overworld-like: remember source.
-     * - From Nether TO Overworld: if we have a remembered overworld-like, CANCEL VANILLA FIRST and try reroute.
-     *   If reroute fails, do nothing (entity stays in portal). No vanilla fallback to minecraft:overworld.
-     */
     @SubscribeEvent
     public static void onTravel(EntityTravelToDimensionEvent e) {
         Entity entity = e.getEntity();
         if (!(entity.level() instanceof ServerLevel from)) return;
 
-        var toKey = e.getDimension();
-        MinecraftServer server = from.getServer();
+        final var toKey = e.getDimension();
+        final MinecraftServer server = from.getServer();
 
-        // Going into Nether from any overworld-like: remember source.
+        // Only react to REAL Nether portal usage; Banana Portals never use this block.
+        if (!isIntersectingNetherPortal((ServerLevel) entity.level(), entity)) return;
+
+        // A) Overworld-like -> Nether: remember source, let vanilla proceed.
         if (toKey == Level.NETHER && net.anatomyworld.harambefmod.Config.isOverworldLike(from.dimension())) {
             PortalMemory.rememberIfOverworldLike(entity, from.dimension(), true);
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("[harambefmod] ENTER Nether: remembered source for {} = {}",
                         nameOf(entity), from.dimension().location());
             }
-            return; // let vanilla proceed
+            return;
         }
 
-        // Leaving Nether -> Overworld: forcibly route back to the remembered overworld-like (if present).
+        // B) Nether -> Overworld: Overworld pass-through unless memory is a different overworld-like.
         if (from.dimension() == Level.NETHER && toKey == Level.OVERWORLD) {
             int now = server.getTickCount();
             if (recentlyRerouted(entity.getUUID(), now)) {
                 e.setCanceled(true);
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("[harambefmod] REROUTE GUARD: cancel again for {} (tick {})",
-                            nameOf(entity), now);
-                }
                 return;
             }
 
-            var rememberedOpt = PortalMemory.get(entity);
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("[harambefmod] EXIT Nether: remembered for {} = {}",
-                        nameOf(entity), rememberedOpt.map(k -> k.location().toString()).orElse("<none>"));
-            }
+            var rememberedOpt = PortalMemory.get(entity)
+                    .filter(net.anatomyworld.harambefmod.Config::isOverworldLike);
 
-            var remembered = rememberedOpt
-                    .filter(net.anatomyworld.harambefmod.Config::isOverworldLike)
-                    .orElse(null);
-
-            if (remembered == null) {
-                // Per your requirement: do NOT fallback to Overworld — cancel and do nothing.
-                e.setCanceled(true);
+            // Let VANILLA handle if no memory OR memory is exactly minecraft:overworld
+            if (rememberedOpt.isEmpty() || rememberedOpt.get() == Level.OVERWORLD) {
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("[harambefmod] EXIT Nether: no overworld-like remembered for {} → cancel vanilla, no move",
-                            nameOf(entity));
+                    LOGGER.debug("[harambefmod] EXIT Nether: {} → vanilla Overworld handling (memory: {})",
+                            nameOf(entity), rememberedOpt.map(k -> k.location().toString()).orElse("<none>"));
                 }
-                return;
+                return; // no cancel
             }
 
-            // Per requirement: cancel vanilla FIRST; then attempt reroute.
+            // Otherwise route to the remembered non-Overworld overworld-like.
+            var remembered = rememberedOpt.get();
             e.setCanceled(true);
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("[harambefmod] EXIT Nether: attempting reroute for {} to {}",
-                        nameOf(entity), remembered.location());
-            }
-
             boolean ok = rerouteNetherReturn(entity, from, remembered);
             if (ok) {
                 LAST_REROUTE_TICK.put(entity.getUUID(), now);
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("[harambefmod] REROUTE SUCCESS: {} -> {}", nameOf(entity), remembered.location());
                 }
-            } else {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("[harambefmod] REROUTE FAIL: {} stayed at Nether portal; no vanilla fallback",
-                            nameOf(entity));
-                }
+            } else if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("[harambefmod] REROUTE FAIL: {} stayed in the Nether portal; canceled vanilla",
+                        nameOf(entity));
             }
         }
     }
+
+    // --- helpers ---
 
     private static boolean recentlyRerouted(UUID id, int currentTick) {
         Integer last = LAST_REROUTE_TICK.get(id);
         return last != null && currentTick - last <= 2;
     }
 
+    /** Tight AABB scan for Nether portal blocks around the entity. */
+    private static boolean isIntersectingNetherPortal(ServerLevel level, Entity e) {
+        var box = e.getBoundingBox().inflate(1.0E-4);
+        int x0 = Mth.floor(box.minX), y0 = Mth.floor(box.minY), z0 = Mth.floor(box.minZ);
+        int x1 = Mth.floor(box.maxX), y1 = Mth.floor(box.maxY), z1 = Mth.floor(box.maxZ);
+
+        for (int x = x0; x <= x1; x++) for (int y = y0; y <= y1; y++) for (int z = z0; z <= z1; z++) {
+            if (level.getBlockState(new BlockPos(x, y, z)).is(Blocks.NETHER_PORTAL)) return true;
+        }
+        return false;
+    }
+
     private static boolean rerouteNetherReturn(Entity entity, ServerLevel from, net.minecraft.resources.ResourceKey<Level> targetKey) {
         MinecraftServer srv = from.getServer();
         ServerLevel dest = srv.getLevel(targetKey);
-        if (dest == null) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("[harambefmod] REROUTE ABORT: target dimension missing: {}", targetKey.location());
-            }
-            return false;
-        }
+        if (dest == null) return false;
 
-        double scale = DimensionType.getTeleportationScale(from.dimensionType(), dest.dimensionType());
+        // 8:1 scaling preserved via DimensionType API (vanilla behavior)
+        double scale = net.minecraft.world.level.dimension.DimensionType.getTeleportationScale(from.dimensionType(), dest.dimensionType());
         double tx = entity.getX() * scale;
         double tz = entity.getZ() * scale;
 
         WorldBorder border = dest.getWorldBorder();
-        tx = Mth.clamp(tx, border.getMinX() + 16.0, border.getMaxX() - 16.0);
-        tz = Mth.clamp(tz, border.getMinZ() + 16.0, border.getMaxZ() - 16.0);
-        int ty = Mth.floor(entity.getY());
+        tx = net.minecraft.util.Mth.clamp(tx, border.getMinX() + 16.0, border.getMaxX() - 16.0);
+        tz = net.minecraft.util.Mth.clamp(tz, border.getMinZ() + 16.0, border.getMaxZ() - 16.0);
+        int ty = net.minecraft.util.Mth.floor(entity.getY());
 
         BlockPos search = BlockPos.containing(tx, ty, tz);
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("[harambefmod] REROUTE: scale={}, searchPos={} in {}",
-                    String.format("%.4f", scale), fmt(search), dest.dimension().location());
-        }
-
         PortalForcer forcer = dest.getPortalForcer();
 
         Optional<BlockPos> existing = PortalCompat.findClosestPortal(forcer, search, /*destIsNether*/ false, border);
         BlockPos portalPos;
         if (existing.isPresent()) {
             portalPos = existing.get();
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("[harambefmod] REROUTE: found existing portal at {}", fmt(portalPos));
-            }
         } else {
-            Optional<BlockUtil.FoundRectangle> created = PortalCompat.createPortal(forcer, search, Direction.Axis.X);
+            Direction.Axis yawAxis = Direction.fromYRot(entity.getYRot()).getAxis();
+            Optional<BlockUtil.FoundRectangle> created = PortalCompat.createPortal(forcer, search, yawAxis);
             if (created.isPresent()) {
                 existing = PortalCompat.findClosestPortal(forcer, search, false, border);
                 portalPos = existing.orElse(search);
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("[harambefmod] REROUTE: created portal; base at {}", fmt(portalPos));
-                }
             } else {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("[harambefmod] REROUTE ABORT: could not create portal near {}", fmt(search));
-                }
                 return false;
             }
         }
@@ -191,24 +174,18 @@ public final class CrossDimPortalHandler {
         double py = portalPos.getY() + 0.1;
         double pz = portalPos.getZ() + 0.5;
 
-        boolean moved = PortalCompat.crossDimTeleport(entity, dest, px, py, pz, entity.getYRot(), entity.getXRot());
-        if (!moved && LOGGER.isDebugEnabled()) {
-            LOGGER.debug("[harambefmod] REROUTE ABORT: teleport failed for {} to ({}, {}, {}) in {}",
-                    nameOf(entity),
-                    String.format("%.2f", px), String.format("%.2f", py), String.format("%.2f", pz),
-                    dest.dimension().location());
-        }
-        return moved;
-    }
+        // ⬇️ KEY CHANGE: do a RAW teleport (viaPortal=false) to avoid vanilla portal nudging.
+        boolean moved = PortalCompat.crossDimTeleportRaw(entity, dest, px, py, pz, entity.getYRot(), entity.getXRot());
+        if (!moved) return false;
 
-    // ---- tiny helpers for tidy logs ----
+        // ⬇️ NO vanilla setPortalCooldown — your Banana portal already gates re-entry; our tick guard
+        // in this handler prevents immediate re-processing on Nether exit.
+        // PortalCompat.trySetPortalCooldown(entity);  // removed on purpose
+
+        return true;
+    }
 
     private static String nameOf(Entity e) {
         return (e instanceof ServerPlayer sp) ? sp.getGameProfile().getName() : e.getStringUUID();
-        // getName() can be expensive for non-players; UUID is fine for logs.
-    }
-
-    private static String fmt(BlockPos p) {
-        return "(" + p.getX() + "," + p.getY() + "," + p.getZ() + ")";
     }
 }

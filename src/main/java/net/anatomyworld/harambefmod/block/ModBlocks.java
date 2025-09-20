@@ -4,6 +4,7 @@ import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.block.custom.*;
 import net.anatomyworld.harambefmod.block.custom.CaroteneGrassBlock;
 import net.anatomyworld.harambefmod.block.custom.NyliumGrassBlock;
+import net.anatomyworld.harambefmod.block.custom.WallBannerBlock;
 import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.level.block.*;
@@ -25,6 +26,28 @@ public final class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(HarambeCore.MOD_ID);
     public static final DeferredRegister.Items  ITEMS  = DeferredRegister.createItems(HarambeCore.MOD_ID);
 
+
+
+
+    public static final DeferredBlock<net.anatomyworld.harambefmod.block.custom.WallBannerBlock> BIG_BELMONT_BANNER =
+            BLOCKS.registerBlock("big_belmont_banner",
+                    p -> new net.anatomyworld.harambefmod.block.custom.WallBannerBlock(
+                            p.noOcclusion().strength(0.5F).sound(SoundType.WOOD)));
+
+    public static final DeferredBlock<net.anatomyworld.harambefmod.block.custom.WallBannerBlock> BIG_DYNASTY_BANNER =
+            BLOCKS.registerBlock("big_dynasty_banner",
+                    p -> new net.anatomyworld.harambefmod.block.custom.WallBannerBlock(
+                            p.noOcclusion().strength(0.5F).sound(SoundType.WOOD)));
+
+    public static final DeferredBlock<net.anatomyworld.harambefmod.block.custom.WallBannerBlock> BIG_IMPERIUM_BANNER =
+            BLOCKS.registerBlock("big_imperium_banner",
+                    p -> new net.anatomyworld.harambefmod.block.custom.WallBannerBlock(
+                            p.noOcclusion().strength(0.5F).sound(SoundType.WOOD)));
+
+    public static final DeferredBlock<net.anatomyworld.harambefmod.block.custom.WallBannerBlock> BIG_MISCHIEF_BANNER =
+            BLOCKS.registerBlock("big_mischief_banner",
+                    p -> new net.anatomyworld.harambefmod.block.custom.WallBannerBlock(
+                            p.noOcclusion().strength(0.5F).sound(SoundType.WOOD)));
 
     public static final DeferredBlock<AnyChestBlock> ANYTOMITHIUM_CHEST =
             BLOCKS.registerBlock("anytomoithium_chest",
@@ -164,6 +187,7 @@ public final class ModBlocks {
                                     .pushReaction(PushReaction.DESTROY)
                     )
             );
+
 
     public static final DeferredBlock<UntintedParticleLeavesBlock> MISCHIEF_LEAVES =
             BLOCKS.registerBlock("mischief_leaves",

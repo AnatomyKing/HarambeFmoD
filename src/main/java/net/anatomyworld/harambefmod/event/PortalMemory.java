@@ -1,4 +1,3 @@
-// src/main/java/net/anatomyworld/harambefmod/event/PortalMemory.java
 package net.anatomyworld.harambefmod.event;
 
 import net.minecraft.core.registries.Registries;
@@ -16,9 +15,7 @@ public final class PortalMemory {
 
     public static void rememberIfOverworldLike(Entity entity, ResourceKey<Level> dim, boolean force) {
         if (force || net.anatomyworld.harambefmod.Config.isOverworldLike(dim)) {
-            // Always store a plain, valid string id
-            String id = dim.location().toString(); // e.g. "minecraft:overworld"
-            entity.getPersistentData().putString(TAG, id);
+            entity.getPersistentData().putString(TAG, dim.location().toString());
         }
     }
 
@@ -27,18 +24,17 @@ public final class PortalMemory {
         if (!tag.contains(TAG)) return Optional.empty();
 
         String raw = String.valueOf(tag.getString(TAG));
-        if (raw == null) return Optional.empty();
-        raw = raw.trim();
-        // Migrate legacy/bad values like "Optional[minecraft:overworld]"
+        if (raw == null || raw.isBlank()) return Optional.empty();
+
+        // Migrate legacy "Optional[namespace:id]" forms, just in case
         if (raw.startsWith("Optional[")) {
             int open = raw.indexOf('[');
             int close = raw.lastIndexOf(']');
             if (open >= 0 && close > open) raw = raw.substring(open + 1, close);
         }
 
-        ResourceLocation rl = ResourceLocation.tryParse(raw);
+        ResourceLocation rl = ResourceLocation.tryParse(raw.trim());
         if (rl == null) {
-            // Invalid -> clean it so it never crashes again
             tag.remove(TAG);
             return Optional.empty();
         }

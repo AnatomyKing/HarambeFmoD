@@ -27,6 +27,8 @@ public final class ModDataGenerators {
         // NEW: models (blockstates + models + auto item models)
         event.createProvider(ModModelProvider::new);
 
+        event.createProvider(EquipmentAssetsProvider::new);
+
         // NEW: lang (en_us)
         event.createProvider(out -> new ModLanguageProvider(out, "en_us"));
 
