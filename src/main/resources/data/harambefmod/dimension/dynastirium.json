@@ -2,7 +2,7 @@
   "type": "minecraft:overworld",
   "generator": {
     "type": "minecraft:noise",
-    "seed": 9384747373,
+    "seed": "epicrizzparty",
     "settings": "minecraft:amplified",
     "biome_source": {
       "type": "minecraft:multi_noise",
