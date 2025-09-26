@@ -18,16 +18,19 @@ public final class SeedHereCommand {
                 .requires(src -> src.hasPermission(2))
                 .executes(ctx -> {
                     ServerLevel lvl = ctx.getSource().getLevel();
-                    long result = lvl.getSeed(); // default
+                    long result = lvl.getSeed(); // default: world seed
                     ChunkGenerator gen = lvl.getChunkSource().getGenerator();
                     if (gen instanceof NoiseBasedChunkGenerator nb) {
                         OptionalLong o = ((SeedOverrideSupport)(Object)nb).harambefmod$getSeedOverride();
                         if (o.isPresent()) result = o.getAsLong();
                     }
                     long finalResult = result;
-                    ctx.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal(
-                            "Seed for " + lvl.dimension().location() + ": " + finalResult
-                    ), false);
+                    ctx.getSource().sendSuccess(
+                            () -> net.minecraft.network.chat.Component.literal(
+                                    "Seed for " + lvl.dimension().location() + ": " + finalResult
+                            ),
+                            false
+                    );
                     return 1;
                 })
         );

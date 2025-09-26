@@ -1,4 +1,3 @@
-// src/main/java/net/anatomyworld/harambefmod/mixin/ChunkMapRandomStateSeedMixin.java
 package net.anatomyworld.harambefmod.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
@@ -16,12 +15,11 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import java.util.OptionalLong;
 
 /**
- * Make the *stored* RandomState in ChunkMap use the per-dimension seed.
- * This one controls the terrain noise, so changing it changes terrain.
+ * Make the stored RandomState in ChunkMap use the per-dimension seed.
+ * This controls terrain noise; changing it changes terrain.
  */
 @Mixin(ChunkMap.class)
 public abstract class ChunkMapRandomStateSeedMixin {
-
     @Redirect(
             method = "<init>",
             at = @At(
@@ -33,7 +31,7 @@ public abstract class ChunkMapRandomStateSeedMixin {
             NoiseGeneratorSettings settings,
             HolderGetter<NormalNoise.NoiseParameters> noises,
             long worldSeed,
-            @Local ChunkGenerator generator // captured from the ctor via Mixin Extras
+            @Local ChunkGenerator generator
     ) {
         long seedToUse = worldSeed;
         if (generator instanceof net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator nb) {
