@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cross",
+  "textures": {
+    "cross": "harambefmod:block/carotene_short_grass"
+  }
+}

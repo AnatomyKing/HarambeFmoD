@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cross",
+  "textures": {
+    "cross": "harambefmod:block/dynasty_sapling"
+  }
+}

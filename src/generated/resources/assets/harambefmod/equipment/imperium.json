@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "harambefmod:imperium"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "harambefmod:imperium"
+      }
+    ]
+  }
+}

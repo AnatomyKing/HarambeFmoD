@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "harambefmod:belmont_log"
+  ],
+  "result": {
+    "count": 4,
+    "id": "harambefmod:belmont_planks"
+  }
+}

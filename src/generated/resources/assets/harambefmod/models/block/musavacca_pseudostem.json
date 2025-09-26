@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "harambefmod:block/musavacca_stem",
+    "side": "harambefmod:block/musavacca_stem"
+  }
+}

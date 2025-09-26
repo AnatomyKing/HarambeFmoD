@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": "#minecraft:banners",
+    "F": "#minecraft:wooden_fences",
+    "M": "harambefmod:dynasty_banner_pattern",
+    "S": "#minecraft:wooden_slabs",
+    "W": "#minecraft:wool"
+  },
+  "pattern": [
+    "SFS",
+    "WBW",
+    "WMW"
+  ],
+  "result": {
+    "count": 1,
+    "id": "harambefmod:big_dynasty_banner"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "loader": "harambefmod:transform",
+  "model": "harambefmod:block/big_mischief_banner",
+  "pivot": [
+    8.0,
+    8.0,
+    8.0
+  ],
+  "scale": [
+    2.0,
+    2.0,
+    2.0
+  ],
+  "translate": [
+    -4.0,
+    -26.0,
+    -0.0
+  ]
+}

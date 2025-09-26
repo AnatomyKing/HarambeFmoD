@@ -1,0 +1,27 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "harambefmod:block/big_imperium_banner_down",
+      "x": 90
+    },
+    "facing=east": {
+      "model": "harambefmod:block/big_imperium_banner_wall",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "harambefmod:block/big_imperium_banner_wall"
+    },
+    "facing=south": {
+      "model": "harambefmod:block/big_imperium_banner_wall",
+      "y": 180
+    },
+    "facing=up": {
+      "model": "harambefmod:block/big_imperium_banner_up",
+      "x": 270
+    },
+    "facing=west": {
+      "model": "harambefmod:block/big_imperium_banner_wall",
+      "y": 270
+    }
+  }
+}

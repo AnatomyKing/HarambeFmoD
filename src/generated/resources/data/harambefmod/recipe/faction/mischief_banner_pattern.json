@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:paper",
+    "harambefmod:mischief_planks"
+  ],
+  "result": {
+    "count": 1,
+    "id": "harambefmod:mischief_banner_pattern"
+  }
+}

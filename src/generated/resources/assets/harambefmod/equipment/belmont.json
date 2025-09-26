@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "harambefmod:belmont"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "harambefmod:belmont"
+      }
+    ]
+  }
+}

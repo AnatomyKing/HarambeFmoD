@@ -72,6 +72,10 @@ public final class HarambeCore {
                 net.anatomyworld.harambefmod.command.SeedHereCommand.register(e.getDispatcher())
         );
 
+        EVENT_BUS.addListener((RegisterCommandsEvent e) ->
+                net.anatomyworld.harambefmod.command.BalanceCommand.register(e.getDispatcher())
+        );
+
         CrossDimPortalHandler.register();
         PortalIgnitionHandler.register();
         SleepSkipCommandFallback.register();

@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:paper",
+    "harambefmod:dynasty_planks"
+  ],
+  "result": {
+    "count": 1,
+    "id": "harambefmod:dynasty_banner_pattern"
+  }
+}

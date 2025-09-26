@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "harambefmod:block/medium_honey_crystal_bud"
+  }
+}

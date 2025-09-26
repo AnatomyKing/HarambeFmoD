@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "harambefmod:block/dynasty_wood_horizontal",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y": {
+      "model": "harambefmod:block/dynasty_wood"
+    },
+    "axis=z": {
+      "model": "harambefmod:block/dynasty_wood_horizontal",
+      "x": 90
+    }
+  }
+}

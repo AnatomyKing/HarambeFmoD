@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_musavacca_stem": {
+      "conditions": {
+        "items": [
+          {
+            "items": "harambefmod:musavacca_stem"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "harambefmod:musavacca/stem_to_pseudo"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_musavacca_stem"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "harambefmod:musavacca/stem_to_pseudo"
+    ]
+  }
+}

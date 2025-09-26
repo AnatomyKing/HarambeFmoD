@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "harambefmod:block/belmont_log",
+    "side": "harambefmod:block/belmont_log"
+  }
+}

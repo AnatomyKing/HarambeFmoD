@@ -1,0 +1,26 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "cases": [
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "harambefmod:item/belmont_helmet"
+        },
+        "when": "gui"
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "harambefmod:item/belmont_helmet_model"
+        },
+        "when": "head"
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "harambefmod:item/belmont_helmet"
+    },
+    "property": "minecraft:display_context"
+  }
+}

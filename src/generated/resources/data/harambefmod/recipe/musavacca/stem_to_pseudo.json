@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "harambefmod:musavacca_stem",
+    "harambefmod:musavacca_stem",
+    "harambefmod:musavacca_stem",
+    "harambefmod:musavacca_stem"
+  ],
+  "result": {
+    "count": 3,
+    "id": "harambefmod:musavacca_pseudostem"
+  }
+}

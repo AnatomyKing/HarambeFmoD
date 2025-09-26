@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "harambefmod:block/carotene_short_grass"
+  }
+}
