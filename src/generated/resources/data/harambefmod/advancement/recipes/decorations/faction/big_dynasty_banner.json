@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_dynasty_banner_pattern": {
+      "conditions": {
+        "items": [
+          {
+            "items": "harambefmod:dynasty_banner_pattern"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "harambefmod:faction/big_dynasty_banner"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_dynasty_banner_pattern"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "harambefmod:faction/big_dynasty_banner"
+    ]
+  }
+}

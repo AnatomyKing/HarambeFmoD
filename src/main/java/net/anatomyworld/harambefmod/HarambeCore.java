@@ -60,6 +60,8 @@ public final class HarambeCore {
         modBus.addListener(this::commonSetup);
         container.registerConfig(ModConfig.Type.COMMON, Config.COMMON_SPEC);
         modBus.addListener(ModDataGenerators::gatherData);
+        // inside HarambeCore constructor, inside the Dist.CLIENT block:
+
 
         EVENT_BUS.addListener(net.anatomyworld.harambefmod.cosmetic.CosmeticSets::addServerReloaders);
         EVENT_BUS.addListener(net.anatomyworld.harambefmod.cosmetic.CosmeticSets::onDatapackSync);
@@ -72,6 +74,11 @@ public final class HarambeCore {
                 net.anatomyworld.harambefmod.command.SeedHereCommand.register(e.getDispatcher())
         );
 
+        EVENT_BUS.addListener((RegisterCommandsEvent e) ->
+                net.anatomyworld.harambefmod.command.BalanceCommand.register(e.getDispatcher())
+        );
+
+
         CrossDimPortalHandler.register();
         PortalIgnitionHandler.register();
         SleepSkipCommandFallback.register();
@@ -83,7 +90,7 @@ public final class HarambeCore {
         if (FMLLoader.getDist() == Dist.CLIENT) {
             modBus.addListener(ClientEvents::layerDefs);
             modBus.addListener(ClientEvents::clientSetup);
-
+            modBus.addListener(net.anatomyworld.harambefmod.client.hud.BalanceHud::registerLayers);
             // Force render layers via model bake hook
             modBus.addListener(net.anatomyworld.harambefmod.client.render.HarambeRenderLayers::onModifyBakingResult);
 

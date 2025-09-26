@@ -5,10 +5,10 @@ import net.anatomyworld.harambefmod.attachment.ModAttachments;
 import net.anatomyworld.harambefmod.block.ModBlocks;
 import net.anatomyworld.harambefmod.block.entity.PearlFireBlockEntity;
 import net.anatomyworld.harambefmod.client.portal.BananaPortalTintCache;
+import net.anatomyworld.harambefmod.client.sync.ClientBalance;
 import net.anatomyworld.harambefmod.item.custom.FlintAndPearlItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -33,7 +33,7 @@ public final class ModNetworking {
 
     @SubscribeEvent
     public static void registerPayloads(RegisterPayloadHandlersEvent evt) {
-        // bump this if you change payload formats
+        // bump version string if you ever change formats
         PayloadRegistrar reg = evt.registrar("1");
 
         /* ---------------- C -> S ---------------- */
@@ -45,19 +45,17 @@ public final class ModNetworking {
                 (payload, ctx) -> ctx.enqueueWork(() -> handlePlaceFire(payload, ctx))
         );
 
-        // save flame color selected in the UI onto the held item
+        // save selected flame color on held item
         reg.playToServer(
                 SyncColorPayload.TYPE,
                 SyncColorPayload.STREAM_CODEC,
                 (payload, ctx) -> ctx.enqueueWork(() -> {
-                    if (!(ctx instanceof ServerPayloadContext serverCtx)) return;
-                    ServerPlayer player = serverCtx.player();
-                    if (player == null) return;
+                    if (!(ctx instanceof ServerPayloadContext s)) return;
+                    ServerPlayer player = s.player(); if (player == null) return;
 
                     InteractionHand hand =
                             player.getMainHandItem().getItem() instanceof FlintAndPearlItem
-                                    ? InteractionHand.MAIN_HAND
-                                    : InteractionHand.OFF_HAND;
+                                    ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
 
                     ItemStack stack = player.getItemInHand(hand);
                     stack.set(net.anatomyworld.harambefmod.component.ModDataComponents.FLAME_COLOR.get(), payload.hex());
@@ -70,7 +68,7 @@ public final class ModNetworking {
                 SelectCosmeticSetPayload.STREAM_CODEC,
                 (payload, ctx) -> ctx.enqueueWork(() -> {
                     if (!(ctx instanceof ServerPayloadContext s)) return;
-                    var player = s.player(); if (player == null) return;
+                    ServerPlayer player = s.player(); if (player == null) return;
 
                     var set = net.anatomyworld.harambefmod.cosmetic.CosmeticSets.get(payload.id());
                     if (set == null) return;
@@ -84,7 +82,7 @@ public final class ModNetworking {
                 })
         );
 
-        // ✅ NEW: clear cosmetic wardrobe (client button -> server)
+        // clear cosmetic wardrobe
         reg.playToServer(
                 ClearCosmeticWardrobePayload.TYPE,
                 ClearCosmeticWardrobePayload.STREAM_CODEC,
@@ -97,15 +95,13 @@ public final class ModNetworking {
                     ward.setChest(null);
                     ward.setLegs(null);
                     ward.setFeet(null);
-
-                    // setData -> attachment has .sync(...) so clients update automatically
                     player.setData(ModAttachments.COSMETIC_WARDROBE.get(), ward);
                 })
         );
 
         /* ---------------- S -> C ---------------- */
 
-        // cosmetics list to clients
+        // cosmetic set list -> client cache
         reg.playToClient(
                 SyncCosmeticSetsPayload.TYPE,
                 SyncCosmeticSetsPayload.STREAM_CODEC,
@@ -114,24 +110,33 @@ public final class ModNetworking {
                 )
         );
 
-        // pre-tint portal interior on clients
+        // pre-tint portal interiors on clients
         reg.playToClient(
                 SyncPortalTintPayload.TYPE,
                 SyncPortalTintPayload.STREAM_CODEC,
-                (payload, ctx) -> ctx.enqueueWork(() -> BananaPortalTintCache.fill(
-                        payload.anchor(), payload.axis(), payload.width(), payload.height(), payload.rgb()
-                ))
+                (payload, ctx) -> ctx.enqueueWork(() ->
+                        BananaPortalTintCache.fill(payload.anchor(), payload.axis(), payload.width(), payload.height(), payload.rgb())
+                )
+        );
+
+        // balance -> client HUD cache
+        reg.playToClient(
+                BalanceSyncPayload.TYPE,
+                BalanceSyncPayload.STREAM_CODEC,
+                (payload, ctx) -> ctx.enqueueWork(() -> ClientBalance.set(payload.balance()))
         );
     }
 
+    /* ---------------- helpers ---------------- */
+
     private static void handlePlaceFire(PlaceFirePayload payload, IPayloadContext ctx) {
-        if (!(ctx instanceof ServerPayloadContext serverCtx)) return;
-        ServerPlayer player = serverCtx.player();
+        if (!(ctx instanceof ServerPayloadContext s)) return;
+        ServerPlayer player = s.player();
         if (player == null) return;
 
         ServerLevel level = (ServerLevel) player.level();
 
-        BlockPos pos   = payload.pos();
+        BlockPos pos = payload.pos();
         Direction face = Direction.values()[payload.face()];
 
         if (!BaseFireBlock.canBePlacedAt(level, pos, face)) return;
@@ -147,7 +152,6 @@ public final class ModNetworking {
 
         InteractionHand hand = payload.mainHand() ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
         ItemStack stack = player.getItemInHand(hand);
-
         if (!stack.isEmpty() && stack.getItem() instanceof FlintAndPearlItem) {
             EquipmentSlot slot = payload.mainHand() ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
             stack.hurtAndBreak(1, player, slot);

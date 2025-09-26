@@ -1,0 +1,6 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#minecraft:is_overworld",
+  "features": "harambefmod:swap_short_grass_harambe_default",
+  "step": "vegetal_decoration"
+}

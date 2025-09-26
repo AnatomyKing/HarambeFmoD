@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_belmont_planks": {
+      "conditions": {
+        "items": [
+          {
+            "items": "harambefmod:belmont_planks"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "harambefmod:faction/belmont_banner_pattern"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_belmont_planks"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "harambefmod:faction/belmont_banner_pattern"
+    ]
+  }
+}

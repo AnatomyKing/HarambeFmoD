@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "harambefmod:block/stripped_imperium_wood_horizontal",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y": {
+      "model": "harambefmod:block/stripped_imperium_wood"
+    },
+    "axis=z": {
+      "model": "harambefmod:block/stripped_imperium_wood_horizontal",
+      "x": 90
+    }
+  }
+}

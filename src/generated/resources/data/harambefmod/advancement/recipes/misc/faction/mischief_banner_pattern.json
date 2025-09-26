@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_mischief_planks": {
+      "conditions": {
+        "items": [
+          {
+            "items": "harambefmod:mischief_planks"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "harambefmod:faction/mischief_banner_pattern"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_mischief_planks"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "harambefmod:faction/mischief_banner_pattern"
+    ]
+  }
+}

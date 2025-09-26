@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:flint",
+    "harambefmod:banana_pearl"
+  ],
+  "result": {
+    "count": 1,
+    "id": "harambefmod:flint_and_pearl"
+  }
+}

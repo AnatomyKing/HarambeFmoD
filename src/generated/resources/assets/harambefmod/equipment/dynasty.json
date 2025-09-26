@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "harambefmod:dynasty"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "harambefmod:dynasty"
+      }
+    ]
+  }
+}

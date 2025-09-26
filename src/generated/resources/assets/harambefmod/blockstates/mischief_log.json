@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "axis=x,natural=false": {
+      "model": "harambefmod:block/mischief_log_horizontal",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,natural=true": {
+      "model": "harambefmod:block/mischief_log_natural_horizontal",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y,natural=false": {
+      "model": "harambefmod:block/mischief_log"
+    },
+    "axis=y,natural=true": {
+      "model": "harambefmod:block/mischief_log_natural"
+    },
+    "axis=z,natural=false": {
+      "model": "harambefmod:block/mischief_log_horizontal",
+      "x": 90
+    },
+    "axis=z,natural=true": {
+      "model": "harambefmod:block/mischief_log_natural_horizontal",
+      "x": 90
+    }
+  }
+}

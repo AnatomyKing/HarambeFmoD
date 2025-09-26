@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:paper",
+    "harambefmod:imperium_planks"
+  ],
+  "result": {
+    "count": 1,
+    "id": "harambefmod:imperium_banner_pattern"
+  }
+}

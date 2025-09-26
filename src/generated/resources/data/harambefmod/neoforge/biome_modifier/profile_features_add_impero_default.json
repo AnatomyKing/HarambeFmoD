@@ -1,0 +1,9 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#minecraft:is_overworld",
+  "features": [
+    "harambefmod:swap_short_grass_impero_default",
+    "harambefmod:patch_tree_impero_default"
+  ],
+  "step": "vegetal_decoration"
+}

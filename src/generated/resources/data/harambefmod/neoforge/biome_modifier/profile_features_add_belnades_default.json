@@ -1,0 +1,9 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#minecraft:is_overworld",
+  "features": [
+    "harambefmod:swap_short_grass_belnades_default",
+    "harambefmod:patch_tree_belnades_default"
+  ],
+  "step": "vegetal_decoration"
+}
