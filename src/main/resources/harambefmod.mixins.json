@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.anatomyworld.harambefmod.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "harambefmod.refmap.json",
+  "mixins": [
+    "MinecraftServerSeedQueueResetMixin",
+    "NoiseBasedChunkGeneratorCodecMixin",
+    "ChunkGeneratorCreateStateMixin",
+    "ChunkMapRandomStateSeedMixin"
+  ],
+  "client": []
+}

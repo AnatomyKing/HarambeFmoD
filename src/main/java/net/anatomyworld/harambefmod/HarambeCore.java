@@ -33,6 +33,7 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import org.slf4j.Logger;
 
 import static net.neoforged.neoforge.common.NeoForge.EVENT_BUS;
@@ -54,6 +55,7 @@ public final class HarambeCore {
         ModAttachments.register(modBus);
         ModFeatures.FEATURES.register(modBus);
 
+
         // Common + datagen
         modBus.addListener(this::commonSetup);
         container.registerConfig(ModConfig.Type.COMMON, Config.COMMON_SPEC);
@@ -66,6 +68,9 @@ public final class HarambeCore {
         EVENT_BUS.addListener(DynastyGrassBonemealHandler::onBonemeal);
         EVENT_BUS.addListener(ImperiumGrassBonemealHandler::onBonemeal);
         EVENT_BUS.addListener(MischiefGrassBonemealHandler::onBonemeal);
+        EVENT_BUS.addListener((RegisterCommandsEvent e) ->
+                net.anatomyworld.harambefmod.command.SeedHereCommand.register(e.getDispatcher())
+        );
 
         CrossDimPortalHandler.register();
         PortalIgnitionHandler.register();
@@ -91,7 +96,7 @@ public final class HarambeCore {
     }
 
     private void commonSetup(final FMLCommonSetupEvent e) {
-        // shared init if needed
+
     }
 
     public static final class ClientEvents {

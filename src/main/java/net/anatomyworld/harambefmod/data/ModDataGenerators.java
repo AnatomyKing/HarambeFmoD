@@ -1,41 +1,33 @@
+// src/main/java/net/anatomyworld/harambefmod/data/ModDataGenerators.java
 package net.anatomyworld.harambefmod.data;
 
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
 public final class ModDataGenerators {
 
-    /**
-     * Register ALL providers for the "clientData" run here (NeoForge 1.21.6–1.21.8 style).
-     * IMPORTANT: This method must be registered exactly once (see HarambeCore constructor).
-     */
+    /** Register ALL providers for the "clientData" run here (NeoForge 1.21.6–1.21.8 style). */
     public static void gatherData(final GatherDataEvent.Client event) {
-        // If you ever split client/server providers, you can also use GatherDataEvent.Server.
-        // The MDK defaults to putting everything in Client. :contentReference[oaicite:1]{index=1}
-
         // Recipes (Runner pattern in 1.21.x)
         event.createProvider(ModRecipeProvider.Runner::new);
 
-        // Block tags
-        event.createProvider(ModBlockTagsProvider::new);
+        // ✅ Block + Item tags (item tags mirror block tags)
+        event.createBlockAndItemTags(ModBlockTagsProvider::new, PlankyItemTagsProvider::new);
 
         // Loot tables
         event.createProvider(ModLootTableProvider::new);
 
-        // If/when you add item tags that depend on block tags, use:
-        // event.createBlockAndItemTags(ModBlockTagsProvider::new, ModItemTagsProvider::new);
-
-        // NEW: models (blockstates + models + auto item models)
+        // Models / blockstates / auto item models
         event.createProvider(ModModelProvider::new);
 
+        // Equipment assets (if you have these)
         event.createProvider(EquipmentAssetsProvider::new);
 
-        // NEW: lang (en_us)
+        // Lang
         event.createProvider(out -> new ModLanguageProvider(out, "en_us"));
 
+        // GLMs / worldgen (your existing ones)
         event.createProvider(out -> new ModGLMProvider(out, event.getLookupProvider()));
-
         event.createProvider(out -> new ModWorldgenProvider(out, event.getLookupProvider()));
-
     }
 
     private ModDataGenerators() {}

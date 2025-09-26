@@ -143,6 +143,12 @@ public final class ModRecipeProvider extends RecipeProvider {
                 "faction/mischief_to_plank"
         );
 
+        dsl.shapelessCountToCount(
+                RecipeCategory.MISC,
+                ModItems.BANANA_PEARL,9,
+                ModBlocks.BANANA_PEARL_BLOCK.get(), 1,
+                "banana/block_to_pearl"
+        );
 
 
 
@@ -194,7 +200,7 @@ public final class ModRecipeProvider extends RecipeProvider {
                 .pattern("xxx")
                 .define('x', Items.AMETHYST_SHARD)
                 .define('o', ModItems.BANANA)
-                .unlockedByHas(ModBlocks.BANANA_PEARL_BLOCK.get())
+                .unlockedByHas(ModItems.BANANA.get())
                 .save("banana/banana_to_pearl");
 
         // Big Belmont Banner
@@ -253,7 +259,7 @@ public final class ModRecipeProvider extends RecipeProvider {
 
 
 
-        dsl.shaped(RecipeCategory.MISC, ModBlocks.PEARLIDIAN.get())
+        dsl.shaped(RecipeCategory.MISC, ModBlocks.PEARLIDIAN.get(), 2)
                 .pattern("xxx")
                 .pattern("xox")
                 .pattern("xxx")

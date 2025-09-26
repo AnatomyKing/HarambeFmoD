@@ -91,7 +91,7 @@ public final class PatchProfiles {
             TreeStyle.IMPERIUM, 18, 1,
             true, Blocks.BLUE_CONCRETE_POWDER,
             // use our merged amplified-with-imperium overlay
-            ResourceLocation.fromNamespaceAndPath("harambefmod", "settings_impero_overlay_merged")
+            null
     );
 
     public static final Profile MARCHELUS_DEFAULT = new Profile(
