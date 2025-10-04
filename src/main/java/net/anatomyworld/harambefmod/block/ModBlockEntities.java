@@ -3,6 +3,7 @@ package net.anatomyworld.harambefmod.block;
 import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.block.entity.AnyChestBlockEntity;
 import net.anatomyworld.harambefmod.block.entity.BananaPortalBlockEntity;
+import net.anatomyworld.harambefmod.block.entity.MischiefCatalystBlockEntity;
 import net.anatomyworld.harambefmod.block.entity.PearlFireBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -39,6 +40,12 @@ public final class ModBlockEntities {
                             false));
 
 
+    public static final Supplier<BlockEntityType<MischiefCatalystBlockEntity>> MISCHIEF_CATALYST_ENTITY =
+            BLOCK_ENTITY_TYPES.register("mischief_catalyst",
+                    () -> new BlockEntityType<>(
+                            MischiefCatalystBlockEntity::new,
+                            Set.of(ModBlocks.MISCHIEF_CATALYST.get()), // ONLY your block here
+                            false));
 
 
     public static void register(IEventBus modBus) {

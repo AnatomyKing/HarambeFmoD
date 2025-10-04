@@ -19,8 +19,14 @@ import net.minecraft.client.renderer.block.model.VariantMutator;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.MultifaceBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
+import net.minecraft.world.level.block.SculkCatalystBlock;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.Property;
+
+import java.util.Objects;
+import java.util.function.Function;
 
 import static net.anatomyworld.harambefmod.data.modelgen.ModelUtil.*;
 
@@ -557,6 +563,130 @@ public final class BlocksGenComplex {
         // Generate for STRIPPED (detect if it also has NATURAL; works either way)
         boolean strippedHasNatural = hasBooleanProperty(strippedPillar, "natural");
         generatePillarWithOptionalNatural(gen, strippedPillar, /*expectNatural*/ strippedHasNatural);
+    }
+
+
+    public static void catalystAuto(BlockModelGenerators gen,
+                                    Block catalyst,
+                                    ResourceLocation side,
+                                    ResourceLocation bottom,
+                                    ResourceLocation topGrass,
+                                    ResourceLocation sideBloom,
+                                    ResourceLocation topBloom) {
+
+        // ---- base model (mischief_catalyst.json)
+        TextureMapping baseMap = new TextureMapping()
+                .put(TextureSlot.SIDE, side)
+                .put(TextureSlot.BOTTOM, bottom)
+                .put(TextureSlot.TOP, topGrass);
+
+        ResourceLocation baseModel =
+                ModelTemplates.CUBE_BOTTOM_TOP.create(catalyst, baseMap, gen.modelOutput);
+
+        // ---- bloom model (mischief_catalyst_bloom.json)
+        // Use the SAME vanilla slots (SIDE/TOP/BOTTOM), no custom keys.
+        TextureMapping bloomMap = new TextureMapping()
+                .put(TextureSlot.SIDE, sideBloom)   // <— points to *_side_bloom
+                .put(TextureSlot.BOTTOM, bottom)
+                .put(TextureSlot.TOP, topBloom);    // <— points to *_top_bloom
+
+        ResourceLocation bloomModel =
+                ModelTemplates.CUBE_BOTTOM_TOP.create(
+                        ModelUtil.rl(ModelUtil.idOf(catalyst).getNamespace(),
+                                "block/" + ModelUtil.idOf(catalyst).getPath() + "_bloom"),
+                        bloomMap,
+                        gen.modelOutput
+                );
+
+        // ---- blockstate: PULSE false -> base, true -> bloom
+        gen.blockStateOutput.accept(
+                MultiVariantGenerator.dispatch(catalyst, mv(baseModel))
+                        .with(PropertyDispatch.modify(SculkCatalystBlock.PULSE)
+                                .select(false, BlockModelGenerators.NOP)
+                                .select(true,  VariantMutator.MODEL.withValue(bloomModel)))
+        );
+    }
+
+
+    public static void veinMultiface(BlockModelGenerators gen, Block vein, ResourceLocation texture) {
+        // --- 1) Model: inherit vanilla sculk_vein, override texture slot "sculk_vein"
+        var id = ModelUtil.idOf(vein);
+        var modelId = ModelUtil.rl(id.getNamespace(), "block/" + id.getPath());
+
+        gen.modelOutput.accept(modelId, () -> {
+            var root = new com.google.gson.JsonObject();
+            root.addProperty("parent", "minecraft:block/sculk_vein");
+            var tex = new com.google.gson.JsonObject();
+            var t = texture.toString();
+            tex.addProperty("particle", t);
+            tex.addProperty("sculk_vein", t); // <<< IMPORTANT: vanilla key name
+            root.add("textures", tex);
+            return root;
+        });
+
+        // helpers
+        Function<Direction, Property<Boolean>> face = d -> Objects.requireNonNull(MultifaceBlock.getFaceProperty(d));
+        var allFalse = BlockModelGenerators.condition()
+                .term(face.apply(Direction.DOWN),  false)
+                .term(face.apply(Direction.UP),    false)
+                .term(face.apply(Direction.NORTH), false)
+                .term(face.apply(Direction.SOUTH), false)
+                .term(face.apply(Direction.EAST),  false)
+                .term(face.apply(Direction.WEST),  false);
+
+        // --- 2) Blockstate: multipart like vanilla (each face + a fallback when all are false)
+        var mp = MultiPartGenerator.multiPart(vein)
+                // north
+                .with(BlockModelGenerators.condition().term(face.apply(Direction.NORTH), true),
+                        BlockModelGenerators.variants(new Variant(modelId)))
+                .with(allFalse, BlockModelGenerators.variants(new Variant(modelId)))
+
+                // east (y=90, uvlock)
+                .with(BlockModelGenerators.condition().term(face.apply(Direction.EAST), true),
+                        BlockModelGenerators.variants(new Variant(modelId)
+                                .with(VariantMutator.Y_ROT.withValue(Quadrant.R90))
+                                .with(VariantMutator.UV_LOCK.withValue(true))))
+                .with(allFalse, BlockModelGenerators.variants(new Variant(modelId)
+                        .with(VariantMutator.Y_ROT.withValue(Quadrant.R90))
+                        .with(VariantMutator.UV_LOCK.withValue(true))))
+
+                // south (y=180, uvlock)
+                .with(BlockModelGenerators.condition().term(face.apply(Direction.SOUTH), true),
+                        BlockModelGenerators.variants(new Variant(modelId)
+                                .with(VariantMutator.Y_ROT.withValue(Quadrant.R180))
+                                .with(VariantMutator.UV_LOCK.withValue(true))))
+                .with(allFalse, BlockModelGenerators.variants(new Variant(modelId)
+                        .with(VariantMutator.Y_ROT.withValue(Quadrant.R180))
+                        .with(VariantMutator.UV_LOCK.withValue(true))))
+
+                // west (y=270, uvlock)
+                .with(BlockModelGenerators.condition().term(face.apply(Direction.WEST), true),
+                        BlockModelGenerators.variants(new Variant(modelId)
+                                .with(VariantMutator.Y_ROT.withValue(Quadrant.R270))
+                                .with(VariantMutator.UV_LOCK.withValue(true))))
+                .with(allFalse, BlockModelGenerators.variants(new Variant(modelId)
+                        .with(VariantMutator.Y_ROT.withValue(Quadrant.R270))
+                        .with(VariantMutator.UV_LOCK.withValue(true))))
+
+                // up (x=270, uvlock)
+                .with(BlockModelGenerators.condition().term(face.apply(Direction.UP), true),
+                        BlockModelGenerators.variants(new Variant(modelId)
+                                .with(VariantMutator.X_ROT.withValue(Quadrant.R270))
+                                .with(VariantMutator.UV_LOCK.withValue(true))))
+                .with(allFalse, BlockModelGenerators.variants(new Variant(modelId)
+                        .with(VariantMutator.X_ROT.withValue(Quadrant.R270))
+                        .with(VariantMutator.UV_LOCK.withValue(true))))
+
+                // down (x=90, uvlock)
+                .with(BlockModelGenerators.condition().term(face.apply(Direction.DOWN), true),
+                        BlockModelGenerators.variants(new Variant(modelId)
+                                .with(VariantMutator.X_ROT.withValue(Quadrant.R90))
+                                .with(VariantMutator.UV_LOCK.withValue(true))))
+                .with(allFalse, BlockModelGenerators.variants(new Variant(modelId)
+                        .with(VariantMutator.X_ROT.withValue(Quadrant.R90))
+                        .with(VariantMutator.UV_LOCK.withValue(true))));
+
+        gen.blockStateOutput.accept(mp);
     }
 
     /* --------------------------------- helpers --------------------------------- */

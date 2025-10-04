@@ -635,6 +635,29 @@ public final class ModBlocks {
                             .strength(1.0F)
                             .sound(net.minecraft.world.level.block.SoundType.AMETHYST)
                             .noOcclusion()));
+
+
+
+    public static final DeferredBlock<MischiefCatalystBlock> MISCHIEF_CATALYST =
+            BLOCKS.registerBlock("mischief_catalyst",
+                    p -> new MischiefCatalystBlock(
+                            p.mapColor(MapColor.COLOR_PURPLE)
+                                    .strength(1.5F, 6.0F)
+                                    .sound(SoundType.SCULK)
+                                    .randomTicks()
+                    ));
+
+    public static final DeferredBlock<MischiefVeinBlock> MISCHIEF_VEIN =
+            BLOCKS.registerBlock("mischief_vein",
+                    p -> new MischiefVeinBlock(
+                            p.mapColor(MapColor.COLOR_PURPLE)
+                                    .noOcclusion()
+                                    .strength(0.2F)
+                                    .sound(SoundType.SCULK)
+                                    .dynamicShape()
+                    ));
+
+
     /* -------------------- Auto BlockItems -------------------- */
 
     private static final Set<DeferredHolder<Block, ? extends Block>> SKIP_BLOCK_ITEMS = Set.of(

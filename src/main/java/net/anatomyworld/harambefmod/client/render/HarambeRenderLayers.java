@@ -59,7 +59,8 @@ public final class HarambeRenderLayers {
             ModBlocks.BIG_BELMONT_BANNER.get(),
             ModBlocks.BIG_DYNASTY_BANNER.get(),
             ModBlocks.BIG_IMPERIUM_BANNER.get(),
-            ModBlocks.BIG_MISCHIEF_BANNER.get()
+            ModBlocks.BIG_MISCHIEF_BANNER.get(),
+            ModBlocks.MISCHIEF_VEIN.get()
 
     );
 

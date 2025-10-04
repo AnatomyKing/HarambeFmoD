@@ -33,11 +33,11 @@ public final class MischiefGrassBonemealHandler {
 
         // look for adjacent carotene grass
         for (Direction d : Direction.Plane.HORIZONTAL) {
-            if (level.getBlockState(pos.relative(d)).is(ModBlocks.CAROTENE_GRASS_BLOCK.get())) {
+            if (level.getBlockState(pos.relative(d)).is(ModBlocks.MISCHIEF_GRASS_BLOCK.get())) {
 
                 if (level instanceof ServerLevel sl) {
                     // 1) convert the block
-                    sl.setBlock(pos, ModBlocks.CAROTENE_GRASS_BLOCK.get().defaultBlockState(), 3);
+                    sl.setBlock(pos, ModBlocks.MISCHIEF_GRASS_BLOCK.get().defaultBlockState(), 3);
 
                     // 2) VANILLA bone-meal effect (particles + sound)
                     // This is the same LevelEvent vanilla fires for bone meal usage.

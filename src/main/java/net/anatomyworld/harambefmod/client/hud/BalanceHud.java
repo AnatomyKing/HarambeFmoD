@@ -10,11 +10,11 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import net.neoforged.neoforge.common.NeoForgeMod;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,26 +22,20 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Ultra-optimized Balance HUD (NeoForge 1.21.8)
- * - No per-frame allocations on the hot path
- * - Precomputed RLs and PNG paths for digits/letters/symbols
- * - Glyph metadata cached per character & reused
- * - Text run cached; recomputed only when balance string actually changes
- * - Instant water bump (sticky until air full), exact extra mount rows
- * - Hidden in spectator & creative
- */
 public final class BalanceHud {
     private BalanceHud() {}
 
     /* ------------------- layout constants ------------------- */
 
     private static final int ICON_W = 9, ICON_H = 9; // pearl.png is 9x9
-    private static final int GLYPH_H = 9;            // glyph PNGs are 8–9px tall
-    private static final int PAD_RIGHT = 230;
+    private static final int GLYPH_H = 9;            // glyph PNGs are ~8–9px tall
     private static final int GAP_ICON_TEXT = 2;
     private static final int MIN_W = 3, MAX_W = 7;
     private static final int HUD_ROW = 10;
+
+    // VANILLA RIGHT-SIDE ANCHOR: x = width/2 + 91, draw to the LEFT of it
+    private static final int RIGHT_ANCHOR_FROM_CENTER = 91;
+    private static final int MARGIN_TO_HUNGER = 2; // small gap so we don't overlap food icons
 
     /* ------------------- precomputed sprites ------------------- */
 
@@ -54,24 +48,16 @@ public final class BalanceHud {
     // Letters a..z
     private static final ResourceLocation[] LETTER_PNG = new ResourceLocation[26];
     // Symbols
-    private static final ResourceLocation PERIOD_PNG =
-            rlPng("hud/symbols/period");
-    private static final ResourceLocation COMMA_PNG  =
-            rlPng("hud/symbols/comma");
-    private static final ResourceLocation APOST_PNG  =
-            rlPng("hud/symbols/apostrophe");
+    private static final ResourceLocation PERIOD_PNG = rlPng("hud/symbols/period");
+    private static final ResourceLocation COMMA_PNG  = rlPng("hud/symbols/comma");
+    private static final ResourceLocation APOST_PNG  = rlPng("hud/symbols/apostrophe");
 
     // Icon
-    private static final ResourceLocation ICON_PNG =
-            rlPng("hud/pearl");
+    private static final ResourceLocation ICON_PNG   = rlPng("hud/pearl");
 
     static {
-        for (int d = 0; d < 10; d++) {
-            DIGIT_PNG[d] = rlPng("hud/numbers/" + (char) ('0' + d));
-        }
-        for (int i = 0; i < 26; i++) {
-            LETTER_PNG[i] = rlPng("hud/letters/" + (char) ('a' + i));
-        }
+        for (int d = 0; d < 10; d++) DIGIT_PNG[d] = rlPng("hud/numbers/" + (char) ('0' + d));
+        for (int i = 0; i < 26; i++) LETTER_PNG[i] = rlPng("hud/letters/" + (char) ('a' + i));
     }
 
     private static ResourceLocation rlPng(String pathNoExt) {
@@ -139,25 +125,22 @@ public final class BalanceHud {
 
     /* ------------------- cached text run ------------------- */
 
-    // Stores a compiled line ready for blitting without allocations.
     private static final class Run {
         long lastBalance = Long.MIN_VALUE;
-        String text = "";           // human text (lowercased)
-        char[] chars = new char[0]; // char array view of text
-        GlyphMeta[] metas = new GlyphMeta[0]; // glyph metas aligned with chars
-        int[] advances = new int[0];          // per-glyph advance (drawW or space)
-        int width = 0;              // total text width (sum of advances)
+        String text = "";
+        char[] chars = new char[0];
+        GlyphMeta[] metas = new GlyphMeta[0];
+        int[] advances = new int[0];
+        int width = 0;
     }
     private static final Run RUN = new Run();
 
     private static void ensureRunUpToDate(long balance) {
         if (balance == RUN.lastBalance) return;
 
-        // Format only on value change (rare). Abbrev is fine here.
         String txt = Abbrev.format(balance).toLowerCase(Locale.ROOT);
         int n = txt.length();
 
-        // (re)size arrays only if needed
         if (RUN.chars.length < n) {
             RUN.chars = new char[n];
             RUN.metas = new GlyphMeta[n];
@@ -173,28 +156,15 @@ public final class BalanceHud {
             int adv;
 
             if (ch == ' ') {
-                meta = null;
-                adv = 4;
+                meta = null; adv = 4;
             } else if (ch >= '0' && ch <= '9') {
-                meta = gmDigit(ch - '0');
-                adv = meta.drawW;
+                meta = gmDigit(ch - '0'); adv = meta.drawW;
             } else if (ch >= 'a' && ch <= 'z') {
-                meta = gmLetter(ch - 'a');
-                adv = meta.drawW;
-            } else if (ch == '.') {
-                meta = gmPeriod();
-                adv = meta.drawW;
-            } else if (ch == ',') {
-                meta = gmComma();
-                adv = meta.drawW;
-            } else if (ch == '\'') {
-                meta = gmApost();
-                adv = meta.drawW;
-            } else {
-                // unsupported character -> skip w/ zero advance
-                meta = null;
-                adv = 0;
-            }
+                meta = gmLetter(ch - 'a'); adv = meta.drawW;
+            } else if (ch == '.') { meta = gmPeriod(); adv = meta.drawW; }
+            else if (ch == ',') { meta = gmComma();  adv = meta.drawW; }
+            else if (ch == '\''){ meta = gmApost();  adv = meta.drawW; }
+            else { meta = null; adv = 0; }
 
             RUN.metas[i] = meta;
             RUN.advances[i] = adv;
@@ -228,7 +198,6 @@ public final class BalanceHud {
         // Hide in spectator AND creative
         if (p.isSpectator() || p.isCreative()) return;
 
-        // Prepare run once per balance change (no per-frame formatting/measurement)
         long bal = ClientBalance.get();
         ensureRunUpToDate(bal);
 
@@ -237,11 +206,13 @@ public final class BalanceHud {
 
         int y = computeHudY(p, sh);
 
+        // --- VANILLA-STYLE X ANCHOR (right side HUD)
+        int anchorRight = sw / 2 + RIGHT_ANCHOR_FROM_CENTER; // same anchor vanilla uses for food bar
         int totalW = ICON_W + GAP_ICON_TEXT + RUN.width;
-        int x = sw - PAD_RIGHT - totalW;
+        int x = anchorRight - MARGIN_TO_HUNGER - totalW;     // draw to the left of the anchor
 
         // Icon
-        GlyphMeta icon = metaFor(ICON_PNG); // cached after first read
+        GlyphMeta icon = metaFor(ICON_PNG);
         blitFull(gg, icon.png, x, y, ICON_W, ICON_H, icon.texW, icon.texH);
 
         // Text baseline and blits (no allocations; pre-measured advances)
@@ -271,7 +242,8 @@ public final class BalanceHud {
         int shiftUp = 0;
 
         // Water bump: instant up; sticky while air not full
-        boolean eyesInWater = p.isEyeInFluid(FluidTags.WATER);
+
+        boolean eyesInWater = p.isEyeInFluidType(NeoForgeMod.WATER_TYPE.value());
         boolean airNotFull  = p.getAirSupply() < p.getMaxAirSupply();
         if (eyesInWater || airNotFull) {
             shiftUp += HUD_ROW;
@@ -301,7 +273,6 @@ public final class BalanceHud {
 
     private static void blitFull(GuiGraphics gg, ResourceLocation texPng, int x, int y,
                                  int drawW, int drawH, int texW, int texH) {
-        // GuiGraphics is the standard HUD API in modern Minecraft. (1.21+)
         gg.blit(RenderPipelines.GUI_TEXTURED, texPng, x, y, 0f, 0f, drawW, drawH, texW, texH);
     }
 }

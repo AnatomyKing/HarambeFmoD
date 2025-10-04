@@ -22,14 +22,14 @@ import net.minecraft.client.renderer.item.properties.select.DisplayContext;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item;                       // <-- needed
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.level.block.Blocks;
 
-import java.util.List;                                      // <-- needed
-import java.util.Optional;                                  // <-- needed
+import java.util.List;
 
-import static net.anatomyworld.harambefmod.data.modelgen.BlocksGenComplex.wallBannerStatesExternal;
+
+
 
 public final class ModModelProvider extends ModelProvider {
 
@@ -166,6 +166,24 @@ public final class ModModelProvider extends ModelProvider {
                 BlocksGenSimple.texOf(Blocks.DIRT)  // bottom
         );
 
+
+        BlocksGenComplex.catalystAuto(
+                blockModels,
+                ModBlocks.MISCHIEF_CATALYST.get(),
+                BlocksGenSimple.texOf(ModBlocks.MISCHIEF_CATALYST.get(), "_side"),
+                BlocksGenSimple.texOf(ModBlocks.MISCHIEF_CATALYST.get(), "_bottom"),
+                BlocksGenSimple.texOf(ModBlocks.MISCHIEF_GRASS_BLOCK.get(), "_top"),
+                BlocksGenSimple.texOf(ModBlocks.MISCHIEF_CATALYST.get(), "_side_bloom"),
+                BlocksGenSimple.texOf(ModBlocks.MISCHIEF_CATALYST.get(), "_top_bloom")
+        );
+
+        BlocksGenComplex.veinMultiface(
+                blockModels,
+                ModBlocks.MISCHIEF_VEIN.get(),
+                BlocksGenSimple.texOf(ModBlocks.MISCHIEF_VEIN.get()) // your vein texture
+        );
+
+
         BlocksGenComplex.wallBannerScaled6Way(
                 blockModels, itemModels,
                 ModBlocks.BIG_BELMONT_BANNER.get(),
@@ -288,7 +306,8 @@ public final class ModModelProvider extends ModelProvider {
                 ModBlocks.BELMONT_SAPLING.get(),
                 ModBlocks.DYNASTY_SAPLING.get(),
                 ModBlocks.IMPERIUM_SAPLING.get(),
-                ModBlocks.MISCHIEF_SAPLING.get()
+                ModBlocks.MISCHIEF_SAPLING.get(),
+                ModBlocks.MISCHIEF_VEIN.get()
         );
 
         ItemsGen.customItemModel(itemModels,

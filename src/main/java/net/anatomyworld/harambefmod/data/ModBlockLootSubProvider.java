@@ -252,6 +252,24 @@ public final class ModBlockLootSubProvider extends BlockLootSubProvider {
                 ModBlocks.IMPERIUM_SHORT_GRASS.get(),
                 ModBlocks.MISCHIEF_SHORT_GRASS.get()
         );
+
+
+        add(ModBlocks.MISCHIEF_VEIN.get(),
+                LootTable.lootTable().withPool(
+                        LootPool.lootPool()
+                                .when(hasSilkTouch())
+                                .add(LootItem.lootTableItem(ModBlocks.MISCHIEF_VEIN.get()))
+                )
+        );
+
+
+        add(ModBlocks.MISCHIEF_CATALYST.get(),
+                LootTable.lootTable().withPool(
+                        LootPool.lootPool()
+                                .when(hasSilkTouch())
+                                .add(LootItem.lootTableItem(ModBlocks.MISCHIEF_CATALYST.get()))
+                )
+        );
     }
 
 

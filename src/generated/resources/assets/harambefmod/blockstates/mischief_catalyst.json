@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "bloom=false": {
+      "model": "harambefmod:block/mischief_catalyst"
+    },
+    "bloom=true": {
+      "model": "harambefmod:block/mischief_catalyst_bloom"
+    }
+  }
+}
