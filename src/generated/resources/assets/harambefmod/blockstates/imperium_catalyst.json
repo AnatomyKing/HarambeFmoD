@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "bloom=false": {
+      "model": "harambefmod:block/imperium_catalyst"
+    },
+    "bloom=true": {
+      "model": "harambefmod:block/imperium_catalyst_bloom"
+    }
+  }
+}

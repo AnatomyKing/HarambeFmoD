@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "bottom": "harambefmod:block/dynasty_catalyst_bottom",
+    "side": "harambefmod:block/dynasty_catalyst_side_bloom",
+    "top": "harambefmod:block/dynasty_catalyst_top_bloom"
+  }
+}

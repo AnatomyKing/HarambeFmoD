@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "bloom=false": {
+      "model": "harambefmod:block/dynasty_catalyst"
+    },
+    "bloom=true": {
+      "model": "harambefmod:block/dynasty_catalyst_bloom"
+    }
+  }
+}

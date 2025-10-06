@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/sculk_vein",
+  "textures": {
+    "particle": "harambefmod:block/belmont_vein",
+    "sculk_vein": "harambefmod:block/belmont_vein"
+  }
+}

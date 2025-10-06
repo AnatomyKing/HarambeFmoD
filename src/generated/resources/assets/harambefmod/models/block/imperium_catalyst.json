@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "bottom": "harambefmod:block/imperium_catalyst_bottom",
+    "side": "harambefmod:block/imperium_catalyst_side",
+    "top": "harambefmod:block/imperium_grass_block_top"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "bloom=false": {
+      "model": "harambefmod:block/belmont_catalyst"
+    },
+    "bloom=true": {
+      "model": "harambefmod:block/belmont_catalyst_bloom"
+    }
+  }
+}
