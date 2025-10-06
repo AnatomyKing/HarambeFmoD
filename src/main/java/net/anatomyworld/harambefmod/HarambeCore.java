@@ -5,8 +5,10 @@ import net.anatomyworld.harambefmod.attachment.ModAttachments;
 import net.anatomyworld.harambefmod.block.ModBlockEntities;
 import net.anatomyworld.harambefmod.block.ModBlocks;
 import net.anatomyworld.harambefmod.block.entity.PearlFireBlockEntity;
+import net.anatomyworld.harambefmod.client.render.FactionCatalystAreaOverlay;
 import net.anatomyworld.harambefmod.component.ModDataComponents;
 import net.anatomyworld.harambefmod.data.ModDataGenerators;
+import net.anatomyworld.harambefmod.effect.ModMobEffects;
 import net.anatomyworld.harambefmod.entity.ModEntities;
 import net.anatomyworld.harambefmod.entity.boat.musavacca.clientmodel.MusavaccaBoatModel;
 import net.anatomyworld.harambefmod.entity.boat.musavacca.clientmodel.MusavaccaBoatRenderer;
@@ -34,6 +36,7 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import org.slf4j.Logger;
 
@@ -53,6 +56,7 @@ public final class HarambeCore {
         ModBlockEntities.register(modBus);
         ModCreativeTabs.register(modBus);
         ModNetworking.register(modBus);
+        ModMobEffects.register(modBus);
         ModAttachments.register(modBus);
         ModFeatures.FEATURES.register(modBus);
         ModMenus.MENUS.register(modBus); // <-- menus
@@ -81,6 +85,29 @@ public final class HarambeCore {
         EVENT_BUS.addListener((net.neoforged.neoforge.event.RegisterCommandsEvent e) ->
                 net.anatomyworld.harambefmod.command.OpenSimpleChestCommand.register(e.getDispatcher())
         );
+
+        EVENT_BUS.addListener(
+                net.anatomyworld.harambefmod.client.render.FactionCatalystAreaOverlay::onRenderAfterBlockEntities
+        );
+
+        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionGameplay::onPlayerTick);
+        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionEvents::onRightClickBlock);
+        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionEvents::onAttackEntity);
+        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionEvents::onIncomingDamage);
+        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionEvents::onPlace);
+
+// Protection: lifecycle (NEW — add these)
+        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionLifecycle::onLoggedIn);
+        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionLifecycle::onRespawn);
+        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionLifecycle::onClone);
+        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionLifecycle::onChangedDimension);
+        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionLifecycle::onTeleportCommand);
+        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionLifecycle::onEnderPearlTeleport);
+        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionLifecycle::onSpreadPlayersTeleport);
+        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionLifecycle::onItemConsumptionTeleport);
+
+        // Client overlay (only once!)
+        EVENT_BUS.addListener(FactionCatalystAreaOverlay::onRenderAfterBlockEntities);
 
         CrossDimPortalHandler.register();
         PortalIgnitionHandler.register();
@@ -126,6 +153,7 @@ public final class HarambeCore {
                         net.anatomyworld.harambefmod.block.ModBlockEntities.ANY_CHEST_ENTITY.get(),
                         net.anatomyworld.harambefmod.entity.chest.any.AnyChestRenderer::new
                 );
+
             });
 
             // Colors (client)

@@ -26,7 +26,14 @@ public final class ModLanguageProvider extends LanguageProvider {
 
     /** Full translation key -> custom text (wins last). */
     private static final Map<String, String> OVERRIDES = new LinkedHashMap<>(Map.of(
-            "block.harambefmod.musavacca_sprout", "Musavacca Sprout"
+            "block.harambefmod.musavacca_sprout", "Musavacca Sprout",
+            "item.harambefmod.banana_cow_egg_unripe", "Unripe Banana Cow Egg",
+            "item.harambefmod.banana_cow_egg_ripening", "Ripening Banana Cow Egg",
+            "item.harambefmod.banana_cow_egg_ripe", "Ripe Banana Cow Egg",
+            "effect.harambefmod.belmont_protection", "Belmont Protect",
+            "effect.harambefmod.dynasty_protection", "Dynasty Protect",
+            "effect.harambefmod.imperium_protection", "Imperium Protect",
+            "effect.harambefmod.mischief_protection", "Mischief Protect"
             // "item.anybackrooms.almond_water", "Almond Water",
             // "itemGroup.anybackrooms.anybackrooms_tab", "AnyBackrooms"
     ));

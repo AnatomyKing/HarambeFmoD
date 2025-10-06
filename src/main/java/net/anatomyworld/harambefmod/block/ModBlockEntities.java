@@ -1,10 +1,7 @@
 package net.anatomyworld.harambefmod.block;
 
 import net.anatomyworld.harambefmod.HarambeCore;
-import net.anatomyworld.harambefmod.block.entity.AnyChestBlockEntity;
-import net.anatomyworld.harambefmod.block.entity.BananaPortalBlockEntity;
-import net.anatomyworld.harambefmod.block.entity.MischiefCatalystBlockEntity;
-import net.anatomyworld.harambefmod.block.entity.PearlFireBlockEntity;
+import net.anatomyworld.harambefmod.block.entity.*;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
@@ -40,12 +37,33 @@ public final class ModBlockEntities {
                             false));
 
 
-    public static final Supplier<BlockEntityType<MischiefCatalystBlockEntity>> MISCHIEF_CATALYST_ENTITY =
-            BLOCK_ENTITY_TYPES.register("mischief_catalyst",
-                    () -> new BlockEntityType<>(
-                            MischiefCatalystBlockEntity::new,
-                            Set.of(ModBlocks.MISCHIEF_CATALYST.get()), // ONLY your block here
-                            false));
+    public static final Supplier<BlockEntityType<MischiefCatalystBlockEntity>>
+            MISCHIEF_CATALYST_ENTITY = BLOCK_ENTITY_TYPES.register("mischief_catalyst",
+            () -> new BlockEntityType<>(
+                    MischiefCatalystBlockEntity::new,
+                    Set.of(ModBlocks.MISCHIEF_CATALYST.get()),
+                    false));
+
+    public static final Supplier<BlockEntityType<ImperiumCatalystBlockEntity>>
+            IMPERIUM_CATALYST_ENTITY = BLOCK_ENTITY_TYPES.register("imperium_catalyst",
+            () -> new BlockEntityType<>(
+                    ImperiumCatalystBlockEntity::new,
+                    Set.of(ModBlocks.IMPERIUM_CATALYST.get()),
+                    false));
+
+    public static final Supplier<BlockEntityType<DynastyCatalystBlockEntity>>
+            DYNASTY_CATALYST_ENTITY = BLOCK_ENTITY_TYPES.register("dynasty_catalyst",
+            () -> new BlockEntityType<>(
+                    DynastyCatalystBlockEntity::new,
+                    Set.of(ModBlocks.DYNASTY_CATALYST.get()),
+                    false));
+
+    public static final Supplier<BlockEntityType<BelmontCatalystBlockEntity>>
+            BELMONT_CATALYST_ENTITY = BLOCK_ENTITY_TYPES.register("belmont_catalyst",
+            () -> new BlockEntityType<>(
+                    BelmontCatalystBlockEntity::new,
+                    Set.of(ModBlocks.BELMONT_CATALYST.get()),
+                    false));
 
 
     public static void register(IEventBus modBus) {

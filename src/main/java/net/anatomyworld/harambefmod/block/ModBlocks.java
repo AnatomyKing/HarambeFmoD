@@ -4,7 +4,6 @@ import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.block.custom.*;
 import net.anatomyworld.harambefmod.block.custom.CaroteneGrassBlock;
 import net.anatomyworld.harambefmod.block.custom.NyliumGrassBlock;
-import net.anatomyworld.harambefmod.block.custom.WallBannerBlock;
 import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.level.block.*;
@@ -647,13 +646,69 @@ public final class ModBlocks {
                                     .randomTicks()
                     ));
 
-    public static final DeferredBlock<MischiefVeinBlock> MISCHIEF_VEIN =
+    public static final DeferredBlock<FactionVeinBlock> MISCHIEF_VEIN =
             BLOCKS.registerBlock("mischief_vein",
-                    p -> new MischiefVeinBlock(
+                    p -> new FactionVeinBlock(
                             p.mapColor(MapColor.COLOR_PURPLE)
                                     .noOcclusion()
                                     .strength(0.2F)
                                     .sound(SoundType.SCULK)
+                                    .dynamicShape()
+                    ));
+
+    public static final DeferredBlock<ImperiumCatalystBlock> IMPERIUM_CATALYST =
+            BLOCKS.registerBlock("imperium_catalyst",
+                    p -> new ImperiumCatalystBlock(
+                            p.mapColor(net.minecraft.world.level.material.MapColor.COLOR_LIGHT_BLUE)
+                                    .strength(1.5F, 6.0F)
+                                    .sound(net.minecraft.world.level.block.SoundType.SCULK)
+                                    .randomTicks()
+                    ));
+    public static final DeferredBlock<FactionVeinBlock> IMPERIUM_VEIN =
+            BLOCKS.registerBlock("imperium_vein",
+                    p -> new FactionVeinBlock(
+                            p.mapColor(net.minecraft.world.level.material.MapColor.COLOR_LIGHT_BLUE)
+                                    .noOcclusion()
+                                    .strength(0.2F)
+                                    .sound(net.minecraft.world.level.block.SoundType.SCULK)
+                                    .dynamicShape()
+                    ));
+
+    // Dynasty
+    public static final DeferredBlock<DynastyCatalystBlock> DYNASTY_CATALYST =
+            BLOCKS.registerBlock("dynasty_catalyst",
+                    p -> new DynastyCatalystBlock(
+                            p.mapColor(net.minecraft.world.level.material.MapColor.COLOR_GREEN)
+                                    .strength(1.5F, 6.0F)
+                                    .sound(net.minecraft.world.level.block.SoundType.SCULK)
+                                    .randomTicks()
+                    ));
+    public static final DeferredBlock<FactionVeinBlock> DYNASTY_VEIN =
+            BLOCKS.registerBlock("dynasty_vein",
+                    p -> new FactionVeinBlock(
+                            p.mapColor(net.minecraft.world.level.material.MapColor.COLOR_GREEN)
+                                    .noOcclusion()
+                                    .strength(0.2F)
+                                    .sound(net.minecraft.world.level.block.SoundType.SCULK)
+                                    .dynamicShape()
+                    ));
+
+    // Belmont
+    public static final DeferredBlock<BelmontCatalystBlock> BELMONT_CATALYST =
+            BLOCKS.registerBlock("belmont_catalyst",
+                    p -> new BelmontCatalystBlock(
+                            p.mapColor(net.minecraft.world.level.material.MapColor.COLOR_RED)
+                                    .strength(1.5F, 6.0F)
+                                    .sound(net.minecraft.world.level.block.SoundType.SCULK)
+                                    .randomTicks()
+                    ));
+    public static final DeferredBlock<FactionVeinBlock> BELMONT_VEIN =
+            BLOCKS.registerBlock("belmont_vein",
+                    p -> new FactionVeinBlock(
+                            p.mapColor(net.minecraft.world.level.material.MapColor.COLOR_RED)
+                                    .noOcclusion()
+                                    .strength(0.2F)
+                                    .sound(net.minecraft.world.level.block.SoundType.SCULK)
                                     .dynamicShape()
                     ));
 

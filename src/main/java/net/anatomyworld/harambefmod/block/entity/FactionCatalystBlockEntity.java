@@ -1,0 +1,196 @@
+package net.anatomyworld.harambefmod.block.entity;
+
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import net.anatomyworld.harambefmod.client.render.FactionCatalystAreaOverlay;
+import net.anatomyworld.harambefmod.faction.Faction;
+import net.anatomyworld.harambefmod.faction.FactionProtection;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.MultifaceBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.SculkCatalystBlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.gameevent.BlockPositionSource;
+import net.minecraft.world.level.gameevent.GameEventListener;
+import net.minecraft.world.level.gameevent.PositionSource;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.event.EventHooks;
+
+public abstract class FactionCatalystBlockEntity extends BlockEntity
+        implements GameEventListener.Provider<SculkCatalystBlockEntity.CatalystListener> {
+
+    /** How far we look for new vanilla placements to convert this tick. */
+    private static final int CONVERT_RADIUS = 16;
+
+    /** Chance to bonemeal a freshly-placed faction grass (0..1). */
+    private static final float AUTO_BONEMEAL_CHANCE = 0.25f;
+
+    private final SculkCatalystBlockEntity.CatalystListener listener;
+
+    protected FactionCatalystBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type,
+                                         BlockPos pos, BlockState state) {
+        super(type, pos, state);
+        PositionSource src = new BlockPositionSource(pos);
+        this.listener = new SculkCatalystBlockEntity.CatalystListener(state, src);
+    }
+
+    public abstract Faction faction();
+    protected abstract Block grassBlock();
+    protected abstract Block veinBlock();
+
+    @Override
+    protected void loadAdditional(ValueInput in) {
+        super.loadAdditional(in);
+        listener.getSculkSpreader().load(in);
+    }
+
+    @Override
+    protected void saveAdditional(ValueOutput out) {
+        listener.getSculkSpreader().save(out);
+        super.saveAdditional(out);
+    }
+
+    @Override
+    public SculkCatalystBlockEntity.CatalystListener getListener() { return listener; }
+
+    /* ---------- lifecycle ---------- */
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (this.level == null) return;
+        if (this.level.isClientSide) {
+            FactionCatalystAreaOverlay.track(this.level.dimension(), this.worldPosition);
+        } else {
+            FactionProtection.track(this.level.dimension(), this.worldPosition, this.faction());
+        }
+    }
+
+    @Override
+    public void setRemoved() {
+        if (this.level != null) {
+            if (this.level.isClientSide) {
+                FactionCatalystAreaOverlay.untrack(this.level.dimension(), this.worldPosition);
+            } else {
+                FactionProtection.untrack(this.level.dimension(), this.worldPosition);
+            }
+        }
+        super.setRemoved();
+    }
+
+    /* ---------- tick: convert sculk to faction materials ---------- */
+
+    public static void serverTick(Level level, BlockPos pos, BlockState state, FactionCatalystBlockEntity be) {
+        if (level.isClientSide) return;
+        ServerLevel srv = (ServerLevel) level;
+
+        LongOpenHashSet before = snapshotSculkAndVeins(srv, pos, CONVERT_RADIUS);
+        be.listener.getSculkSpreader().updateCursors(level, pos, level.getRandom(), true);
+        LongOpenHashSet after = snapshotSculkAndVeins(srv, pos, CONVERT_RADIUS);
+        after.removeAll(before);
+
+        if (after.isEmpty()) return;
+
+        RandomSource rnd = srv.getRandom();
+
+        for (long packed : after.toLongArray()) {
+            BlockPos p = BlockPos.of(packed);
+            BlockState s = srv.getBlockState(p);
+
+            if (s.is(Blocks.SCULK)) {
+                srv.setBlock(p, be.grassBlock().defaultBlockState(), 3);
+                if (rnd.nextFloat() < AUTO_BONEMEAL_CHANCE) {
+                    fireBonemealForFactionGrass(srv, p, be.grassBlock());
+                }
+                continue;
+            }
+
+            if (s.is(Blocks.SCULK_VEIN)) {
+                if (hasFactionGrassNeighbor(srv, p, be.grassBlock())) {
+                    srv.setBlock(p, Blocks.AIR.defaultBlockState(), 3);
+                    continue;
+                }
+
+                BlockState out = be.veinBlock().defaultBlockState();
+                for (Direction d : Direction.values()) {
+                    var face = MultifaceBlock.getFaceProperty(d);
+                    if (face != null && s.hasProperty(face) && s.getValue(face)) {
+                        out = out.setValue(face, true);
+                    }
+                }
+                if (s.hasProperty(BlockStateProperties.WATERLOGGED) && out.hasProperty(BlockStateProperties.WATERLOGGED)) {
+                    out = out.setValue(BlockStateProperties.WATERLOGGED, s.getValue(BlockStateProperties.WATERLOGGED));
+                }
+
+                if (hasFactionGrassNeighbor(srv, p, be.grassBlock())) {
+                    srv.setBlock(p, Blocks.AIR.defaultBlockState(), 3);
+                } else {
+                    srv.setBlock(p, out, 3);
+                }
+            }
+        }
+        stripVeinFacesFromCatalyst(srv, pos, be.veinBlock());
+    }
+
+    /* ---------- helpers ---------- */
+
+    private static it.unimi.dsi.fastutil.longs.LongOpenHashSet snapshotSculkAndVeins(ServerLevel srv, BlockPos center, int r) {
+        it.unimi.dsi.fastutil.longs.LongOpenHashSet set = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+        BlockPos.MutableBlockPos cur = new BlockPos.MutableBlockPos();
+
+        for (int dx = -r; dx <= r; dx++) {
+            for (int dy = -r; dy <= r; dy++) {
+                for (int dz = -r; dz <= r; dz++) {
+                    cur.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
+                    BlockState s = srv.getBlockState(cur);
+                    if (s.is(Blocks.SCULK) || s.is(Blocks.SCULK_VEIN)) {
+                        set.add(cur.asLong());
+                    }
+                }
+            }
+        }
+        return set;
+    }
+
+    private static boolean hasFactionGrassNeighbor(Level lvl, BlockPos pos, Block grassBlock) {
+        for (Direction d : Direction.values()) {
+            if (lvl.getBlockState(pos.relative(d)).is(grassBlock)) return true;
+        }
+        return false;
+    }
+
+    private static void fireBonemealForFactionGrass(ServerLevel level, BlockPos pos, Block grassBlock) {
+        BlockState now = level.getBlockState(pos);
+        if (!now.is(grassBlock)) return;
+        EventHooks.fireBonemealEvent(null, level, pos, now, new ItemStack(Items.BONE_MEAL));
+    }
+
+    private static void stripVeinFacesFromCatalyst(ServerLevel level, BlockPos catalystPos, Block factionVein) {
+        for (Direction d : Direction.values()) {
+            BlockPos neighbor = catalystPos.relative(d);
+            BlockState s = level.getBlockState(neighbor);
+            if (!s.is(factionVein)) continue;
+
+            var faceProp = MultifaceBlock.getFaceProperty(d.getOpposite());
+            if (faceProp != null && s.hasProperty(faceProp) && s.getValue(faceProp)) {
+                BlockState newState = s.setValue(faceProp, false);
+
+                boolean anyFaceLeft = false;
+                for (Direction d2 : Direction.values()) {
+                    var f2 = MultifaceBlock.getFaceProperty(d2);
+                    if (f2 != null && newState.hasProperty(f2) && newState.getValue(f2)) { anyFaceLeft = true; break; }
+                }
+                level.setBlock(neighbor, anyFaceLeft ? newState : Blocks.AIR.defaultBlockState(), 3);
+            }
+        }
+    }
+}

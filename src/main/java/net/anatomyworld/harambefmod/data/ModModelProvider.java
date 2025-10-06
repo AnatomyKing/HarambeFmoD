@@ -166,6 +166,35 @@ public final class ModModelProvider extends ModelProvider {
                 BlocksGenSimple.texOf(Blocks.DIRT)  // bottom
         );
 
+        BlocksGenComplex.catalystAuto(
+                blockModels,
+                ModBlocks.BELMONT_CATALYST.get(),
+                BlocksGenSimple.texOf(ModBlocks.BELMONT_CATALYST.get(), "_side"),
+                BlocksGenSimple.texOf(ModBlocks.BELMONT_CATALYST.get(), "_bottom"),
+                BlocksGenSimple.texOf(ModBlocks.BELMONT_GRASS_BLOCK.get(), "_top"),
+                BlocksGenSimple.texOf(ModBlocks.BELMONT_CATALYST.get(), "_side_bloom"),
+                BlocksGenSimple.texOf(ModBlocks.BELMONT_CATALYST.get(), "_top_bloom")
+        );
+
+        BlocksGenComplex.catalystAuto(
+                blockModels,
+                ModBlocks.DYNASTY_CATALYST.get(),
+                BlocksGenSimple.texOf(ModBlocks.DYNASTY_CATALYST.get(), "_side"),
+                BlocksGenSimple.texOf(ModBlocks.DYNASTY_CATALYST.get(), "_bottom"),
+                BlocksGenSimple.texOf(ModBlocks.DYNASTY_GRASS_BLOCK.get(), "_top"),
+                BlocksGenSimple.texOf(ModBlocks.DYNASTY_CATALYST.get(), "_side_bloom"),
+                BlocksGenSimple.texOf(ModBlocks.DYNASTY_CATALYST.get(), "_top_bloom")
+        );
+
+        BlocksGenComplex.catalystAuto(
+                blockModels,
+                ModBlocks.IMPERIUM_CATALYST.get(),
+                BlocksGenSimple.texOf(ModBlocks.IMPERIUM_CATALYST.get(), "_side"),
+                BlocksGenSimple.texOf(ModBlocks.IMPERIUM_CATALYST.get(), "_bottom"),
+                BlocksGenSimple.texOf(ModBlocks.IMPERIUM_GRASS_BLOCK.get(), "_top"),
+                BlocksGenSimple.texOf(ModBlocks.IMPERIUM_CATALYST.get(), "_side_bloom"),
+                BlocksGenSimple.texOf(ModBlocks.IMPERIUM_CATALYST.get(), "_top_bloom")
+        );
 
         BlocksGenComplex.catalystAuto(
                 blockModels,
@@ -179,9 +208,29 @@ public final class ModModelProvider extends ModelProvider {
 
         BlocksGenComplex.veinMultiface(
                 blockModels,
-                ModBlocks.MISCHIEF_VEIN.get(),
-                BlocksGenSimple.texOf(ModBlocks.MISCHIEF_VEIN.get()) // your vein texture
+                ModBlocks.BELMONT_VEIN.get(),
+                BlocksGenSimple.texOf(ModBlocks.BELMONT_VEIN.get())
         );
+
+        BlocksGenComplex.veinMultiface(
+                blockModels,
+                ModBlocks.DYNASTY_VEIN.get(),
+                BlocksGenSimple.texOf(ModBlocks.DYNASTY_VEIN.get())
+        );
+
+        BlocksGenComplex.veinMultiface(
+                blockModels,
+                ModBlocks.IMPERIUM_VEIN.get(),
+                BlocksGenSimple.texOf(ModBlocks.IMPERIUM_VEIN.get())
+        );
+
+        BlocksGenComplex.veinMultiface(
+                blockModels,
+                ModBlocks.MISCHIEF_VEIN.get(),
+                BlocksGenSimple.texOf(ModBlocks.MISCHIEF_VEIN.get())
+        );
+
+
 
 
         BlocksGenComplex.wallBannerScaled6Way(
@@ -307,6 +356,9 @@ public final class ModModelProvider extends ModelProvider {
                 ModBlocks.DYNASTY_SAPLING.get(),
                 ModBlocks.IMPERIUM_SAPLING.get(),
                 ModBlocks.MISCHIEF_SAPLING.get(),
+                ModBlocks.BELMONT_VEIN.get(),
+                ModBlocks.DYNASTY_VEIN.get(),
+                ModBlocks.IMPERIUM_VEIN.get(),
                 ModBlocks.MISCHIEF_VEIN.get()
         );
 

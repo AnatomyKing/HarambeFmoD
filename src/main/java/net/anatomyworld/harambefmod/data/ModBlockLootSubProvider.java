@@ -253,12 +253,27 @@ public final class ModBlockLootSubProvider extends BlockLootSubProvider {
                 ModBlocks.MISCHIEF_SHORT_GRASS.get()
         );
 
-
-        add(ModBlocks.MISCHIEF_VEIN.get(),
+        add(ModBlocks.BELMONT_CATALYST.get(),
                 LootTable.lootTable().withPool(
                         LootPool.lootPool()
                                 .when(hasSilkTouch())
-                                .add(LootItem.lootTableItem(ModBlocks.MISCHIEF_VEIN.get()))
+                                .add(LootItem.lootTableItem(ModBlocks.BELMONT_CATALYST.get()))
+                )
+        );
+
+        add(ModBlocks.DYNASTY_CATALYST.get(),
+                LootTable.lootTable().withPool(
+                        LootPool.lootPool()
+                                .when(hasSilkTouch())
+                                .add(LootItem.lootTableItem(ModBlocks.DYNASTY_CATALYST.get()))
+                )
+        );
+
+        add(ModBlocks.IMPERIUM_CATALYST.get(),
+                LootTable.lootTable().withPool(
+                        LootPool.lootPool()
+                                .when(hasSilkTouch())
+                                .add(LootItem.lootTableItem(ModBlocks.IMPERIUM_CATALYST.get()))
                 )
         );
 
@@ -268,6 +283,38 @@ public final class ModBlockLootSubProvider extends BlockLootSubProvider {
                         LootPool.lootPool()
                                 .when(hasSilkTouch())
                                 .add(LootItem.lootTableItem(ModBlocks.MISCHIEF_CATALYST.get()))
+                )
+        );
+
+        add(ModBlocks.BELMONT_VEIN.get(),
+                LootTable.lootTable().withPool(
+                        LootPool.lootPool()
+                                .when(hasSilkTouch())
+                                .add(LootItem.lootTableItem(ModBlocks.BELMONT_VEIN.get()))
+                )
+        );
+
+        add(ModBlocks.DYNASTY_VEIN.get(),
+                LootTable.lootTable().withPool(
+                        LootPool.lootPool()
+                                .when(hasSilkTouch())
+                                .add(LootItem.lootTableItem(ModBlocks.DYNASTY_VEIN.get()))
+                )
+        );
+
+        add(ModBlocks.IMPERIUM_VEIN.get(),
+                LootTable.lootTable().withPool(
+                        LootPool.lootPool()
+                                .when(hasSilkTouch())
+                                .add(LootItem.lootTableItem(ModBlocks.IMPERIUM_VEIN.get()))
+                )
+        );
+
+        add(ModBlocks.MISCHIEF_VEIN.get(),
+                LootTable.lootTable().withPool(
+                        LootPool.lootPool()
+                                .when(hasSilkTouch())
+                                .add(LootItem.lootTableItem(ModBlocks.MISCHIEF_VEIN.get()))
                 )
         );
     }
