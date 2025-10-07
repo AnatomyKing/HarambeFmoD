@@ -9,5 +9,8 @@
     "ChunkGeneratorCreateStateMixin",
     "ChunkMapRandomStateSeedMixin"
   ],
-  "client": []
+  "client": [
+    "DebugScreenOverlayNoPieMixin",
+    "ProfilerPieChartNeverRenderMixin"
+  ]
 }
