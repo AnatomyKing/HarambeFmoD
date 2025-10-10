@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import net.anatomyworld.harambefmod.faction.CatalystRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -19,7 +20,6 @@ import java.util.Map;
 
 /** Structure-block-like outline for all faction catalysts. */
 public final class FactionCatalystAreaOverlay {
-    public static final int RADIUS = 32;
     private static final int VIEW_DISTANCE = 128;
 
     private static final Map<ResourceKey<Level>, LongOpenHashSet> TRACKED = new HashMap<>();
@@ -54,8 +54,10 @@ public final class FactionCatalystAreaOverlay {
             final BlockPos pos = BlockPos.of(it.nextLong());
             if (pos.distToCenterSqr(cam.x, cam.y, cam.z) > maxDistSqr) continue;
 
-            double minX = -RADIUS, minZ = -RADIUS;
-            double maxX =  RADIUS + 1, maxZ =  RADIUS + 1;
+            double minX = -CatalystRegistry.RADIUS;
+            double minZ = -CatalystRegistry.RADIUS;
+            double maxX =  CatalystRegistry.RADIUS_PLUS_ONE;
+            double maxZ =  CatalystRegistry.RADIUS_PLUS_ONE;
             double minY = (minYWorld - pos.getY());
             double maxY = (maxYWorld - pos.getY());
             AABB box = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
@@ -71,11 +73,9 @@ public final class FactionCatalystAreaOverlay {
                              double x1, double y1, double z1,
                              double x2, double y2, double z2,
                              int r, int g, int b, int a) {
-
         vc.addVertex(pose.last().pose(), (float) x1, (float) y1, (float) z1)
                 .setColor(r, g, b, a)
                 .setNormal(pose.last(), 0f, 1f, 0f);
-
         vc.addVertex(pose.last().pose(), (float) x2, (float) y2, (float) z2)
                 .setColor(r, g, b, a)
                 .setNormal(pose.last(), 0f, 1f, 0f);

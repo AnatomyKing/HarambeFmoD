@@ -1,9 +1,10 @@
 package net.anatomyworld.harambefmod.block.entity;
 
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.client.render.FactionCatalystAreaOverlay;
+import net.anatomyworld.harambefmod.faction.CatalystRegistry;
 import net.anatomyworld.harambefmod.faction.Faction;
-import net.anatomyworld.harambefmod.faction.FactionProtection;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -21,20 +22,18 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.gameevent.BlockPositionSource;
 import net.minecraft.world.level.gameevent.GameEventListener;
 import net.minecraft.world.level.gameevent.PositionSource;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.event.EventHooks;
 
 public abstract class FactionCatalystBlockEntity extends BlockEntity
         implements GameEventListener.Provider<SculkCatalystBlockEntity.CatalystListener> {
 
-    /** How far we look for new vanilla placements to convert this tick. */
     private static final int CONVERT_RADIUS = 16;
-
-    /** Chance to bonemeal a freshly-placed faction grass (0..1). */
     private static final float AUTO_BONEMEAL_CHANCE = 0.25f;
 
     private final SculkCatalystBlockEntity.CatalystListener listener;
+
+    // zone lifetime (wall time) - start at 0 so NO protection/effect on place
+    private long expiresAtMs = 0L;
 
     protected FactionCatalystBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type,
                                          BlockPos pos, BlockState state) {
@@ -48,18 +47,6 @@ public abstract class FactionCatalystBlockEntity extends BlockEntity
     protected abstract Block veinBlock();
 
     @Override
-    protected void loadAdditional(ValueInput in) {
-        super.loadAdditional(in);
-        listener.getSculkSpreader().load(in);
-    }
-
-    @Override
-    protected void saveAdditional(ValueOutput out) {
-        listener.getSculkSpreader().save(out);
-        super.saveAdditional(out);
-    }
-
-    @Override
     public SculkCatalystBlockEntity.CatalystListener getListener() { return listener; }
 
     /* ---------- lifecycle ---------- */
@@ -68,10 +55,16 @@ public abstract class FactionCatalystBlockEntity extends BlockEntity
     public void onLoad() {
         super.onLoad();
         if (this.level == null) return;
+
         if (this.level.isClientSide) {
             FactionCatalystAreaOverlay.track(this.level.dimension(), this.worldPosition);
         } else {
-            FactionProtection.track(this.level.dimension(), this.worldPosition, this.faction());
+            // IMPORTANT: Do NOT auto-fill time. Keep whatever is here (default 0L).
+            if (this.expiresAtMs < 0L) this.expiresAtMs = 0L;
+            CatalystRegistry.put(this.level.dimension(), this.worldPosition, this.faction(), this.expiresAtMs);
+            HarambeCore.LOGGER.info("[CATALYST] placed faction={} pos={} expiresAtMs={}",
+                    this.faction(), this.worldPosition, this.expiresAtMs);
+            setChanged();
         }
     }
 
@@ -81,7 +74,8 @@ public abstract class FactionCatalystBlockEntity extends BlockEntity
             if (this.level.isClientSide) {
                 FactionCatalystAreaOverlay.untrack(this.level.dimension(), this.worldPosition);
             } else {
-                FactionProtection.untrack(this.level.dimension(), this.worldPosition);
+                CatalystRegistry.remove(this.level.dimension(), this.worldPosition);
+                HarambeCore.LOGGER.info("[CATALYST] removed faction={} pos={}", this.faction(), this.worldPosition);
             }
         }
         super.setRemoved();
@@ -143,8 +137,8 @@ public abstract class FactionCatalystBlockEntity extends BlockEntity
 
     /* ---------- helpers ---------- */
 
-    private static it.unimi.dsi.fastutil.longs.LongOpenHashSet snapshotSculkAndVeins(ServerLevel srv, BlockPos center, int r) {
-        it.unimi.dsi.fastutil.longs.LongOpenHashSet set = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+    private static LongOpenHashSet snapshotSculkAndVeins(ServerLevel srv, BlockPos center, int r) {
+        LongOpenHashSet set = new LongOpenHashSet();
         BlockPos.MutableBlockPos cur = new BlockPos.MutableBlockPos();
 
         for (int dx = -r; dx <= r; dx++) {
@@ -169,7 +163,7 @@ public abstract class FactionCatalystBlockEntity extends BlockEntity
     }
 
     private static void fireBonemealForFactionGrass(ServerLevel level, BlockPos pos, Block grassBlock) {
-        BlockState now = level.getBlockState(pos);
+        var now = level.getBlockState(pos);
         if (!now.is(grassBlock)) return;
         EventHooks.fireBonemealEvent(null, level, pos, now, new ItemStack(Items.BONE_MEAL));
     }

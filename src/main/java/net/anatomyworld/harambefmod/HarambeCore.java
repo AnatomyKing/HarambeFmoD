@@ -15,6 +15,7 @@ import net.anatomyworld.harambefmod.entity.boat.musavacca.clientmodel.MusavaccaB
 import net.anatomyworld.harambefmod.entity.mob.bananacow.clientmodel.BananaCowModel;
 import net.anatomyworld.harambefmod.entity.mob.bananacow.clientmodel.BananaCowRenderer;
 import net.anatomyworld.harambefmod.event.*;
+import net.anatomyworld.harambefmod.faction.FactionProtectionEvents;
 import net.anatomyworld.harambefmod.item.ModCreativeTabs;
 import net.anatomyworld.harambefmod.item.ModItems;
 import net.anatomyworld.harambefmod.menu.ModMenus;
@@ -36,7 +37,6 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import org.slf4j.Logger;
 
@@ -86,25 +86,10 @@ public final class HarambeCore {
                 net.anatomyworld.harambefmod.command.OpenSimpleChestCommand.register(e.getDispatcher())
         );
 
-        EVENT_BUS.addListener(
-                net.anatomyworld.harambefmod.client.render.FactionCatalystAreaOverlay::onRenderAfterBlockEntities
-        );
 
-        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionGameplay::onPlayerTick);
-        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionEvents::onRightClickBlock);
-        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionEvents::onAttackEntity);
-        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionEvents::onIncomingDamage);
-        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionEvents::onPlace);
 
-// Protection: lifecycle (NEW — add these)
-        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionLifecycle::onLoggedIn);
-        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionLifecycle::onRespawn);
-        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionLifecycle::onClone);
-        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionLifecycle::onChangedDimension);
-        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionLifecycle::onTeleportCommand);
-        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionLifecycle::onEnderPearlTeleport);
-        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionLifecycle::onSpreadPlayersTeleport);
-        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionProtectionLifecycle::onItemConsumptionTeleport);
+
+        EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionAuraEffects::onPlayerTick);
 
         // Client overlay (only once!)
         EVENT_BUS.addListener(FactionCatalystAreaOverlay::onRenderAfterBlockEntities);
@@ -112,6 +97,7 @@ public final class HarambeCore {
         CrossDimPortalHandler.register();
         PortalIgnitionHandler.register();
         SleepSkipCommandFallback.register();
+        FactionProtectionEvents.register();
 
         // Client-only listeners
         if (FMLLoader.getDist() == Dist.CLIENT) {
