@@ -37,6 +37,17 @@ public final class FactionCatalystAreaOverlay {
         if (set != null) set.remove(pos.asLong());
     }
 
+    /** Called by S->C payload to toggle visibility live. */
+    public static void applyServerVisibility(ResourceKey<Level> dim, BlockPos pos, boolean visible) {
+        if (visible) track(dim, pos); else untrack(dim, pos);
+        // If the BE exists on client, mirror the flag (optional but keeps things tidy)
+        var lvl = Minecraft.getInstance().level;
+        if (lvl != null && lvl.dimension().equals(dim)) {
+            var be = lvl.getBlockEntity(pos);
+            if (be instanceof FactionCatalystBlockEntity fbe) fbe.setOverlayVisible(visible);
+        }
+    }
+
     /** Register on the game bus: NeoForge.EVENT_BUS.addListener(FactionCatalystAreaOverlay::onRenderAfterBlockEntities) */
     public static void onRenderAfterBlockEntities(RenderLevelStageEvent.AfterBlockEntities e) {
         final Level level = e.getLevel();
@@ -57,7 +68,6 @@ public final class FactionCatalystAreaOverlay {
             final BlockPos pos = BlockPos.of(it.nextLong());
             if (pos.distToCenterSqr(cam.x, cam.y, cam.z) > maxDistSqr) continue;
 
-            // Find faction by checking the client-side BE at this position (fallback white if unknown)
             int rgb = 0xFFFFFF;
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof FactionCatalystBlockEntity fbe) {
@@ -74,18 +84,12 @@ public final class FactionCatalystAreaOverlay {
 
             pose.pushPose();
             pose.translate(pos.getX() - cam.x, pos.getY() - cam.y, pos.getZ() - cam.z);
-            // Slightly translucent so it’s not overpowering
             drawBoxEdges(pose, lines, box, rgb, 220);
             pose.popPose();
         }
     }
 
     private static int colorForFaction(Faction f) {
-        // Requested colors:
-        // belmont:  #14B002
-        // dynasty:  #A10E0F
-        // imperium: #2C55A7
-        // mischief: #7E2870
         return switch (f) {
             case BELMONT  -> 0x14B002;
             case DYNASTY  -> 0xA10E0F;

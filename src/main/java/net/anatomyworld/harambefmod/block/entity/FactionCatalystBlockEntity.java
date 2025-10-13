@@ -37,6 +37,9 @@ public abstract class FactionCatalystBlockEntity extends BlockEntity
     /** Wall-clock expiry; 0 = inactive. Authoritative value persisted to disk. */
     private long expiresAtMs = 0L;
 
+    /** Whether the client overlay is visible (synced + persisted). Default: true. */
+    private boolean overlayVisible = true;
+
     protected FactionCatalystBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type,
                                          BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -57,12 +60,14 @@ public abstract class FactionCatalystBlockEntity extends BlockEntity
     protected void saveAdditional(ValueOutput out) {
         super.saveAdditional(out);
         out.putLong("ExpiresAtMs", Math.max(0L, this.expiresAtMs));
+        out.putBoolean("OverlayVisible", this.overlayVisible);
     }
 
     @Override
     protected void loadAdditional(ValueInput in) {
         super.loadAdditional(in);
         this.expiresAtMs = Math.max(0L, in.getLongOr("ExpiresAtMs", 0L));
+        this.overlayVisible = in.getBooleanOr("OverlayVisible", true);
     }
 
     public void setExpiresAtMs(long ms) {
@@ -72,6 +77,9 @@ public abstract class FactionCatalystBlockEntity extends BlockEntity
 
     public long getExpiresAtMs() { return Math.max(0L, expiresAtMs); }
 
+    public boolean isOverlayVisible() { return overlayVisible; }
+    public void setOverlayVisible(boolean visible) { this.overlayVisible = visible; }
+
     /* ---------- lifecycle ---------- */
 
     @Override
@@ -80,7 +88,12 @@ public abstract class FactionCatalystBlockEntity extends BlockEntity
         if (this.level == null) return;
 
         if (this.level.isClientSide) {
-            FactionCatalystAreaOverlay.track(this.level.dimension(), this.worldPosition);
+            // Respect saved visibility: track/untrack accordingly
+            if (this.overlayVisible) {
+                FactionCatalystAreaOverlay.track(this.level.dimension(), this.worldPosition);
+            } else {
+                FactionCatalystAreaOverlay.untrack(this.level.dimension(), this.worldPosition);
+            }
         } else {
             CatalystRegistry.put(this.level.dimension(), this.worldPosition, this.faction(), this.expiresAtMs);
             HarambeCore.LOGGER.info("[CATALYST] placed faction={} pos={} expiresAtMs={}",

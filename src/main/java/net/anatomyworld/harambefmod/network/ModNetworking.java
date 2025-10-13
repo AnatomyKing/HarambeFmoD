@@ -5,6 +5,7 @@ import net.anatomyworld.harambefmod.attachment.ModAttachments;
 import net.anatomyworld.harambefmod.block.ModBlocks;
 import net.anatomyworld.harambefmod.block.entity.PearlFireBlockEntity;
 import net.anatomyworld.harambefmod.client.portal.BananaPortalTintCache;
+import net.anatomyworld.harambefmod.client.render.FactionCatalystAreaOverlay;
 import net.anatomyworld.harambefmod.client.sync.ClientBalance;
 import net.anatomyworld.harambefmod.item.custom.FlintAndPearlItem;
 import net.minecraft.core.BlockPos;
@@ -101,6 +102,14 @@ public final class ModNetworking {
 
         /* ---------------- S -> C ---------------- */
 
+        reg.playToClient(
+                SyncCatalystOverlayPayload.TYPE,
+                SyncCatalystOverlayPayload.STREAM_CODEC,
+                (payload, ctx) -> ctx.enqueueWork(() ->
+                        FactionCatalystAreaOverlay.applyServerVisibility(payload.dim(), payload.pos(), payload.visible())
+                )
+        );
+
         // cosmetic set list -> client cache
         reg.playToClient(
                 SyncCosmeticSetsPayload.TYPE,
@@ -168,6 +177,16 @@ public final class ModNetworking {
             }
         }
     }
+
+    public static void sendCatalystOverlayToDimension(ServerLevel server, BlockPos pos, boolean visible) {
+        var payload = new SyncCatalystOverlayPayload(server.dimension(), pos, visible);
+        for (ServerPlayer p : server.players()) {
+            if (p.level() == server) {
+                PacketDistributor.sendToPlayer(p, payload);
+            }
+        }
+    }
+
 
     private ModNetworking() {}
 }
