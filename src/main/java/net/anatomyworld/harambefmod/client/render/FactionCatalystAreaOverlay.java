@@ -4,13 +4,16 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import net.anatomyworld.harambefmod.block.entity.FactionCatalystBlockEntity;
 import net.anatomyworld.harambefmod.faction.CatalystRegistry;
+import net.anatomyworld.harambefmod.faction.Faction;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
@@ -18,7 +21,7 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Structure-block-like outline for all faction catalysts. */
+/** Structure-block-like outline for all faction catalysts (colored by faction). */
 public final class FactionCatalystAreaOverlay {
     private static final int VIEW_DISTANCE = 128;
 
@@ -54,6 +57,13 @@ public final class FactionCatalystAreaOverlay {
             final BlockPos pos = BlockPos.of(it.nextLong());
             if (pos.distToCenterSqr(cam.x, cam.y, cam.z) > maxDistSqr) continue;
 
+            // Find faction by checking the client-side BE at this position (fallback white if unknown)
+            int rgb = 0xFFFFFF;
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof FactionCatalystBlockEntity fbe) {
+                rgb = colorForFaction(fbe.faction());
+            }
+
             double minX = -CatalystRegistry.RADIUS;
             double minZ = -CatalystRegistry.RADIUS;
             double maxX =  CatalystRegistry.RADIUS_PLUS_ONE;
@@ -64,9 +74,24 @@ public final class FactionCatalystAreaOverlay {
 
             pose.pushPose();
             pose.translate(pos.getX() - cam.x, pos.getY() - cam.y, pos.getZ() - cam.z);
-            drawBoxEdges(pose, lines, box, 255, 255, 255, 255);
+            // Slightly translucent so it’s not overpowering
+            drawBoxEdges(pose, lines, box, rgb, 220);
             pose.popPose();
         }
+    }
+
+    private static int colorForFaction(Faction f) {
+        // Requested colors:
+        // belmont:  #14B002
+        // dynasty:  #A10E0F
+        // imperium: #2C55A7
+        // mischief: #7E2870
+        return switch (f) {
+            case BELMONT  -> 0x14B002;
+            case DYNASTY  -> 0xA10E0F;
+            case IMPERIUM -> 0x2C55A7;
+            case MISCHIEF -> 0x7E2870;
+        };
     }
 
     private static void line(PoseStack pose, VertexConsumer vc,
@@ -81,7 +106,11 @@ public final class FactionCatalystAreaOverlay {
                 .setNormal(pose.last(), 0f, 1f, 0f);
     }
 
-    private static void drawBoxEdges(PoseStack pose, VertexConsumer vc, AABB b, int r, int g, int bl, int a) {
+    private static void drawBoxEdges(PoseStack pose, VertexConsumer vc, AABB b, int rgb, int a) {
+        int r = (rgb >> 16) & 0xFF;
+        int g = (rgb >> 8) & 0xFF;
+        int bl = rgb & 0xFF;
+
         double x0 = b.minX, x1 = b.maxX;
         double y0 = b.minY, y1 = b.maxY;
         double z0 = b.minZ, z1 = b.maxZ;

@@ -43,8 +43,10 @@ public final class FactionAuraEffects {
 
     private static void ensure(ServerPlayer sp, Holder<MobEffect> effect, int ticks) {
         MobEffectInstance cur = sp.getEffect(effect);
-        if (cur == null || cur.getDuration() != ticks) {
-            sp.addEffect(new MobEffectInstance(effect, ticks, 0, false, true, true));
+        // Hide particles, keep icon:
+        // ambient=false, visible=false (no particles), showIcon=true
+        if (cur == null || cur.getDuration() != ticks || cur.isVisible() || !cur.showIcon()) {
+            sp.addEffect(new MobEffectInstance(effect, ticks, 0, false, false, true));
         }
         if (!effect.equals(ModMobEffects.BELMONT_PROTECTION))  sp.removeEffect(ModMobEffects.BELMONT_PROTECTION);
         if (!effect.equals(ModMobEffects.DYNASTY_PROTECTION))  sp.removeEffect(ModMobEffects.DYNASTY_PROTECTION);
