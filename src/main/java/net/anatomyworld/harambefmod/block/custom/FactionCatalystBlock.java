@@ -16,7 +16,6 @@ public abstract class FactionCatalystBlock extends SculkCatalystBlock implements
     public abstract BlockEntity newBlockEntity(BlockPos pos, BlockState state);
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state,
                                                                   net.minecraft.world.level.block.entity.BlockEntityType<T> type) {
         return level.isClientSide ? null

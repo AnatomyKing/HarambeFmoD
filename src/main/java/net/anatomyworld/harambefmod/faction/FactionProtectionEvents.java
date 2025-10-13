@@ -1,20 +1,23 @@
 package net.anatomyworld.harambefmod.faction;
 
 import net.anatomyworld.harambefmod.HarambeCore;
+import net.anatomyworld.harambefmod.block.ModBlocks;
+import net.anatomyworld.harambefmod.block.custom.FactionCatalystBlock;
 import net.anatomyworld.harambefmod.effect.ModMobEffects;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
+import net.minecraft.network.protocol.game.ClientboundContainerSetContentPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -22,11 +25,10 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteract;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.LeftClickBlock;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickItem;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.*;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.BlockEvent.EntityMultiPlaceEvent;
+import net.neoforged.neoforge.event.level.BlockEvent.EntityPlaceEvent;
 import net.neoforged.neoforge.event.level.ExplosionEvent;
 import net.neoforged.neoforge.event.level.ExplosionKnockbackEvent;
 import org.jetbrains.annotations.Nullable;
@@ -38,6 +40,8 @@ public final class FactionProtectionEvents {
         NeoForge.EVENT_BUS.register(FactionProtectionEvents.class);
         HarambeCore.LOGGER.info("[PROTECT] FactionProtectionEvents registered.");
     }
+
+    /* ---------------- helpers ---------------- */
 
     private static @Nullable CatalystRegistry.Entry zoneAt(ServerLevel level, BlockPos pos) {
         return CatalystRegistry.activeEntryAt(level.dimension(), pos);
@@ -51,7 +55,6 @@ public final class FactionProtectionEvents {
         return pf != null && pf == zoneFaction;
     }
 
-    /** Which aura a player currently has (client and server helpers). */
     private static @Nullable Faction zoneFactionViaEffects(Player p) {
         if (p.hasEffect(ModMobEffects.BELMONT_PROTECTION)) return Faction.BELMONT;
         if (p.hasEffect(ModMobEffects.DYNASTY_PROTECTION)) return Faction.DYNASTY;
@@ -60,63 +63,202 @@ public final class FactionProtectionEvents {
         return null;
     }
 
+    /** Full, authoritative inventory push to kill any client-side prediction/ghosts. */
+    private static void hardResyncInventory(ServerPlayer sp) {
+        sp.getInventory().setChanged();
+        sp.inventoryMenu.broadcastChanges();
+        int stateId = sp.inventoryMenu.incrementStateId();
+        sp.connection.send(new ClientboundContainerSetContentPacket(
+                sp.inventoryMenu.containerId,
+                stateId,
+                sp.inventoryMenu.getItems(),
+                sp.inventoryMenu.getCarried()
+        ));
+    }
+
+    /** Single place to perform the full “adventure-mode” denial + *hard* resync. */
+    private static void denyLikeAdventure(@Nullable RightClickBlock e, ServerPlayer sp, ServerLevel sl, BlockPos clicked, BlockPos placePos) {
+        if (e != null) {
+            e.setCanceled(true);
+            e.setCancellationResult(InteractionResult.FAIL); // ends pipeline on client, stops prediction
+        }
+        // Refresh both blocks (what you clicked + where the client predicted placement)
+        sp.connection.send(new ClientboundBlockUpdatePacket(sl, clicked));
+        if (!placePos.equals(clicked)) sp.connection.send(new ClientboundBlockUpdatePacket(sl, placePos));
+
+        // Force an authoritative inventory reset (kills hotbar ghost even when reaching-in)
+        hardResyncInventory(sp);
+    }
+
     /* ------------------------------------------------------------
-     * FEED THE ZONE TIMER ON ANY XP-CAPABLE DEATH NEAR A CATALYST
-     * (don’t use LivingExperienceDropEvent; sculk eats the XP orbs)
+     * CATALYST PLACEMENT RULES (routed through denyLikeAdventure)
      * ------------------------------------------------------------ */
+
+    @SubscribeEvent
+    public static void onRightClickBlock(RightClickBlock e) {
+        // CLIENT: gate like adventure mode for foreign active zones (stops packets early).
+        if (e.getLevel().isClientSide()) {
+            Player lp = e.getEntity();
+            if (lp != null) {
+                var aura = zoneFactionViaEffects(lp);
+                if (aura != null && !isOwner(lp, aura)) {
+                    e.setCanceled(true);
+                    e.setCancellationResult(InteractionResult.FAIL);
+                }
+            }
+            return;
+        }
+
+        if (!(e.getLevel() instanceof ServerLevel sl)) return;
+        ServerPlayer sp = (e.getEntity() instanceof ServerPlayer p) ? p : null;
+        if (sp == null) return;
+
+        BlockPos clicked = e.getPos();
+        BlockPos placePos = e.getFace() != null ? clicked.relative(e.getFace()) : clicked;
+
+        // Catalyst in hand? Use special validation, but DENY via the same path.
+        if (isCatalystStack(e.getItemStack())) {
+            Faction fac = catalystFactionFromStack(e.getItemStack());
+            if (fac == null) return;
+
+            if (!validateCatalystPlacementRivalFriendly(sl, placePos, fac, sp)) {
+                denyLikeAdventure(e, sp, sl, clicked, placePos);
+            }
+            return;
+        }
+
+        // Non-catalyst: if either target lies in an active foreign zone, deny.
+        var entryAtClick = zoneAt(sl, clicked);
+        var entryAtPlace = zoneAt(sl, placePos);
+        var denyEntry = entryAtPlace != null ? entryAtPlace : entryAtClick;
+        if (denyEntry != null && !isOwner(sp, denyEntry.faction())) {
+            denyLikeAdventure(e, sp, sl, clicked, placePos);
+        }
+    }
+
+    /** Server safety: catalyst placement via other routes. */
+    @SubscribeEvent
+    public static void onEntityPlaceCatalyst(EntityPlaceEvent e) {
+        if (!(e.getLevel() instanceof ServerLevel sl)) return;
+        Block placed = e.getPlacedBlock().getBlock();
+        if (!(placed instanceof FactionCatalystBlock)) return;
+
+        ServerPlayer sp = (e.getEntity() instanceof ServerPlayer p) ? p : null;
+        Faction fac = catalystFactionFromBlock(placed);
+        if (fac == null) { e.setCanceled(true); return; }
+
+        if (!validateCatalystPlacementRivalFriendly(sl, e.getPos(), fac, sp)) {
+            e.setCanceled(true);
+            if (sp != null) {
+                // We don't have the original clicked pos here, so use pos for both
+                denyLikeAdventure(null, sp, sl, e.getPos(), e.getPos());
+            }
+        }
+    }
+
+    /* ------------------------------------------------------------
+     * GENERAL PLACEMENT GUARDS (all blocks/fluids)
+     * ------------------------------------------------------------ */
+
+    @SubscribeEvent
+    public static void onEntityPlace(EntityPlaceEvent e) {
+        if (!(e.getLevel() instanceof ServerLevel sl)) return;
+        if (e.getPlacedBlock().getBlock() instanceof FactionCatalystBlock) return; // handled above
+
+        ServerPlayer sp = (e.getEntity() instanceof ServerPlayer p) ? p : null;
+        var entry = zoneAt(sl, e.getPos());
+        if (entry != null && !isOwner(sp, entry.faction())) {
+            e.setCanceled(true);
+            if (sp != null) denyLikeAdventure(null, sp, sl, e.getPos(), e.getPos());
+        }
+    }
+
+    @SubscribeEvent
+    public static void onEntityMultiPlace(EntityMultiPlaceEvent e) {
+        if (!(e.getLevel() instanceof ServerLevel sl)) return;
+        ServerPlayer sp = (e.getEntity() instanceof ServerPlayer p) ? p : null;
+
+        for (net.neoforged.neoforge.common.util.BlockSnapshot snap : e.getReplacedBlockSnapshots()) {
+            BlockPos pos = snap.getPos();
+            var entry = zoneAt(sl, pos);
+            if (entry != null && !isOwner(sp, entry.faction())) {
+                e.setCanceled(true);
+                if (sp != null) denyLikeAdventure(null, sp, sl, pos, pos);
+                return;
+            }
+        }
+    }
+
+    /** Block fluid placements (flow/bucket outcome) inside protected zones. */
+    @SubscribeEvent
+    public static void onFluidPlace(BlockEvent.FluidPlaceBlockEvent e) {
+        if (!(e.getLevel() instanceof ServerLevel sl)) return;
+        var entry = zoneAt(sl, e.getPos());
+        if (entry != null) e.setCanceled(true);
+    }
+
+    /* ------------------------------------------------------------
+     * FEED ZONE TIMER ON XP-CAPABLE DEATHS NEAR A CATALYST
+     * ------------------------------------------------------------ */
+
     @SubscribeEvent
     public static void onLivingDeath(LivingDeathEvent e) {
         if (!(e.getEntity().level() instanceof ServerLevel sl)) return;
 
         LivingEntity victim = e.getEntity();
-        if (!wouldDropXp(victim)) return; // match “entity that drops XP”
+        if (!wouldDropXp(victim)) return;
 
-        // Find nearest catalyst (active or inactive) within bloom radius
         BlockPos deathPos = victim.blockPosition();
-        var entry = CatalystRegistry.nearestWithinInclusive(
-                sl.dimension(), deathPos, CatalystRegistry.BLOOM_RADIUS_BLOCKS);
-        if (entry == null) return;
+        var activeHere = CatalystRegistry.activeEntryAt(sl.dimension(), deathPos);
+        var nearest = CatalystRegistry.nearestWithinInclusive(sl.dimension(), deathPos, CatalystRegistry.BLOOM_RADIUS_BLOCKS);
+        if (nearest == null) return;
+
+        if (activeHere != null && !activeHere.pos().equals(nearest.pos())) {
+            var killer = e.getSource() != null ? e.getSource().getEntity() : null;
+            if (killer instanceof ServerPlayer sp) {
+                long remain = Math.max(0L, activeHere.expiresAtMs() - System.currentTimeMillis());
+                sp.displayClientMessage(Component.literal("Zone is active (" + formatShortDuration(remain) + " left). Feed denied."), true);
+            }
+            return;
+        }
 
         boolean hostile = isHostileLike(victim);
         long delta = hostile ? CatalystRegistry.BONUS_HOSTILE_MS : CatalystRegistry.BONUS_PASSIVE_MS;
 
-        // Extend and get the UPDATED entry (old entry object is stale)
-        var updated = CatalystRegistry.extendExpiryAllowInactiveAndGet(sl.dimension(), entry.pos(), delta);
+        var updated = CatalystRegistry.extendExpiryAllowInactiveAndGet(sl.dimension(), nearest.pos(), delta);
         if (updated == null) return;
+
+        var be = sl.getBlockEntity(updated.pos());
+        if (be instanceof net.anatomyworld.harambefmod.block.entity.FactionCatalystBlockEntity fbe) {
+            fbe.setExpiresAtMs(updated.expiresAtMs());
+        }
 
         HarambeCore.LOGGER.debug("[CATALYST] bloom feed +{}ms at {} (faction={}, hostile={})",
                 delta, updated.pos(), updated.faction(), hostile);
 
-        // Immediately push/extend aura to all players currently inside the zone
         refreshAuraForPlayersInZone(sl, updated);
     }
 
     private static boolean wouldDropXp(LivingEntity v) {
-        // Players: drop XP if they have any XP/levels
-        if (v instanceof ServerPlayer sp) {
-            return sp.experienceLevel > 0 || sp.experienceProgress > 0f;
-        }
-        // Animals: only adults drop XP
+        if (v instanceof ServerPlayer sp) return sp.experienceLevel > 0 || sp.experienceProgress > 0f;
         if (v instanceof Animal an) return !an.isBaby();
-        // Other mobs (villagers, golems, monsters, etc.): usually drop XP
         return v instanceof Mob;
     }
 
     private static boolean isHostileLike(LivingEntity v) {
-        // Hostile mobs OR players count as "hostile" for 12s, animals as "passive" for 6s
         if (v instanceof Enemy) return true;
         if (v instanceof ServerPlayer) return true;
         if (v instanceof Animal) return false;
-        // other xp-dropping non-animals (villagers/golems) – treat as hostile for consistency
         return true;
     }
 
-    /** Push the current remaining time as an effect to all players standing in the given entry's zone. */
     private static void refreshAuraForPlayersInZone(ServerLevel sl, CatalystRegistry.Entry entry) {
         long now = System.currentTimeMillis();
         long remainingMs = Math.max(0L, entry.expiresAtMs() - now);
         int ticks = (int) Math.min(Integer.MAX_VALUE, remainingMs / 50L);
-        Holder<MobEffect> eff = switch (entry.faction()) {
+        if (ticks <= 0) return;
+
+        var eff = switch (entry.faction()) {
             case BELMONT -> ModMobEffects.BELMONT_PROTECTION;
             case DYNASTY -> ModMobEffects.DYNASTY_PROTECTION;
             case IMPERIUM -> ModMobEffects.IMPERIUM_PROTECTION;
@@ -135,16 +277,10 @@ public final class FactionProtectionEvents {
             int dz = Math.abs(sp.blockPosition().getZ() - c.getZ());
             if (dx > r || dz > r) continue;
 
-            if (ticks <= 0) {
-                sp.removeEffect(eff);
-            } else {
-                MobEffectInstance cur = sp.getEffect(eff);
-                if (cur == null || Math.abs(cur.getDuration() - ticks) > 2) {
-                    sp.addEffect(new MobEffectInstance(eff, ticks, 0, false, true, true));
-                }
+            MobEffectInstance cur = sp.getEffect(eff);
+            if (cur == null || Math.abs(cur.getDuration() - ticks) > 2) {
+                sp.addEffect(new MobEffectInstance(eff, ticks, 0, false, true, true));
             }
-
-            // keep exactly one aura
             if (!eff.equals(ModMobEffects.BELMONT_PROTECTION))  sp.removeEffect(ModMobEffects.BELMONT_PROTECTION);
             if (!eff.equals(ModMobEffects.DYNASTY_PROTECTION))  sp.removeEffect(ModMobEffects.DYNASTY_PROTECTION);
             if (!eff.equals(ModMobEffects.IMPERIUM_PROTECTION)) sp.removeEffect(ModMobEffects.IMPERIUM_PROTECTION);
@@ -152,36 +288,48 @@ public final class FactionProtectionEvents {
         }
     }
 
+    private static String formatShortDuration(long ms) {
+        if (ms <= 0) return "00:00";
+        long totalSec = ms / 1000L;
+        long h = totalSec / 3600L;
+        long m = (totalSec % 3600L) / 60L;
+        long s = totalSec % 60L;
+        if (h > 0) return String.format("%dh %02dm", h, m);
+        return String.format("%02d:%02d", m, s);
+    }
+
     /* ------------------------------------------------------------
-     * Breaking / left-clicking
+     * ADVENTURE-MODE FEEL: deny break/attack/use if not owner
      * ------------------------------------------------------------ */
+
     @SubscribeEvent
     public static void onLeftClickBlock(LeftClickBlock e) {
         if (e.getLevel().isClientSide()) {
-            var f = zoneFactionViaEffects(e.getEntity());
-            if (f != null && !isOwner(e.getEntity(), f)) {
-                e.setCanceled(true);
-                return;
+            Player lp = e.getEntity();
+            if (lp != null) {
+                var aura = zoneFactionViaEffects(lp);
+                if (aura != null && !isOwner(lp, aura)) e.setCanceled(true);
             }
-        } else if (e.getLevel() instanceof ServerLevel sl) {
-            var entry = zoneAt(sl, e.getPos());
-            if (entry == null) return;
-            if (e.getEntity() instanceof ServerPlayer sp && isOwner(sp, entry.faction())) return;
+            return;
+        }
+
+        if (!(e.getLevel() instanceof ServerLevel sl)) return;
+        var entry = zoneAt(sl, e.getPos());
+        if (entry == null) return;
+        ServerPlayer sp = (e.getEntity() instanceof ServerPlayer p) ? p : null;
+        if (!isOwner(sp, entry.faction())) {
             e.setCanceled(true);
-            if (e.getEntity() instanceof ServerPlayer sp) {
-                sp.connection.send(new ClientboundBlockUpdatePacket(sl, e.getPos()));
-            }
+            if (sp != null) sp.connection.send(new ClientboundBlockUpdatePacket(sl, e.getPos()));
         }
     }
 
     @SubscribeEvent
     public static void onBreakSpeed(PlayerEvent.BreakSpeed e) {
-        if (!(e.getEntity().level() instanceof ServerLevel sl)) return;
-        BlockPos pos = e.getPosition().orElse(e.getEntity().blockPosition());
+        if (!(e.getEntity() instanceof ServerPlayer sp)) return;
+        if (!(sp.level() instanceof ServerLevel sl)) return;
+        BlockPos pos = e.getPosition().orElse(sp.blockPosition());
         var entry = zoneAt(sl, pos);
-        if (entry == null) return;
-        if (e.getEntity() instanceof ServerPlayer sp && isOwner(sp, entry.faction())) return;
-        e.setNewSpeed(0.0F);
+        if (entry != null && !isOwner(sp, entry.faction())) e.setNewSpeed(0.0F);
     }
 
     @SubscribeEvent
@@ -189,146 +337,52 @@ public final class FactionProtectionEvents {
         if (!(e.getLevel() instanceof ServerLevel sl)) return;
         var entry = zoneAt(sl, e.getPos());
         if (entry == null) return;
-        var sp = (e.getPlayer() instanceof ServerPlayer p) ? p : null;
-        if (isOwner(sp, entry.faction())) return;
-        e.setCanceled(true);
+        ServerPlayer sp = (e.getPlayer() instanceof ServerPlayer p) ? p : null;
+        if (!isOwner(sp, entry.faction())) e.setCanceled(true);
     }
 
-    /* ------------------------------------------------------------
-     * Placing / right-clicking (reach-in protected)
-     * ------------------------------------------------------------ */
-    @SubscribeEvent
-    public static void onRightClickBlock(RightClickBlock e) {
-        if (e.getLevel().isClientSide()) {
-            var f = zoneFactionViaEffects(e.getEntity());
-            if (f != null && !isOwner(e.getEntity(), f)) {
-                e.setCanceled(true);
-                e.setCancellationResult(InteractionResult.FAIL);
-            }
-            return;
-        }
-
-        if (!(e.getLevel() instanceof ServerLevel sl)) return;
-
-        BlockPos clicked = e.getPos();
-        var face = e.getFace();
-        BlockPos placePos = (face != null) ? clicked.relative(face) : clicked;
-
-        var entryClicked = zoneAt(sl, clicked);
-        var entryPlace  = zoneAt(sl, placePos);
-        var entry = (entryPlace != null) ? entryPlace : entryClicked;
-        if (entry == null) return;
-
-        var sp = (e.getEntity() instanceof ServerPlayer p) ? p : null;
-        if (isOwner(sp, entry.faction())) return;
-
-        e.setCanceled(true);
-        e.setCancellationResult(InteractionResult.FAIL);
-
-        if (sp != null) {
-            sp.connection.send(new ClientboundBlockUpdatePacket(sl, clicked));
-            if (!placePos.equals(clicked)) {
-                sp.connection.send(new ClientboundBlockUpdatePacket(sl, placePos));
-            }
-            sp.inventoryMenu.broadcastChanges();
-        }
-    }
-
-    /** Authoritative guard for any placement that bypasses RightClickBlock. */
-    @SubscribeEvent
-    public static void onEntityPlace(BlockEvent.EntityPlaceEvent e) {
-        if (!(e.getLevel() instanceof ServerLevel sl)) return;
-        var entry = zoneAt(sl, e.getPos());
-        if (entry == null) return;
-
-        ServerPlayer sp = (e.getEntity() instanceof ServerPlayer p) ? p : null;
-        if (isOwner(sp, entry.faction())) return;
-
-        e.setCanceled(true);
-        if (sp != null) {
-            sp.connection.send(new ClientboundBlockUpdatePacket(sl, e.getPos()));
-            sp.inventoryMenu.broadcastChanges();
-        }
-    }
-
-    /** Beds/doors/etc that create multiple blocks at once. */
-    @SubscribeEvent
-    public static void onEntityMultiPlace(BlockEvent.EntityMultiPlaceEvent e) {
-        if (!(e.getLevel() instanceof ServerLevel sl)) return;
-
-        boolean touchesZone = e.getReplacedBlockSnapshots().stream()
-                .anyMatch(snap -> zoneAt(sl, snap.getPos()) != null);
-        if (!touchesZone) return;
-
-        ServerPlayer sp = (e.getEntity() instanceof ServerPlayer p) ? p : null;
-        if (sp != null) {
-            var anyForbidden = e.getReplacedBlockSnapshots().stream().anyMatch(snap -> {
-                var entry = zoneAt(sl, snap.getPos());
-                return entry != null && !isOwner(sp, entry.faction());
-            });
-            if (!anyForbidden) return; // allow if entirely their own zone
-        }
-
-        e.setCanceled(true);
-        if (sp != null) sp.inventoryMenu.broadcastChanges();
-    }
-
-    /** Buckets/fluids that would create blocks (obsidian/cobble, flowing water/lava). */
-    @SubscribeEvent
-    public static void onFluidPlace(BlockEvent.FluidPlaceBlockEvent e) {
-        if (!(e.getLevel() instanceof ServerLevel sl)) return;
-        var entry = zoneAt(sl, e.getPos());
-        if (entry == null) return;
-        e.setCanceled(true);
-    }
-
-    /* ------------------------------------------------------------
-     * Items used in air (inside-zone only)
-     * ------------------------------------------------------------ */
     @SubscribeEvent
     public static void onRightClickItem(RightClickItem e) {
         if (e.getLevel().isClientSide()) {
-            var f = zoneFactionViaEffects(e.getEntity());
-            if (f != null && !isOwner(e.getEntity(), f)) {
-                e.setCanceled(true);
-                e.setCancellationResult(InteractionResult.FAIL);
+            Player lp = e.getEntity();
+            if (lp != null) {
+                var aura = zoneFactionViaEffects(lp);
+                if (aura != null && !isOwner(lp, aura)) {
+                    e.setCanceled(true);
+                    e.setCancellationResult(InteractionResult.FAIL);
+                }
             }
             return;
         }
 
-        if (e.getLevel() instanceof ServerLevel sl) {
-            var entry = zoneAt(sl, e.getEntity().blockPosition());
-            if (entry == null) return;
-            if (e.getEntity() instanceof ServerPlayer sp && isOwner(sp, entry.faction())) return;
-
+        if (!(e.getEntity() instanceof ServerPlayer sp)) return;
+        if (!(e.getLevel() instanceof ServerLevel sl)) return;
+        var entry = zoneAt(sl, sp.blockPosition());
+        if (entry != null && !isOwner(sp, entry.faction())) {
             e.setCanceled(true);
             e.setCancellationResult(InteractionResult.FAIL);
-            if (e.getEntity() instanceof ServerPlayer sp) {
-                sp.inventoryMenu.broadcastChanges();
-            }
+            hardResyncInventory(sp);
         }
     }
 
-    /* ------------------------------------------------------------
-     * Entity interactions & combat inside zones
-     * ------------------------------------------------------------ */
     @SubscribeEvent
     public static void onEntityInteract(EntityInteract e) {
         if (e.getLevel().isClientSide()) {
-            var f = zoneFactionViaEffects(e.getEntity());
-            if (f != null && !isOwner(e.getEntity(), f)) {
-                e.setCanceled(true);
-                e.setCancellationResult(InteractionResult.FAIL);
+            Player lp = e.getEntity();
+            if (lp != null) {
+                var aura = zoneFactionViaEffects(lp);
+                if (aura != null && !isOwner(lp, aura)) {
+                    e.setCanceled(true);
+                    e.setCancellationResult(InteractionResult.FAIL);
+                }
             }
             return;
         }
 
-        if (e.getLevel() instanceof ServerLevel sl) {
-            var entry = zoneAt(sl, e.getTarget().blockPosition());
-            if (entry == null) return;
-            var sp = (e.getEntity() instanceof ServerPlayer p) ? p : null;
-            if (isOwner(sp, entry.faction())) return;
-
+        if (!(e.getEntity() instanceof ServerPlayer sp)) return;
+        if (!(e.getLevel() instanceof ServerLevel sl)) return;
+        var entry = zoneAt(sl, e.getTarget().blockPosition());
+        if (entry != null && !isOwner(sp, entry.faction())) {
             e.setCanceled(true);
             e.setCancellationResult(InteractionResult.FAIL);
         }
@@ -336,37 +390,60 @@ public final class FactionProtectionEvents {
 
     @SubscribeEvent
     public static void onAttackEntity(AttackEntityEvent e) {
-        if (!(e.getEntity().level() instanceof ServerLevel sl)) return;
+        if (!(e.getEntity() instanceof ServerPlayer sp)) return;
+        if (!(sp.level() instanceof ServerLevel sl)) return;
         var entry = zoneAt(sl, e.getTarget().blockPosition());
-        if (entry == null) return;
-        var sp = (e.getEntity() instanceof ServerPlayer p) ? p : null;
-        if (sp != null && isOwner(sp, entry.faction())) return;
-        e.setCanceled(true);
+        if (entry != null && !isOwner(sp, entry.faction())) e.setCanceled(true);
     }
 
-    /* ------------------------------------------------------------
-     * Explosions: keep blocks safe + protect entities in zones
-     * ------------------------------------------------------------ */
-    @SubscribeEvent
-    public static void onExplosionDetonate(ExplosionEvent.Detonate e) {
-        if (!(e.getLevel() instanceof ServerLevel sl)) return;
+    /* ---------------- catalyst helpers ---------------- */
 
-        var blocks = e.getAffectedBlocks();
-        if (blocks != null && !blocks.isEmpty()) {
-            blocks.removeIf(pos -> CatalystRegistry.activeEntryAt(sl.dimension(), pos) != null);
-        }
-
-        var ents = e.getAffectedEntities();
-        if (ents != null && !ents.isEmpty()) {
-            ents.removeIf(ent -> CatalystRegistry.activeEntryAt(sl.dimension(), ent.blockPosition()) != null);
-        }
+    private static boolean isCatalystStack(net.minecraft.world.item.ItemStack stack) {
+        if (!(stack.getItem() instanceof net.minecraft.world.item.BlockItem bi)) return false;
+        Block b = bi.getBlock();
+        return b instanceof FactionCatalystBlock
+                || b == ModBlocks.BELMONT_CATALYST.get()
+                || b == ModBlocks.DYNASTY_CATALYST.get()
+                || b == ModBlocks.IMPERIUM_CATALYST.get()
+                || b == ModBlocks.MISCHIEF_CATALYST.get();
     }
 
-    @SubscribeEvent
-    public static void onExplosionKnockback(ExplosionKnockbackEvent e) {
-        if (!(e.getLevel() instanceof ServerLevel sl)) return;
-        var entry = CatalystRegistry.activeEntryAt(sl.dimension(), e.getAffectedEntity().blockPosition());
-        if (entry == null) return;
-        e.setKnockbackVelocity(Vec3.ZERO);
+    @Nullable
+    private static Faction catalystFactionFromStack(net.minecraft.world.item.ItemStack stack) {
+        if (!(stack.getItem() instanceof net.minecraft.world.item.BlockItem bi)) return null;
+        return catalystFactionFromBlock(bi.getBlock());
+    }
+
+    @Nullable
+    private static Faction catalystFactionFromBlock(Block b) {
+        if (b == ModBlocks.BELMONT_CATALYST.get())  return Faction.BELMONT;
+        if (b == ModBlocks.DYNASTY_CATALYST.get())  return Faction.DYNASTY;
+        if (b == ModBlocks.IMPERIUM_CATALYST.get()) return Faction.IMPERIUM;
+        if (b == ModBlocks.MISCHIEF_CATALYST.get()) return Faction.MISCHIEF;
+        return null;
+    }
+
+    private static boolean validateCatalystPlacementRivalFriendly(ServerLevel sl, BlockPos placePos, Faction placingFaction, @Nullable ServerPlayer actor) {
+        var activeOverlap = CatalystRegistry.anyActiveOverlapping(sl.dimension(), placePos);
+        if (activeOverlap != null) {
+            if (actor != null) {
+                long remain = Math.max(0L, activeOverlap.expiresAtMs() - System.currentTimeMillis());
+                actor.displayClientMessage(Component.literal("Zone is active (" + formatShortDuration(remain) + " left). Placement locked."), true);
+            }
+            return false;
+        }
+
+        var anyOverlap = CatalystRegistry.anyOverlapping(sl.dimension(), placePos);
+        if (anyOverlap != null && anyOverlap.faction() == placingFaction) {
+            if (actor != null) actor.displayClientMessage(Component.literal("You can't place a catalyst inside your own Area."), true);
+            return false;
+        }
+
+        var sameFactionInside = CatalystRegistry.sameFactionContaining(sl.dimension(), placePos, placingFaction);
+        if (sameFactionInside != null) {
+            if (actor != null) actor.displayClientMessage(Component.literal("You can't place a catalyst inside an existing Area of the same faction."), true);
+            return false;
+        }
+        return true;
     }
 }

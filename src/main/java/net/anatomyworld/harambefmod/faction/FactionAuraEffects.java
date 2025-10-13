@@ -9,11 +9,6 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
-/**
- * Applies a visible effect ONLY while inside a zone.
- * The effect duration equals the catalyst's remaining lifetime.
- * Leaving the area immediately clears the effect.
- */
 public final class FactionAuraEffects {
     private FactionAuraEffects() {}
 
@@ -36,7 +31,6 @@ public final class FactionAuraEffects {
             return;
         }
 
-        // Convert remaining wall-time to ticks (cap a little to avoid overflow)
         int ticks = (int) Math.min(Integer.MAX_VALUE, remainingMs / 50L);
 
         switch (entry.faction()) {
@@ -50,10 +44,8 @@ public final class FactionAuraEffects {
     private static void ensure(ServerPlayer sp, Holder<MobEffect> effect, int ticks) {
         MobEffectInstance cur = sp.getEffect(effect);
         if (cur == null || cur.getDuration() != ticks) {
-            // ambient=false, showParticles=true, showIcon=true
             sp.addEffect(new MobEffectInstance(effect, ticks, 0, false, true, true));
         }
-        // Strip the others to avoid multi-auras
         if (!effect.equals(ModMobEffects.BELMONT_PROTECTION))  sp.removeEffect(ModMobEffects.BELMONT_PROTECTION);
         if (!effect.equals(ModMobEffects.DYNASTY_PROTECTION))  sp.removeEffect(ModMobEffects.DYNASTY_PROTECTION);
         if (!effect.equals(ModMobEffects.IMPERIUM_PROTECTION)) sp.removeEffect(ModMobEffects.IMPERIUM_PROTECTION);

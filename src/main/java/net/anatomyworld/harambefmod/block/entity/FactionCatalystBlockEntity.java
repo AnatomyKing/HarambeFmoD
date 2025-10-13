@@ -22,6 +22,8 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.gameevent.BlockPositionSource;
 import net.minecraft.world.level.gameevent.GameEventListener;
 import net.minecraft.world.level.gameevent.PositionSource;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.event.EventHooks;
 
 public abstract class FactionCatalystBlockEntity extends BlockEntity
@@ -32,7 +34,7 @@ public abstract class FactionCatalystBlockEntity extends BlockEntity
 
     private final SculkCatalystBlockEntity.CatalystListener listener;
 
-    // zone lifetime (wall time) - start at 0 so NO protection/effect on place
+    /** Wall-clock expiry; 0 = inactive. Authoritative value persisted to disk. */
     private long expiresAtMs = 0L;
 
     protected FactionCatalystBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type,
@@ -49,6 +51,27 @@ public abstract class FactionCatalystBlockEntity extends BlockEntity
     @Override
     public SculkCatalystBlockEntity.CatalystListener getListener() { return listener; }
 
+    /* ---------- persistence (1.21.6+ Value I/O) ---------- */
+
+    @Override
+    protected void saveAdditional(ValueOutput out) {
+        super.saveAdditional(out);
+        out.putLong("ExpiresAtMs", Math.max(0L, this.expiresAtMs));
+    }
+
+    @Override
+    protected void loadAdditional(ValueInput in) {
+        super.loadAdditional(in);
+        this.expiresAtMs = Math.max(0L, in.getLongOr("ExpiresAtMs", 0L));
+    }
+
+    public void setExpiresAtMs(long ms) {
+        this.expiresAtMs = Math.max(0L, ms);
+        setChanged(); // mark BE dirty so the chunk saves
+    }
+
+    public long getExpiresAtMs() { return Math.max(0L, expiresAtMs); }
+
     /* ---------- lifecycle ---------- */
 
     @Override
@@ -59,8 +82,6 @@ public abstract class FactionCatalystBlockEntity extends BlockEntity
         if (this.level.isClientSide) {
             FactionCatalystAreaOverlay.track(this.level.dimension(), this.worldPosition);
         } else {
-            // IMPORTANT: Do NOT auto-fill time. Keep whatever is here (default 0L).
-            if (this.expiresAtMs < 0L) this.expiresAtMs = 0L;
             CatalystRegistry.put(this.level.dimension(), this.worldPosition, this.faction(), this.expiresAtMs);
             HarambeCore.LOGGER.info("[CATALYST] placed faction={} pos={} expiresAtMs={}",
                     this.faction(), this.worldPosition, this.expiresAtMs);
