@@ -40,12 +40,10 @@ public final class CosmeticWardrobeLayer extends RenderLayer<PlayerRenderState, 
     @Override
     public void render(PoseStack pose, MultiBufferSource buf, int packedLight,
                        PlayerRenderState state, float yaw, float partialTick) {
-        // Keep our model transforms in sync with the player's current animation
         PlayerModel parent = this.getParentModel();
         copyPose(parent, inner);
         copyPose(parent, outer);
 
-        // Render each configured cosmetic stack from render state
         renderSlot(pose, buf, packedLight, state.getRenderData(CosmeticWardrobeRenderData.COS_HEAD),
                 EquipmentSlot.HEAD, EquipmentClientInfo.LayerType.HUMANOID, parent);
         renderSlot(pose, buf, packedLight, state.getRenderData(CosmeticWardrobeRenderData.COS_CHEST),
@@ -61,48 +59,32 @@ public final class CosmeticWardrobeLayer extends RenderLayer<PlayerRenderState, 
                             PlayerModel parentModel) {
         if (stack == null || stack.isEmpty()) return;
 
-        // Validate equippable + get the asset id that defines how to render this armor
         Equippable eq = stack.get(DataComponents.EQUIPPABLE);
         if (eq == null || eq.slot() != slot) return;
 
-        // If there is an armor asset -> render like armor. If not, and it's the HEAD slot,
-        // fall back to vanilla-style "item on head" that tracks head rotations.
         ResourceKey<EquipmentAsset> assetKey = eq.assetId().orElse(null);
         if (assetKey == null && slot == EquipmentSlot.HEAD) {
             renderHeadItemFollowingHead(stack, pose, buf, light, parentModel);
             return;
         }
-        if (assetKey == null) return; // no armor asset for non-head -> nothing to draw
+        if (assetKey == null) return;
 
-        // Pick the correct armor model and set per-slot visibility like vanilla
         HumanoidModel<?> model = (slot == EquipmentSlot.LEGS) ? inner : outer;
         setPartVisibility(model, slot);
 
-        // Draw all equipment layers (base/overlay/trim/tints) for this asset
         equipment.renderLayers(layerType, assetKey, model, stack, pose, buf, light, null);
     }
 
-    /**
-     * Vanilla-like item-on-head path that FOLLOWS the player's head rotations.
-     * Equivalent to: headPart.translateAndRotate -> translate Y -> scale -> render item with HEAD display context.
-     */
     private static void renderHeadItemFollowingHead(ItemStack stack, PoseStack pose, MultiBufferSource buf, int light,
                                                     PlayerModel parentModel) {
         pose.pushPose();
-
-        // 1) Apply the player head's current rotation & pivot (this makes the item follow yaw/pitch/bob).
         parentModel.head.translateAndRotate(pose);
 
-        // 2) Apply the standard offsets/scaling used by vanilla for head items.
-        // (These match the carved pumpkin / item-on-head transforms.)
         pose.translate(0.0D, -0.25D, 0.0D);
         float s = 0.625F;
         pose.scale(s, -s, -s);
-
-        // flip to face forward
         pose.mulPose(Axis.YP.rotationDegrees(180.0F));
 
-        // 3) Render with "HEAD" display context so your item's display->head transform is honored.
         Minecraft mc = Minecraft.getInstance();
         mc.getItemRenderer().renderStatic(
                 stack,
@@ -118,7 +100,6 @@ public final class CosmeticWardrobeLayer extends RenderLayer<PlayerRenderState, 
         pose.popPose();
     }
 
-    /** Match vanilla HumanoidArmorLayer visibility per slot. */
     private static void setPartVisibility(HumanoidModel<?> model, EquipmentSlot slot) {
         model.setAllVisible(false);
         switch (slot) {
@@ -129,7 +110,6 @@ public final class CosmeticWardrobeLayer extends RenderLayer<PlayerRenderState, 
         }
     }
 
-    /** Copy transforms so the cosmetic follows the current animation pose. */
     private static void copyPose(PlayerModel from, HumanoidModel<?> to) {
         to.head.copyFrom(from.head);
         to.hat.copyFrom(from.hat);

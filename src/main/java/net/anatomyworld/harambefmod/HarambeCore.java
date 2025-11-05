@@ -1,7 +1,6 @@
 package net.anatomyworld.harambefmod;
 
 import com.mojang.logging.LogUtils;
-import net.anatomyworld.harambefmod.attachment.ModAttachments;
 import net.anatomyworld.harambefmod.block.ModBlockEntities;
 import net.anatomyworld.harambefmod.block.ModBlocks;
 import net.anatomyworld.harambefmod.block.entity.PearlFireBlockEntity;
@@ -57,9 +56,8 @@ public final class HarambeCore {
         ModCreativeTabs.register(modBus);
         ModNetworking.register(modBus);
         ModMobEffects.register(modBus);
-        ModAttachments.register(modBus);
         ModFeatures.FEATURES.register(modBus);
-        ModMenus.MENUS.register(modBus); // <-- menus
+        ModMenus.MENUS.register(modBus);
 
         // Common + datagen
         modBus.addListener(this::commonSetup);
@@ -67,14 +65,12 @@ public final class HarambeCore {
         modBus.addListener(ModDataGenerators::gatherData);
 
         // Server-side event listeners
-        EVENT_BUS.addListener(net.anatomyworld.harambefmod.cosmetic.CosmeticSets::addServerReloaders);
-        EVENT_BUS.addListener(net.anatomyworld.harambefmod.cosmetic.CosmeticSets::onDatapackSync);
+
         EVENT_BUS.addListener(CaroteneGrassBonemealHandler::onBonemeal);
         EVENT_BUS.addListener(BelmontGrassBonemealHandler::onBonemeal);
         EVENT_BUS.addListener(DynastyGrassBonemealHandler::onBonemeal);
         EVENT_BUS.addListener(ImperiumGrassBonemealHandler::onBonemeal);
         EVENT_BUS.addListener(MischiefGrassBonemealHandler::onBonemeal);
-
 
         EVENT_BUS.addListener((RegisterCommandsEvent e) ->
                 net.anatomyworld.harambefmod.command.SeedHereCommand.register(e.getDispatcher())
@@ -85,9 +81,6 @@ public final class HarambeCore {
         EVENT_BUS.addListener((net.neoforged.neoforge.event.RegisterCommandsEvent e) ->
                 net.anatomyworld.harambefmod.command.OpenSimpleChestCommand.register(e.getDispatcher())
         );
-
-
-
 
         EVENT_BUS.addListener(net.anatomyworld.harambefmod.faction.FactionAuraEffects::onPlayerTick);
 
@@ -103,7 +96,7 @@ public final class HarambeCore {
         if (FMLLoader.getDist() == Dist.CLIENT) {
             modBus.addListener(ClientEvents::layerDefs);
             modBus.addListener(ClientEvents::clientSetup);
-            modBus.addListener(ClientEvents::registerScreens); // <-- screen registration via event
+            modBus.addListener(ClientEvents::registerScreens);
             modBus.addListener(net.anatomyworld.harambefmod.client.hud.BalanceHud::registerLayers);
             modBus.addListener(net.anatomyworld.harambefmod.client.render.HarambeRenderLayers::onModifyBakingResult);
             modBus.addListener(net.anatomyworld.harambefmod.client.render.CosmeticWardrobeRenderData::onRegisterStateMods);

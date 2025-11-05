@@ -1,91 +1,80 @@
 package net.anatomyworld.harambefmod.client.gui;
 
-import net.anatomyworld.harambefmod.cosmetic.CosmeticSet;
-import net.anatomyworld.harambefmod.cosmetic.client.ClientCosmeticSets;
-import net.anatomyworld.harambefmod.network.SelectCosmeticSetPayload;
-import net.anatomyworld.harambefmod.network.ClearCosmeticWardrobePayload;
-
+import net.anatomyworld.harambefmod.component.ModDataComponents;
+import net.anatomyworld.harambefmod.network.ArmorCosmeticSkinPayload;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
-
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 public class CosmeticWardrobeScreen extends Screen {
-    private static final int COLS = 2;
-    private static final int CELL_W = 180;
-    private static final int CELL_H = 42;
-    private static final int GAP = 8;
-    private static final int TOP_PAD = 38;
 
-    private List<ResourceLocation> order = new ArrayList<>();
+    private static final int ROW_HEIGHT  = 28;
+    private static final int ROW_START_Y = 52;
 
     public CosmeticWardrobeScreen() {
-        super(Component.literal("Cosmetic Sets"));
+        super(Component.literal("Cosmetic Wardrobe"));
     }
 
     @Override
     protected void init() {
-        order = new ArrayList<>(ClientCosmeticSets.sets().keySet());
         clearWidgets();
 
-        // Global "Clear" button (top-right)
-        int clearW = 60, clearH = 20;
-        addRenderableWidget(
-                Button.builder(Component.literal("Clear"), b -> clearAll())
-                        .pos(this.width - clearW - 10, 8)
-                        .size(clearW, clearH)
-                        .build()
-        );
+        int centerX = this.width / 2;
+        int buttonWidth  = 40;
+        int buttonHeight = 18;
 
-        int gridW = COLS * CELL_W + (COLS - 1) * GAP;
-        int x0 = (width - gridW) / 2;
-        int y0 = TOP_PAD;
-
-        int i = 0;
-        for (ResourceLocation id : order) {
-            int row = i / COLS, col = i % COLS;
-            int x = x0 + col * (CELL_W + GAP);
-            int y = y0 + row * (CELL_H + GAP);
-
-            addRenderableWidget(
-                    Button.builder(Component.literal("Equip"), b -> equip(id))
-                            .pos(x + CELL_W - 60, y + (CELL_H - 20) / 2)
-                            .size(56, 20)
-                            .build()
-            );
-            i++;
-        }
+        // For each armor slot: two buttons: ON / OFF
+        addSlotButtons(centerX, EquipmentSlot.HEAD,  0, buttonWidth, buttonHeight);
+        addSlotButtons(centerX, EquipmentSlot.CHEST, 1, buttonWidth, buttonHeight);
+        addSlotButtons(centerX, EquipmentSlot.LEGS,  2, buttonWidth, buttonHeight);
+        addSlotButtons(centerX, EquipmentSlot.FEET,  3, buttonWidth, buttonHeight);
 
         super.init();
     }
 
-    private void equip(ResourceLocation id) {
-        ClientPacketDistributor.sendToServer(new SelectCosmeticSetPayload(id));
-        if (Minecraft.getInstance().player != null) {
-            Minecraft.getInstance().player.displayClientMessage(
-                    Component.literal("Equipped set: ").append(id.toString()).withStyle(ChatFormatting.YELLOW),
-                    true
-            );
-        }
+    private void addSlotButtons(int centerX,
+                                EquipmentSlot slot,
+                                int rowIndex,
+                                int buttonWidth,
+                                int buttonHeight) {
+
+        int y = ROW_START_Y + rowIndex * ROW_HEIGHT - buttonHeight / 2;
+        int onX  = centerX + 80;
+        int offX = onX + buttonWidth + 6;
+
+        // ON button -> active = true
+        addRenderableWidget(
+                Button.builder(Component.literal("ON"), b -> setSlotActive(slot, true))
+                        .pos(onX, y)
+                        .size(buttonWidth, buttonHeight)
+                        .build()
+        );
+
+        // OFF button -> active = false
+        addRenderableWidget(
+                Button.builder(Component.literal("OFF"), b -> setSlotActive(slot, false))
+                        .pos(offX, y)
+                        .size(buttonWidth, buttonHeight)
+                        .build()
+        );
     }
 
-    private void clearAll() {
-        ClientPacketDistributor.sendToServer(ClearCosmeticWardrobePayload.INSTANCE);
-        if (Minecraft.getInstance().player != null) {
-            Minecraft.getInstance().player.displayClientMessage(
-                    Component.literal("Cleared cosmetic armor").withStyle(ChatFormatting.RED),
+    private void setSlotActive(EquipmentSlot slot, boolean active) {
+        ClientPacketDistributor.sendToServer(new ArmorCosmeticSkinPayload(slot, active));
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null) {
+            String state = active ? "ON" : "OFF";
+            mc.player.displayClientMessage(
+                    Component.literal("Cosmetic skin " + state + " for " + slot.getName())
+                            .withStyle(active ? ChatFormatting.GREEN : ChatFormatting.RED),
                     true
             );
         }
@@ -94,53 +83,77 @@ public class CosmeticWardrobeScreen extends Screen {
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         this.renderTransparentBackground(g);
-        g.drawCenteredString(this.font, "Cosmetic Armor (visual only)", this.width / 2, 12, 0xFFFFFF);
 
-        Map<ResourceLocation, CosmeticSet> sets = ClientCosmeticSets.sets();
+        Minecraft mc = Minecraft.getInstance();
+        int centerX = this.width / 2;
 
-        if (order.isEmpty()) {
-            g.drawCenteredString(this.font, "No cosmetic sets found", this.width / 2, this.height / 2 - 5, 0xAAAAAA);
-            super.render(g, mouseX, mouseY, partialTick);
-            return;
-        }
+        g.drawCenteredString(this.font, "Cosmetic Armor Skins (visual only)", centerX, 12, 0xFFFFFF);
+        g.drawCenteredString(
+                this.font,
+                "Each armor piece can have its own cosmetic_skin + active flag.",
+                centerX,
+                24,
+                0xAAAAAA
+        );
+        g.drawCenteredString(
+                this.font,
+                "ON/OFF only toggles rendering; the stored skin is never lost.",
+                centerX,
+                36,
+                0xAAAAAA
+        );
 
-        int gridW = COLS * CELL_W + (COLS - 1) * GAP;
-        int x0 = (width - gridW) / 2;
-        int y0 = TOP_PAD;
-
-        for (int i = 0; i < order.size(); i++) {
-            ResourceLocation id = order.get(i);
-            CosmeticSet set = sets.get(id);
-            if (set == null) continue;
-
-            int row = i / COLS, col = i % COLS;
-            int x = x0 + col * (CELL_W + GAP);
-            int y = y0 + row * (CELL_H + GAP);
-
-            g.fill(x, y, x + CELL_W, y + CELL_H, 0x66000000);
-            g.fill(x, y, x + CELL_W, y + 1, 0x22FFFFFF);
-            g.fill(x, y + CELL_H - 1, x + CELL_W, y + CELL_H, 0x22000000);
-            g.fill(x, y, x + 1, y + CELL_H, 0x22FFFFFF);
-            g.fill(x + CELL_W - 1, y, x + CELL_W, y + CELL_H, 0x22000000);
-
-            String title = set.title().orElse(id.getPath());
-            g.drawString(this.font, title, x + 8, y + 6, 0xFFFFFF, false);
-
-            int iconX = x + 10, iconY = y + 18, step = 18;
-            drawIcon(g, set.head().orElse(null),  iconX + step * 0, iconY);
-            drawIcon(g, set.chest().orElse(null), iconX + step * 1, iconY);
-            drawIcon(g, set.legs().orElse(null),  iconX + step * 2, iconY);
-            drawIcon(g, set.feet().orElse(null),  iconX + step * 3, iconY);
+        // Armor rows
+        if (mc.player != null) {
+            drawArmorRow(g, mc.player.getItemBySlot(EquipmentSlot.HEAD),  EquipmentSlot.HEAD,  0);
+            drawArmorRow(g, mc.player.getItemBySlot(EquipmentSlot.CHEST), EquipmentSlot.CHEST, 1);
+            drawArmorRow(g, mc.player.getItemBySlot(EquipmentSlot.LEGS),  EquipmentSlot.LEGS,  2);
+            drawArmorRow(g, mc.player.getItemBySlot(EquipmentSlot.FEET),  EquipmentSlot.FEET,  3);
         }
 
         super.render(g, mouseX, mouseY, partialTick);
     }
 
-    private void drawIcon(GuiGraphics g, ResourceLocation itemId, int x, int y) {
-        if (itemId == null) return;
-        var maybeItem = BuiltInRegistries.ITEM.getOptional(itemId);
-        if (maybeItem.isEmpty()) return;
-        Item item = maybeItem.get();
-        g.renderItem(new ItemStack(item), x, y);
+    private void drawArmorRow(GuiGraphics g, ItemStack stack, EquipmentSlot slot, int rowIndex) {
+        int centerX = this.width / 2;
+        int y = ROW_START_Y + rowIndex * ROW_HEIGHT;
+        int leftX = centerX - 140;
+
+        // Background bar
+        g.fill(leftX - 4, y - 6, centerX + 190, y + 18, 0x55000000);
+
+        String slotName = slot.getName().substring(0, 1).toUpperCase() + slot.getName().substring(1);
+
+        if (stack.isEmpty()) {
+            g.drawString(
+                    this.font,
+                    slotName + ": (empty)",
+                    leftX,
+                    y,
+                    0x888888,
+                    false
+            );
+            return;
+        }
+
+        g.renderItem(stack, leftX, y - 4);
+
+        ResourceLocation skin = stack.get(ModDataComponents.COSMETIC_SKIN.get());
+        Boolean active = stack.get(ModDataComponents.COSMETIC_SKIN_ACTIVE.get());
+
+        String baseTxt = slotName + ": " + stack.getHoverName().getString();
+        String skinTxt = "Skin: " + (skin != null ? skin.toString() : "(none)");
+        String activeTxt;
+
+        if (skin == null) {
+            activeTxt = "Status: no skin defined";
+        } else {
+            boolean isOn = (active == null || active);
+            activeTxt = "Status: " + (isOn ? "ON" : "OFF");
+        }
+
+        g.drawString(this.font, baseTxt, leftX + 20, y - 4, 0xFFFFFF, false);
+        g.drawString(this.font, skinTxt, leftX + 20, y + 6, 0xCCCCCC, false);
+        g.drawString(this.font, activeTxt, leftX + 20, y + 16, 0xAAAAAA, false);
     }
 }

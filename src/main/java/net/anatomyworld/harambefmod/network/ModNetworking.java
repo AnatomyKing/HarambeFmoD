@@ -1,12 +1,11 @@
 package net.anatomyworld.harambefmod.network;
 
-import net.anatomyworld.harambefmod.attachment.CosmeticWardrobe;
-import net.anatomyworld.harambefmod.attachment.ModAttachments;
 import net.anatomyworld.harambefmod.block.ModBlocks;
 import net.anatomyworld.harambefmod.block.entity.PearlFireBlockEntity;
 import net.anatomyworld.harambefmod.client.portal.BananaPortalTintCache;
 import net.anatomyworld.harambefmod.client.render.FactionCatalystAreaOverlay;
 import net.anatomyworld.harambefmod.client.sync.ClientBalance;
+import net.anatomyworld.harambefmod.component.ModDataComponents;
 import net.anatomyworld.harambefmod.item.custom.FlintAndPearlItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -59,45 +58,15 @@ public final class ModNetworking {
                                     ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
 
                     ItemStack stack = player.getItemInHand(hand);
-                    stack.set(net.anatomyworld.harambefmod.component.ModDataComponents.FLAME_COLOR.get(), payload.hex());
+                    stack.set(ModDataComponents.FLAME_COLOR.get(), payload.hex());
                 })
         );
 
-        // select a cosmetic set
+        // toggle cosmetic skin active flag for a specific armor slot
         reg.playToServer(
-                SelectCosmeticSetPayload.TYPE,
-                SelectCosmeticSetPayload.STREAM_CODEC,
-                (payload, ctx) -> ctx.enqueueWork(() -> {
-                    if (!(ctx instanceof ServerPayloadContext s)) return;
-                    ServerPlayer player = s.player(); if (player == null) return;
-
-                    var set = net.anatomyworld.harambefmod.cosmetic.CosmeticSets.get(payload.id());
-                    if (set == null) return;
-
-                    var ward = player.getData(ModAttachments.COSMETIC_WARDROBE.get());
-                    set.head().ifPresentOrElse(ward::setHead, () -> ward.setHead(null));
-                    set.chest().ifPresentOrElse(ward::setChest, () -> ward.setChest(null));
-                    set.legs().ifPresentOrElse(ward::setLegs, () -> ward.setLegs(null));
-                    set.feet().ifPresentOrElse(ward::setFeet, () -> ward.setFeet(null));
-                    player.setData(ModAttachments.COSMETIC_WARDROBE.get(), ward); // triggers sync
-                })
-        );
-
-        // clear cosmetic wardrobe
-        reg.playToServer(
-                ClearCosmeticWardrobePayload.TYPE,
-                ClearCosmeticWardrobePayload.STREAM_CODEC,
-                (payload, ctx) -> ctx.enqueueWork(() -> {
-                    if (!(ctx instanceof ServerPayloadContext s)) return;
-                    ServerPlayer player = s.player(); if (player == null) return;
-
-                    CosmeticWardrobe ward = player.getData(ModAttachments.COSMETIC_WARDROBE.get());
-                    ward.setHead(null);
-                    ward.setChest(null);
-                    ward.setLegs(null);
-                    ward.setFeet(null);
-                    player.setData(ModAttachments.COSMETIC_WARDROBE.get(), ward);
-                })
+                ArmorCosmeticSkinPayload.TYPE,
+                ArmorCosmeticSkinPayload.STREAM_CODEC,
+                (payload, ctx) -> ctx.enqueueWork(() -> handleArmorCosmeticSkin(payload, ctx))
         );
 
         /* ---------------- S -> C ---------------- */
@@ -107,15 +76,6 @@ public final class ModNetworking {
                 SyncCatalystOverlayPayload.STREAM_CODEC,
                 (payload, ctx) -> ctx.enqueueWork(() ->
                         FactionCatalystAreaOverlay.applyServerVisibility(payload.dim(), payload.pos(), payload.visible())
-                )
-        );
-
-        // cosmetic set list -> client cache
-        reg.playToClient(
-                SyncCosmeticSetsPayload.TYPE,
-                SyncCosmeticSetsPayload.STREAM_CODEC,
-                (payload, ctx) -> ctx.enqueueWork(() ->
-                        net.anatomyworld.harambefmod.cosmetic.client.ClientCosmeticSets.accept(payload)
                 )
         );
 
@@ -156,8 +116,13 @@ public final class ModNetworking {
             be.setColor(payload.color());
         }
 
-        level.playSound(null, pos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F,
-                level.getRandom().nextFloat() * 0.4F + 0.8F);
+        level.playSound(
+                null, pos,
+                SoundEvents.FLINTANDSTEEL_USE,
+                SoundSource.BLOCKS,
+                1.0F,
+                level.getRandom().nextFloat() * 0.4F + 0.8F
+        );
 
         InteractionHand hand = payload.mainHand() ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
         ItemStack stack = player.getItemInHand(hand);
@@ -165,6 +130,36 @@ public final class ModNetworking {
             EquipmentSlot slot = payload.mainHand() ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
             stack.hurtAndBreak(1, player, slot);
         }
+    }
+
+    /**
+     * Handle ON/OFF for cosmetic_skin_active.
+     *
+     * - Never modifies (or removes) cosmetic_skin itself.
+     * - If no cosmetic_skin is set on that armor piece, we ignore the request (nothing to toggle).
+     */
+    private static void handleArmorCosmeticSkin(ArmorCosmeticSkinPayload payload, IPayloadContext ctx) {
+        if (!(ctx instanceof ServerPayloadContext s)) return;
+        ServerPlayer player = s.player();
+        if (player == null) return;
+
+        EquipmentSlot slot = payload.slot();
+        ItemStack armor = player.getItemBySlot(slot);
+        if (armor.isEmpty()) return;
+
+        // Must have a stored skin to toggle visibility; otherwise do nothing
+        var skinId = armor.get(ModDataComponents.COSMETIC_SKIN.get());
+        if (skinId == null) return;
+
+        boolean active = payload.active();
+
+        if (active) {
+            armor.set(ModDataComponents.COSMETIC_SKIN_ACTIVE.get(), Boolean.TRUE);
+        } else {
+            armor.set(ModDataComponents.COSMETIC_SKIN_ACTIVE.get(), Boolean.FALSE);
+        }
+
+        player.setItemSlot(slot, armor);
     }
 
     /** Server helper to broadcast a payload to nearby players. */
@@ -186,7 +181,6 @@ public final class ModNetworking {
             }
         }
     }
-
 
     private ModNetworking() {}
 }

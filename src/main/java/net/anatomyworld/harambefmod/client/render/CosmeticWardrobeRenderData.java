@@ -1,6 +1,6 @@
 package net.anatomyworld.harambefmod.client.render;
 
-import net.anatomyworld.harambefmod.attachment.ModAttachments;
+import net.anatomyworld.harambefmod.component.ModDataComponents;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -11,8 +11,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.equipment.Equippable;
 import net.neoforged.neoforge.client.renderstate.RegisterRenderStateModifiersEvent;
-
-import javax.annotation.Nullable;
 
 public final class CosmeticWardrobeRenderData {
 
@@ -27,37 +25,57 @@ public final class CosmeticWardrobeRenderData {
 
     private CosmeticWardrobeRenderData() {}
 
-    /** MOD bus — push stacks into PlayerRenderState: cosmetic if present, else *real armor*. */
+    /**
+     * For each armor slot we decide:
+     *  - If that armor stack has harambefmod:cosmetic_skin AND cosmetic_skin_active != false
+     *    → overlay that skin item.
+     *  - Else → no overlay (EMPTY); vanilla armor renders normally underneath.
+     */
     public static void onRegisterStateMods(RegisterRenderStateModifiersEvent e) {
         e.registerEntityModifier(
                 net.minecraft.client.renderer.entity.player.PlayerRenderer.class,
-                (AbstractClientPlayer player, net.minecraft.client.renderer.entity.state.PlayerRenderState state) -> {
-                    var w = player.getData(ModAttachments.COSMETIC_WARDROBE.get());
-                    if (w == null) return;
+                (AbstractClientPlayer player,
+                 net.minecraft.client.renderer.entity.state.PlayerRenderState state) -> {
 
-                    state.setRenderData(COS_HEAD,  cosmeticOrReal(w.head(),  EquipmentSlot.HEAD,  player));
-                    state.setRenderData(COS_CHEST, cosmeticOrReal(w.chest(), EquipmentSlot.CHEST, player));
-                    state.setRenderData(COS_LEGS,  cosmeticOrReal(w.legs(),  EquipmentSlot.LEGS,  player));
-                    state.setRenderData(COS_FEET,  cosmeticOrReal(w.feet(),  EquipmentSlot.FEET,  player));
+                    state.setRenderData(COS_HEAD,  skinStackFor(player, EquipmentSlot.HEAD));
+                    state.setRenderData(COS_CHEST, skinStackFor(player, EquipmentSlot.CHEST));
+                    state.setRenderData(COS_LEGS,  skinStackFor(player, EquipmentSlot.LEGS));
+                    state.setRenderData(COS_FEET,  skinStackFor(player, EquipmentSlot.FEET));
                 }
         );
     }
 
-    /** If cosmetic id is present and valid for the slot, build that stack; else return the player's real armor. */
-    private static ItemStack cosmeticOrReal(@Nullable ResourceLocation id, EquipmentSlot slot, AbstractClientPlayer player) {
-        ItemStack cosmetic = stackFor(id, slot);
-        return cosmetic.isEmpty() ? player.getItemBySlot(slot) : cosmetic;
+    private static ItemStack skinStackFor(AbstractClientPlayer player, EquipmentSlot slot) {
+        ItemStack real = player.getItemBySlot(slot);
+        if (real.isEmpty()) return ItemStack.EMPTY;
+
+        ResourceLocation skinId = real.get(ModDataComponents.COSMETIC_SKIN.get());
+        if (skinId == null) {
+            // No cosmetic_skin component -> no overlay
+            return ItemStack.EMPTY;
+        }
+
+        Boolean active = real.get(ModDataComponents.COSMETIC_SKIN_ACTIVE.get());
+        // If explicitly false -> overlay OFF but skin remembered
+        if (active != null && !active) {
+            return ItemStack.EMPTY;
+        }
+
+        return stackForSkin(skinId, slot);
     }
 
-    /** Build an ItemStack for an id and ensure it’s equippable for the expected slot. */
-    private static ItemStack stackFor(@Nullable ResourceLocation id, EquipmentSlot slot) {
-        if (id == null) return ItemStack.EMPTY;
+    private static ItemStack stackForSkin(ResourceLocation id, EquipmentSlot slot) {
         Item item = BuiltInRegistries.ITEM.getOptional(id).orElse(null);
         if (item == null) return ItemStack.EMPTY;
 
         ItemStack stack = new ItemStack(item);
         Equippable eq = stack.get(DataComponents.EQUIPPABLE);
-        if (eq == null || eq.slot() != slot) return ItemStack.EMPTY;
-        return stack; // EquipmentLayerRenderer reads client info (asset) from this stack.
+
+        // If the skin item is armor, its slot must match; otherwise we allow it (head items, blocks, etc).
+        if (eq != null && eq.slot() != slot) {
+            return ItemStack.EMPTY;
+        }
+
+        return stack;
     }
 }
