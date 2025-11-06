@@ -20,7 +20,7 @@ import net.neoforged.neoforge.event.entity.player.BonemealEvent;
 public final class BelmontGrassBonemealHandler {
     private BelmontGrassBonemealHandler() {}
 
-    /** Bonemeal Rooted    Dirt next to Carotene Grass -> convert it (nylium-like) with vanilla particles. */
+    /** Bonemeal Rooted     Dirt next to Carotene Grass -> convert it (nylium-like) with vanilla particles. */
     @SubscribeEvent
     public static void onBonemeal(BonemealEvent event) {
         BlockState state = event.getState();
