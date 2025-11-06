@@ -62,21 +62,16 @@ jobs:
 
             core.info(`PNG files detected: ${imageFiles.map(f => f.path).join(', ')}`);
 
+            // Build embeds: image-only, no text, no links
             const embeds = imageFiles.slice(0, 10).map(file => {
               const rawUrl  = `https://raw.githubusercontent.com/${repoFull}/${headSha}/${file.path}`;
-              const blobUrl = `https://github.com/${repoFull}/blob/${headSha}/${file.path}`;
-
               return {
-                title: file.path,
-                url: blobUrl,
-                description: `Status: ${file.status}`,
                 image: { url: rawUrl },
               };
             });
 
             const body = {
-              content: `🖼️ ${imageFiles.length} PNG file(s) updated in \`${repoFull}\`.`,
-              embeds,
+              embeds,  // no "content", no titles, no descriptions, no URLs
             };
 
             const res = await fetch(webhook, {
