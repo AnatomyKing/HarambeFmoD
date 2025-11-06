@@ -10,77 +10,229 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Ensure ImageMagick is available
-        run: |
-          # jq & curl are already on ubuntu-latest; make sure ImageMagick is there
-          sudo apt-get update
-          sudo apt-get install -y imagemagick
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install sharp
+        run: npm install sharp
 
       - name: Build collage and send to Discord (HD)
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
+          node - << 'EOF'
+          const sharp = require('sharp');
+          const fs = require('fs');
+          const https = require('https');
 
-          PAYLOAD="$GITHUB_EVENT_PATH"
+          const webhook = process.env.DISCORD_WEBHOOK;
+          if (!webhook) {
+            console.error('DISCORD_WEBHOOK secret is not set');
+            process.exit(1);
+          }
 
-          REPO_FULL=$(jq -r '.repository.full_name' "$PAYLOAD")
-          HEAD_SHA=$(jq -r '.after // .head_commit.id // empty' "$PAYLOAD")
-          BASE_SHA=$(jq -r '.before // empty' "$PAYLOAD")
+          // GitHub event payload
+          const payloadPath = process.env.GITHUB_EVENT_PATH;
+          const payload = JSON.parse(fs.readFileSync(payloadPath, 'utf8'));
+          const repoFull = payload.repository.full_name;
+          const headSha = payload.after || (payload.head_commit && payload.head_commit.id);
+          const baseSha = payload.before;
 
-          echo "Repo: $REPO_FULL"
-          echo "Base SHA: $BASE_SHA"
-          echo "Head SHA: $HEAD_SHA"
+          console.log('Repo:', repoFull);
+          console.log('Base SHA (before):', baseSha);
+          console.log('Head SHA (after):', headSha);
 
-          if [ -z "$HEAD_SHA" ] || [ -z "$BASE_SHA" ] || [ "$HEAD_SHA" = "$BASE_SHA" ]; then
-            echo "No base/head to compare; skipping."
-            exit 0
-          fi
+          if (!baseSha || !headSha || baseSha === headSha) {
+            console.log('No base/head to compare (maybe force-push or initial commit), skipping.');
+            process.exit(0);
+          }
 
-          COMPARE_URL="https://api.github.com/repos/$REPO_FULL/compare/$BASE_SHA...$HEAD_SHA"
-          echo "Calling $COMPARE_URL"
+          const [owner, repo] = repoFull.split('/');
 
-          COMPARE_JSON=$(curl -sS \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "$COMPARE_URL")
+          function ghRequest(pathname) {
+            const token = process.env.GITHUB_TOKEN;
+            const options = {
+              hostname: 'api.github.com',
+              path: pathname,
+              method: 'GET',
+              headers: {
+                'User-Agent': 'github-actions',
+                'Accept': 'application/vnd.github+json',
+              }
+            };
+            if (token) {
+              options.headers.Authorization = `Bearer ${token}`;
+            }
+            return new Promise((resolve, reject) => {
+              https.get(options, res => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => {
+                  if (res.statusCode >= 200 && res.statusCode < 300) {
+                    resolve(JSON.parse(data));
+                  } else {
+                    reject(new Error(`GitHub API ${res.statusCode}: ${data}`));
+                  }
+                });
+              }).on('error', reject);
+            });
+          }
 
-          mkdir -p tmp_pngs
-          echo "$COMPARE_JSON" \
-            | jq -r '.files[].filename' \
-            | grep -i '\.png$' \
-            | head -n 10 > tmp_pngs/list.txt || true
+          (async () => {
+            try {
+              const comparePath = `/repos/${owner}/${repo}/compare/${baseSha}...${headSha}`;
+              console.log('Calling GitHub compare API:', comparePath);
+              const compare = await ghRequest(comparePath);
+              const files = compare.files || [];
+              console.log('Compare returned', files.length, 'file(s)');
 
-          if [ ! -s tmp_pngs/list.txt ]; then
-            echo "No PNG files changed; skipping."
-            exit 0
-          fi
+              const pngFiles = files.filter(
+                f => typeof f.filename === 'string' && f.filename.toLowerCase().endsWith('.png')
+              );
 
-          i=0
-          while IFS= read -r FILE; do
-            i=$((i+1))
-            RAW_URL="https://raw.githubusercontent.com/$REPO_FULL/$HEAD_SHA/$FILE"
-            echo "Downloading $RAW_URL"
-            curl -sS -L "$RAW_URL" -o "tmp_pngs/$i.png"
-          done < tmp_pngs/list.txt
+              if (!pngFiles.length) {
+                console.log('No PNG files changed in this push, skipping Discord call.');
+                process.exit(0);
+              }
 
-          if [ "$i" -eq 0 ]; then
-            echo "No PNGs downloaded; skipping."
-            exit 0
-          fi
+              console.log('PNG files:', pngFiles.map(f => f.filename).join(', '));
 
-          echo "Downloaded $i PNG(s):"
-          ls tmp_pngs
+              const selected = pngFiles.slice(0, 10); // safety limit
 
-          # Horizontal collage with no gaps
-          magick montage tmp_pngs/*.png -geometry +0+0 -tile x1 collage.png
+              // Download PNGs
+              function downloadBuffer(url) {
+                return new Promise((resolve, reject) => {
+                  https.get(url, res => {
+                    if (res.statusCode !== 200) {
+                      reject(new Error(`Download ${url} failed: ${res.statusCode}`));
+                      return;
+                    }
+                    const chunks = [];
+                    res.on('data', chunk => chunks.push(chunk));
+                    res.on('end', () => resolve(Buffer.concat(chunks)));
+                  }).on('error', reject);
+                });
+              }
 
-          # HD upscale (4x) using nearest-neighbour-like sampling for crisp pixel art
-          magick collage.png -sample 400%x400% collage_hd.png
+              const buffers = [];
+              for (const f of selected) {
+                const rawUrl = `https://raw.githubusercontent.com/${repoFull}/${headSha}/${f.filename}`;
+                console.log('Downloading', rawUrl);
+                const buf = await downloadBuffer(rawUrl);
+                buffers.push(buf);
+              }
 
-          echo "Sending collage to Discord"
+              // Determine original sizes
+              const metas = await Promise.all(buffers.map(b => sharp(b).metadata()));
+              const heights = metas.map(m => m.height || 0);
+              const widths  = metas.map(m => m.width || 0);
 
-          curl -sS -X POST "$DISCORD_WEBHOOK" \
-            -F 'payload_json={"embeds":[{"image":{"url":"attachment://collage.png"}}]}' \
-            -F "file=@collage_hd.png;filename=collage.png"
+              const maxHeight = Math.max(...heights);
+              console.log('Original max height:', maxHeight);
+
+              // Resize each to same height (maxHeight) for clean row
+              const resizedBuffers = await Promise.all(
+                buffers.map(b => sharp(b).resize({ height: maxHeight }).toBuffer())
+              );
+              const resizedMetas = await Promise.all(resizedBuffers.map(b => sharp(b).metadata()));
+              const resizedWidths = resizedMetas.map(m => m.width || 0);
+
+              // Compute total width for the row
+              let x = 0;
+              const composites = [];
+              for (let i = 0; i < resizedBuffers.length; i++) {
+                composites.push({
+                  input: resizedBuffers[i],
+                  left: x,
+                  top: 0,
+                });
+                x += resizedWidths[i];
+              }
+
+              console.log('Collage base size:', x, 'x', maxHeight);
+
+              // Create base collage
+              let collageBuffer = await sharp({
+                create: {
+                  width: x,
+                  height: maxHeight,
+                  channels: 4,
+                  background: { r: 0, g: 0, b: 0, alpha: 0 },
+                }
+              }).composite(composites).png().toBuffer();
+
+              // HD UPSCALE (4x) with NEAREST for crisp pixel art
+              const SCALE = 4;
+              collageBuffer = await sharp(collageBuffer)
+                .resize({
+                  width: Math.round(x * SCALE),
+                  height: Math.round(maxHeight * SCALE),
+                  kernel: sharp.kernel.nearest,
+                })
+                .png()
+                .toBuffer();
+
+              console.log('Upscaled collage size:', Math.round(x * SCALE), 'x', Math.round(maxHeight * SCALE));
+
+              // Send collage to Discord as one embed image via multipart/form-data
+              const httpsReq = require('https').request;
+              const payloadJson = JSON.stringify({
+                embeds: [
+                  {
+                    image: { url: 'attachment://collage.png' }
+                  }
+                ]
+              });
+
+              const boundary = '----WebKitFormBoundary7MA4YWxkTrZu0gW';
+              const preamble =
+                `--${boundary}\r\n` +
+                `Content-Disposition: form-data; name="payload_json"\r\n` +
+                `Content-Type: application/json\r\n\r\n` +
+                payloadJson + `\r\n` +
+                `--${boundary}\r\n` +
+                `Content-Disposition: form-data; name="file"; filename="collage.png"\r\n` +
+                `Content-Type: image/png\r\n\r\n`;
+              const closing = `\r\n--${boundary}--\r\n`;
+
+              const options = new URL(webhook);
+              options.method = 'POST';
+              options.headers = {
+                'Content-Type': 'multipart/form-data; boundary=' + boundary,
+              };
+
+              const req = httpsReq(options, res => {
+                let respData = '';
+                res.on('data', chunk => respData += chunk);
+                res.on('end', () => {
+                  console.log('Discord response:', res.statusCode, respData);
+                  if (res.statusCode < 200 || res.statusCode >= 300) {
+                    process.exit(1);
+                  } else {
+                    process.exit(0);
+                  }
+                });
+              });
+
+              req.on('error', err => {
+                console.error('Error sending to Discord:', err);
+                process.exit(1);
+              });
+
+              req.write(preamble);
+              req.write(collageBuffer);
+              req.write(closing);
+              req.end();
+
+            } catch (err) {
+              console.error('Error in workflow:', err);
+              process.exit(1);
+            }
+          })();
+          EOF
