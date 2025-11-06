@@ -3,7 +3,7 @@ name: Discord PNG previews
 on:
   push:
     branches:
-      - '**'   # run on any branch
+      - '**'   # run on any branch that has this workflow
 
 jobs:
   send-previews:
@@ -26,6 +26,10 @@ jobs:
             const repoFull = payload.repository.full_name;
             const headSha = payload.after || (payload.head_commit && payload.head_commit.id);
 
+            core.info(`Repo: ${repoFull}`);
+            core.info(`Head SHA: ${headSha}`);
+            core.info(`Commit count: ${(payload.commits || []).length}`);
+
             const imageFiles = [];
 
             for (const commit of payload.commits || []) {
@@ -34,8 +38,10 @@ jobs:
                 ...(commit.modified || []),
               ];
 
+              core.info(`Commit ${commit.id} files: ${JSON.stringify(files)}`);
+
               for (const path of files) {
-                if (path.toLowerCase().endsWith('.png')) {
+                if (typeof path === 'string' && path.toLowerCase().endsWith('.png')) {
                   imageFiles.push({
                     path,
                     author: (commit.author && commit.author.name) || 'unknown',
@@ -46,9 +52,11 @@ jobs:
             }
 
             if (!imageFiles.length) {
-              core.info('No PNG files changed in this push, skipping.');
+              core.info('No PNG files changed in this push, skipping Discord call.');
               return;
             }
+
+            core.info(`PNG files detected: ${imageFiles.map(f => f.path).join(', ')}`);
 
             const embeds = imageFiles.slice(0, 10).map(file => {
               const rawUrl  = `https://raw.githubusercontent.com/${repoFull}/${headSha}/${file.path}`;
