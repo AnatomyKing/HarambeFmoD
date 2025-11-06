@@ -25,34 +25,38 @@ jobs:
             const payload = context.payload;
             const repoFull = payload.repository.full_name;
             const headSha = payload.after || (payload.head_commit && payload.head_commit.id);
+            const baseSha = payload.before;
 
             core.info(`Repo: ${repoFull}`);
-            core.info(`Head SHA: ${headSha}`);
-            core.info(`Commit count: ${(payload.commits || []).length}`);
+            core.info(`Base SHA (before): ${baseSha}`);
+            core.info(`Head SHA (after): ${headSha}`);
 
-            const imageFiles = [];
-
-            for (const commit of payload.commits || []) {
-              const files = [
-                ...(commit.added || []),
-                ...(commit.modified || []),
-              ];
-
-              core.info(`Commit ${commit.id} files: ${JSON.stringify(files)}`);
-
-              for (const path of files) {
-                if (typeof path === 'string' && path.toLowerCase().endsWith('.png')) {
-                  imageFiles.push({
-                    path,
-                    author: (commit.author && commit.author.name) || 'unknown',
-                    message: commit.message || '',
-                  });
-                }
-              }
+            if (!baseSha || !headSha || baseSha === headSha) {
+              core.info('No base/head to compare (maybe force-push or initial commit), skipping.');
+              return;
             }
 
+            // Use the GitHub REST API to get changed files between base and head
+            const { owner, repo } = context.repo;
+            const compare = await github.rest.repos.compareCommits({
+              owner,
+              repo,
+              base: baseSha,
+              head: headSha,
+            });
+
+            const files = compare.data.files || [];
+            core.info(`Compare API returned ${files.length} file(s).`);
+
+            const imageFiles = files
+              .filter(f => typeof f.filename === 'string' && f.filename.toLowerCase().endsWith('.png'))
+              .map(f => ({
+                path: f.filename,
+                status: f.status,
+              }));
+
             if (!imageFiles.length) {
-              core.info('No PNG files changed in this push, skipping Discord call.');
+              core.info('No PNG files changed in this push (via compare API), skipping Discord call.');
               return;
             }
 
@@ -65,7 +69,7 @@ jobs:
               return {
                 title: file.path,
                 url: blobUrl,
-                description: `Commit by **${file.author}**\n${file.message}`,
+                description: `Status: ${file.status}`,
                 image: { url: rawUrl },
               };
             });
