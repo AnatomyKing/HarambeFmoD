@@ -24,6 +24,7 @@ jobs:
       - name: Build collage and send to Discord (HD)
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           node - << 'EOF'
           const sharp = require('sharp');
@@ -166,7 +167,7 @@ jobs:
                 }
               }).composite(composites).png().toBuffer();
 
-              // 🔴 HD UPSCALE (10x) with NEAREST for crisp pixel art
+              // HD UPSCALE (4x) with NEAREST for crisp pixel art
               const SCALE = 4;
               collageBuffer = await sharp(collageBuffer)
                 .resize({
