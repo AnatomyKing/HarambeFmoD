@@ -167,7 +167,7 @@ jobs:
               }).composite(composites).png().toBuffer();
 
               // 🔴 HD UPSCALE (10x) with NEAREST for crisp pixel art
-              const SCALE = 10;
+              const SCALE = 4;
               collageBuffer = await sharp(collageBuffer)
                 .resize({
                   width: Math.round(x * SCALE),
