@@ -18,9 +18,22 @@ jobs:
         with:
           node-version: '20'
 
+      # System deps needed for the `canvas` npm package
+      - name: Install native deps for node-canvas
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libcairo2-dev \
+            libpango1.0-dev \
+            libjpeg-dev \
+            libgif-dev \
+            librsvg2-dev
+
       - name: Install Node dependencies
         run: |
-          npm install sharp esbuild puppeteer @iskallia-dev/item-model-renderer
+          npm init -y >/dev/null 2>&1 || true
+          npm install sharp canvas
 
       - name: Render changed models and send collage to Discord
         env:
@@ -32,17 +45,15 @@ jobs:
           const path = require('path');
           const https = require('https');
           const sharp = require('sharp');
-          const esbuild = require('esbuild');
-          const puppeteer = require('puppeteer');
+          const { createCanvas, loadImage } = require('canvas');
 
           const webhook = process.env.DISCORD_WEBHOOK;
           if (!webhook) {
             console.error('DISCORD_WEBHOOK secret is not set');
-            process.exit(1);
+            process.exit(0);
           }
 
-          // --- GitHub helpers -------------------------------------------------
-
+          // GitHub event payload
           const payloadPath = process.env.GITHUB_EVENT_PATH;
           const payload = JSON.parse(fs.readFileSync(payloadPath, 'utf8'));
           const repoFull = payload.repository.full_name;
@@ -69,46 +80,47 @@ jobs:
               headers: {
                 'User-Agent': 'github-actions',
                 'Accept': 'application/vnd.github+json',
-              }
+              },
             };
             if (token) {
               options.headers.Authorization = `Bearer ${token}`;
             }
             return new Promise((resolve, reject) => {
-              https.get(options, res => {
-                let data = '';
-                res.on('data', chunk => data += chunk);
-                res.on('end', () => {
-                  if (res.statusCode >= 200 && res.statusCode < 300) {
-                    try {
-                      resolve(JSON.parse(data));
-                    } catch (e) {
-                      reject(new Error(`Failed to parse GitHub API JSON: ${e.message}`));
+              https
+                .get(options, (res) => {
+                  let data = '';
+                  res.on('data', (chunk) => (data += chunk));
+                  res.on('end', () => {
+                    if (res.statusCode >= 200 && res.statusCode < 300) {
+                      try {
+                        resolve(JSON.parse(data));
+                      } catch (e) {
+                        reject(new Error(`Failed to parse GitHub API JSON: ${e.message}`));
+                      }
+                    } else {
+                      reject(new Error(`GitHub API ${res.statusCode}: ${data}`));
                     }
-                  } else {
-                    reject(new Error(`GitHub API ${res.statusCode}: ${data}`));
-                  }
-                });
-              }).on('error', reject);
+                  });
+                })
+                .on('error', reject);
             });
           }
 
-          // --- Texture path resolution ----------------------------------------
-
+          // Resolve a texture reference like "harambefmod:item/anyphone"
           function resolveTexturePath(ref) {
             if (!ref || typeof ref !== 'string') return null;
             if (ref.startsWith('builtin/')) return null;
 
             let namespace = 'minecraft';
-            let key = ref;
+            let pathKey = ref;
 
             const parts = ref.split(':');
             if (parts.length === 2) {
               namespace = parts[0];
-              key = parts[1];
+              pathKey = parts[1];
             }
 
-            const texRel = key.replace(/\//g, path.sep) + '.png';
+            const texPath = pathKey.replace(/\//g, path.sep) + '.png';
 
             return path.join(
               'src',
@@ -117,147 +129,316 @@ jobs:
               'assets',
               namespace,
               'textures',
-              texRel
+              texPath
             );
           }
 
-          // --- Build item-model-renderer bundle (once) ------------------------
+          async function loadTextures(modelPath, model) {
+            const texturesDef = model.textures || {};
+            const entries = Object.entries(texturesDef);
+            const result = {};
+            for (const [key, ref] of entries) {
+              const texPath = resolveTexturePath(ref);
+              if (!texPath) continue;
+              const abs = path.join(process.cwd(), texPath);
+              if (!fs.existsSync(abs)) {
+                console.warn('Texture file not found:', abs);
+                continue;
+              }
+              try {
+                const img = await loadImage(abs);
+                result[key] = img;
+              } catch (err) {
+                console.error('Failed to load texture', abs, err);
+              }
+            }
+            return result;
+          }
 
-          async function buildRendererBundle() {
-            const entrySource = `
-              import React from 'react';
-              import { createRoot } from 'react-dom/client';
-              import { ItemModelGlProvider, ItemModelDisplayer } from '@iskallia-dev/item-model-renderer';
+          function degToRad(d) {
+            return (d * Math.PI) / 180;
+          }
 
-              const textureResolver = (resourceLocation) => {
-                const map = window.__TEXTURE_MAP__ || {};
-                if (map[resourceLocation]) return map[resourceLocation];
-                if (map['default']) return map['default'];
-                const keys = Object.keys(map);
-                if (keys.length > 0) return map[keys[0]];
-                return '';
+          function rotateAroundAxis(v, axis, angleDeg, origin) {
+            if (!angleDeg) return { ...v };
+            const angle = degToRad(angleDeg);
+            const sin = Math.sin(angle);
+            const cos = Math.cos(angle);
+            const ox = origin[0];
+            const oy = origin[1];
+            const oz = origin[2];
+            let x = v.x - ox;
+            let y = v.y - oy;
+            let z = v.z - oz;
+            let nx = x;
+            let ny = y;
+            let nz = z;
+            switch (axis) {
+              case 'x':
+                ny = y * cos - z * sin;
+                nz = y * sin + z * cos;
+                break;
+              case 'y':
+                nx = x * cos + z * sin;
+                nz = -x * sin + z * cos;
+                break;
+              case 'z':
+                nx = x * cos - y * sin;
+                ny = x * sin + y * cos;
+                break;
+            }
+            return { x: nx + ox, y: ny + oy, z: nz + oz };
+          }
+
+          // Apply display.gui transform
+          function applyDisplayTransform(v, display) {
+            const gui = (display && display.gui) || {};
+            const rot = gui.rotation || [0, 0, 0];
+            const trans = gui.translation || [0, 0, 0];
+            const scale = gui.scale || [1, 1, 1];
+
+            let x = v.x + trans[0];
+            let y = v.y + trans[1];
+            let z = v.z + trans[2];
+
+            // scale around origin
+            x *= scale[0];
+            y *= scale[1];
+            z *= scale[2];
+
+            // apply rotations X -> Y -> Z (Minecraft-ish)
+            let vec = { x, y, z };
+            vec = rotateAroundAxis(vec, 'x', rot[0], [0, 0, 0]);
+            vec = rotateAroundAxis(vec, 'y', rot[1], [0, 0, 0]);
+            vec = rotateAroundAxis(vec, 'z', rot[2], [0, 0, 0]);
+            return vec;
+          }
+
+          // Project 3D to 2D (orthographic, Y up)
+          function project2D(v) {
+            return { x: v.x, y: v.y, z: v.z };
+          }
+
+          function buildFaces(model, textures) {
+            const elements = model.elements || [];
+            const faces = [];
+
+            for (const el of elements) {
+              const from = el.from || [0, 0, 0];
+              const to = el.to || [0, 0, 0];
+              const rot = el.rotation || null;
+              const facesDef = el.faces || {};
+
+              const x0 = Math.min(from[0], to[0]);
+              const x1 = Math.max(from[0], to[0]);
+              const y0 = Math.min(from[1], to[1]);
+              const y1 = Math.max(from[1], to[1]);
+              const z0 = Math.min(from[2], to[2]);
+              const z1 = Math.max(from[2], to[2]);
+
+              const baseVerts = {
+                north: [
+                  { x: x0, y: y0, z: z0 },
+                  { x: x1, y: y0, z: z0 },
+                  { x: x1, y: y1, z: z0 },
+                  { x: x0, y: y1, z: z0 },
+                ],
+                south: [
+                  { x: x1, y: y0, z: z1 },
+                  { x: x0, y: y0, z: z1 },
+                  { x: x0, y: y1, z: z1 },
+                  { x: x1, y: y1, z: z1 },
+                ],
+                west: [
+                  { x: x0, y: y0, z: z1 },
+                  { x: x0, y: y0, z: z0 },
+                  { x: x0, y: y1, z: z0 },
+                  { x: x0, y: y1, z: z1 },
+                ],
+                east: [
+                  { x: x1, y: y0, z: z0 },
+                  { x: x1, y: y0, z: z1 },
+                  { x: x1, y: y1, z: z1 },
+                  { x: x1, y: y1, z: z0 },
+                ],
+                up: [
+                  { x: x0, y: y1, z: z0 },
+                  { x: x1, y: y1, z: z0 },
+                  { x: x1, y: y1, z: z1 },
+                  { x: x0, y: y1, z: z1 },
+                ],
+                down: [
+                  { x: x0, y: y0, z: z1 },
+                  { x: x1, y: y0, z: z1 },
+                  { x: x1, y: y0, z: z0 },
+                  { x: x0, y: y0, z: z0 },
+                ],
               };
 
-              const mcmetaResolver = async () => null;
+              for (const dir of Object.keys(facesDef)) {
+                const faceInfo = facesDef[dir];
+                let verts = baseVerts[dir];
+                if (!verts) continue;
 
-              function App() {
-                const itemModel = window.__ITEM_MODEL__;
-                const zoomFactor = window.__ZOOM_FACTOR__ || 1.0;
+                // element rotation
+                if (rot && rot.angle) {
+                  verts = verts.map((v) =>
+                    rotateAroundAxis(v, rot.axis || 'y', rot.angle, rot.origin || [8, 8, 8])
+                  );
+                }
 
-                return React.createElement(
-                  ItemModelGlProvider,
-                  {
-                    resolveTextureUrl: textureResolver,
-                    resolveMcmeta: mcmetaResolver,
-                    itemModelTransform: 'gui',
-                    zoomFactor,
-                  },
-                  React.createElement(
-                    'div',
-                    {
-                      style: {
-                        width: '256px',
-                        height: '256px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      },
-                    },
-                    React.createElement(ItemModelDisplayer, {
-                      itemId: 'item',
-                      itemModel,
-                      renderedSize: 256,
-                      className: 'item-preview-image',
-                    })
-                  )
-                );
+                // display transform (GUI)
+                verts = verts.map((v) => applyDisplayTransform(v, model.display));
+
+                const uv = faceInfo.uv || [0, 0, 16, 16];
+                let texKey = null;
+                if (typeof faceInfo.texture === 'string' && faceInfo.texture.startsWith('#')) {
+                  texKey = faceInfo.texture.slice(1);
+                }
+                const texImg = (texKey && textures[texKey]) || textures['layer0'] || null;
+                if (!texImg) continue;
+
+                const projVerts = verts.map(project2D);
+                const depth =
+                  projVerts.reduce((acc, v) => acc + v.z, 0) / projVerts.length;
+
+                faces.push({
+                  dir,
+                  uv,
+                  texture: texImg,
+                  verts3D: projVerts,
+                  depth,
+                });
               }
-
-              const rootElement = document.getElementById('root');
-              if (rootElement) {
-                const root = createRoot(rootElement);
-                root.render(React.createElement(App));
-              }
-            `;
-
-            const result = await esbuild.build({
-              stdin: {
-                contents: entrySource,
-                loader: 'js',
-                resolveDir: process.cwd(),
-              },
-              bundle: true,
-              platform: 'browser',
-              format: 'iife',
-              write: false,
-            });
-
-            return result.outputFiles[0].text;
-          }
-
-          // --- Puppeteer rendering -------------------------------------------
-
-          async function renderModelWithPuppeteer(page, rendererBundleJs, model, textureMap) {
-            const html = `
-              <!DOCTYPE html>
-              <html>
-                <head>
-                  <meta charset="utf-8" />
-                  <style>
-                    html, body {
-                      margin: 0;
-                      padding: 0;
-                      width: 100%;
-                      height: 100%;
-                      background: transparent;
-                      display: flex;
-                      align-items: center;
-                      justify-content: center;
-                      overflow: hidden;
-                    }
-                    #root {
-                      width: 256px;
-                      height: 256px;
-                    }
-                  </style>
-                </head>
-                <body>
-                  <script>
-                    window.__ITEM_MODEL__ = ${JSON.stringify(model)};
-                    window.__TEXTURE_MAP__ = ${JSON.stringify(textureMap)};
-                    window.__ZOOM_FACTOR__ = 1.0;
-                  </script>
-                  <div id="root"></div>
-                  <script>
-                    ${rendererBundleJs.replace(/<\/script/gi, '<\\/script')}
-                  </script>
-                </body>
-              </html>
-            `;
-
-            await page.setContent(html, { waitUntil: 'load' });
-
-            await page.waitForFunction(() => {
-              const img = document.querySelector('img.item-preview-image');
-              if (!img) return false;
-              const src = img.src || '';
-              return src.startsWith('data:image');
-            }, { timeout: 20000 });
-
-            const dataUrl = await page.evaluate(() => {
-              const img = document.querySelector('img.item-preview-image');
-              return img ? img.src : null;
-            });
-
-            if (!dataUrl) {
-              throw new Error('Renderer did not produce an image data URL');
             }
 
-            const base64 = dataUrl.split(',')[1] || '';
-            return Buffer.from(base64, 'base64');
+            return faces;
           }
 
-          // --- Discord sending ------------------------------------------------
+          function projectFacesToScreen(faces, width, height) {
+            let minX = Infinity;
+            let maxX = -Infinity;
+            let minY = Infinity;
+            let maxY = -Infinity;
+
+            for (const face of faces) {
+              for (const v of face.verts3D) {
+                const x = v.x;
+                const y = v.y;
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+              }
+            }
+
+            if (!isFinite(minX) || !isFinite(maxX) || !isFinite(minY) || !isFinite(maxY)) {
+              return;
+            }
+
+            const spanX = maxX - minX || 1;
+            const spanY = maxY - minY || 1;
+            const scale = 0.8 * Math.min(width / spanX, height / spanY);
+
+            const offsetX = width / 2 - ((minX + maxX) / 2) * scale;
+            const offsetY = height / 2 + ((minY + maxY) / 2) * scale;
+
+            for (const face of faces) {
+              face.verts2D = face.verts3D.map((v) => ({
+                x: v.x * scale + offsetX,
+                y: -v.y * scale + offsetY,
+              }));
+            }
+          }
+
+          function drawFace(ctx, face) {
+            const verts = face.verts2D;
+            if (!verts || verts.length !== 4) return;
+
+            const img = face.texture;
+            const uv = face.uv;
+            const u0 = uv[0];
+            const v0 = uv[1];
+            const u1 = uv[2];
+            const v1 = uv[3];
+
+            const sw = Math.max(1, u1 - u0);
+            const sh = Math.max(1, v1 - v0);
+
+            const p0 = verts[0];
+            const p1 = verts[1];
+            const p3 = verts[3];
+
+            const vx = { x: p1.x - p0.x, y: p1.y - p0.y };
+            const vy = { x: p3.x - p0.x, y: p3.y - p0.y };
+
+            ctx.save();
+
+            const a = vx.x / sw;
+            const b = vx.y / sw;
+            const c = vy.x / sh;
+            const d = vy.y / sh;
+            const e = p0.x;
+            const f = p0.y;
+
+            ctx.setTransform(a, b, c, d, e, f);
+
+            ctx.drawImage(
+              img,
+              u0,
+              v0,
+              sw,
+              sh,
+              0,
+              0,
+              sw,
+              sh
+            );
+
+            ctx.restore();
+          }
+
+          async function renderModelFile(modelPath, outPath) {
+            let model;
+            try {
+              const raw = fs.readFileSync(modelPath, 'utf8');
+              model = JSON.parse(raw);
+            } catch (err) {
+              console.error('Failed to read/parse model', modelPath, err);
+              return false;
+            }
+
+            const textures = await loadTextures(modelPath, model);
+            if (!Object.keys(textures).length) {
+              console.warn('No textures loaded for model', modelPath);
+              return false;
+            }
+
+            const faces = buildFaces(model, textures);
+            if (!faces.length) {
+              console.warn('No faces to render for model', modelPath);
+              return false;
+            }
+
+            const width = 512;
+            const height = 512;
+            const canvas = createCanvas(width, height);
+            const ctx = canvas.getContext('2d');
+
+            ctx.clearRect(0, 0, width, height);
+            ctx.imageSmoothingEnabled = false;
+
+            projectFacesToScreen(faces, width, height);
+
+            faces.sort((a, b) => a.depth - b.depth);
+
+            for (const face of faces) {
+              drawFace(ctx, face);
+            }
+
+            fs.writeFileSync(outPath, canvas.toBuffer('image/png'));
+            return true;
+          }
 
           async function sendCollageToDiscord(imagePaths) {
             if (!imagePaths.length) {
@@ -265,20 +446,18 @@ jobs:
               return;
             }
 
-            const buffers = imagePaths.map(p => fs.readFileSync(p));
-            const metas = await Promise.all(buffers.map(b => sharp(b).metadata()));
-            const heights = metas.map(m => m.height || 0);
+            const buffers = imagePaths.map((p) => fs.readFileSync(p));
+            const metas = await Promise.all(buffers.map((b) => sharp(b).metadata()));
+            const heights = metas.map((m) => m.height || 0);
             const maxHeight = Math.max(...heights);
 
-            console.log('Original max height:', maxHeight);
-
             const resizedBuffers = await Promise.all(
-              buffers.map(b => sharp(b).resize({ height: maxHeight }).toBuffer())
+              buffers.map((b) => sharp(b).resize({ height: maxHeight }).toBuffer())
             );
             const resizedMetas = await Promise.all(
-              resizedBuffers.map(b => sharp(b).metadata())
+              resizedBuffers.map((b) => sharp(b).metadata())
             );
-            const resizedWidths = resizedMetas.map(m => m.width || 0);
+            const widths = resizedMetas.map((m) => m.width || 0);
 
             let x = 0;
             const composites = [];
@@ -288,10 +467,8 @@ jobs:
                 left: x,
                 top: 0,
               });
-              x += resizedWidths[i];
+              x += widths[i];
             }
-
-            console.log('Collage base size:', x, 'x', maxHeight);
 
             let collageBuffer = await sharp({
               create: {
@@ -299,8 +476,11 @@ jobs:
                 height: maxHeight,
                 channels: 4,
                 background: { r: 0, g: 0, b: 0, alpha: 0 },
-              }
-            }).composite(composites).png().toBuffer();
+              },
+            })
+              .composite(composites)
+              .png()
+              .toBuffer();
 
             const SCALE = 4;
             collageBuffer = await sharp(collageBuffer)
@@ -312,19 +492,12 @@ jobs:
               .png()
               .toBuffer();
 
-            console.log(
-              'Upscaled collage size:',
-              Math.round(x * SCALE),
-              'x',
-              Math.round(maxHeight * SCALE)
-            );
-
             const payloadJson = JSON.stringify({
               embeds: [
                 {
-                  image: { url: 'attachment://collage.png' }
-                }
-              ]
+                  image: { url: 'attachment://collage.png' },
+                },
+              ],
             });
 
             const boundary = '----WebKitFormBoundary7MA4YWxkTrZu0gW';
@@ -332,7 +505,8 @@ jobs:
               `--${boundary}\r\n` +
               `Content-Disposition: form-data; name="payload_json"\r\n` +
               `Content-Type: application/json\r\n\r\n` +
-              payloadJson + `\r\n` +
+              payloadJson +
+              `\r\n` +
               `--${boundary}\r\n` +
               `Content-Disposition: form-data; name="file"; filename="collage.png"\r\n` +
               `Content-Type: image/png\r\n\r\n`;
@@ -345,9 +519,9 @@ jobs:
             };
 
             await new Promise((resolve, reject) => {
-              const req = https.request(options, res => {
+              const req = https.request(options, (res) => {
                 let respData = '';
-                res.on('data', chunk => respData += chunk);
+                res.on('data', (chunk) => (respData += chunk));
                 res.on('end', () => {
                   console.log('Discord response:', res.statusCode, respData);
                   if (res.statusCode < 200 || res.statusCode >= 300) {
@@ -357,20 +531,16 @@ jobs:
                   }
                 });
               });
-
-              req.on('error', err => {
+              req.on('error', (err) => {
                 console.error('Error sending to Discord:', err);
                 reject(err);
               });
-
               req.write(preamble);
               req.write(collageBuffer);
               req.write(closing);
               req.end();
             });
           }
-
-          // --- Main -----------------------------------------------------------
 
           (async () => {
             try {
@@ -381,7 +551,7 @@ jobs:
               console.log('Compare returned', files.length, 'file(s)');
 
               const modelFiles = files.filter(
-                f =>
+                (f) =>
                   typeof f.filename === 'string' &&
                   f.filename.toLowerCase().endsWith('.json') &&
                   f.filename.includes('src/main/resources/assets/') &&
@@ -395,73 +565,29 @@ jobs:
 
               console.log(
                 'Model JSON files:',
-                modelFiles.map(f => f.filename).join(', ')
+                modelFiles.map((f) => f.filename).join(', ')
               );
-
-              console.log('Building renderer bundle with esbuild...');
-              const rendererBundleJs = await buildRendererBundle();
-
-              const browser = await puppeteer.launch({
-                headless: 'new',
-                args: ['--no-sandbox', '--disable-setuid-sandbox'],
-              });
-              const page = await browser.newPage();
-              await page.setViewport({ width: 512, height: 512, deviceScaleFactor: 2 });
 
               fs.mkdirSync('renders', { recursive: true });
 
               const renderedPaths = [];
-
               for (const f of modelFiles) {
                 const srcPath = path.join(process.cwd(), f.filename);
                 if (!fs.existsSync(srcPath)) {
-                  console.log('Model file not present in checkout (maybe deleted):', srcPath);
+                  console.log(
+                    'Model file not present in checkout (maybe deleted):',
+                    srcPath
+                  );
                   continue;
                 }
-
-                let model;
-                try {
-                  model = JSON.parse(fs.readFileSync(srcPath, 'utf8'));
-                } catch (err) {
-                  console.error('Failed to parse model JSON:', srcPath, err);
-                  continue;
-                }
-
-                const texturesDef = model.textures || {};
-                const textureMap = {};
-                for (const [, ref] of Object.entries(texturesDef)) {
-                  const resLoc = typeof ref === 'string' ? ref : null;
-                  if (!resLoc) continue;
-                  const texPath = resolveTexturePath(resLoc);
-                  if (!texPath || !fs.existsSync(texPath)) {
-                    console.warn('Texture file not found for', resLoc, '->', texPath);
-                    continue;
-                  }
-                  const imgBuffer = fs.readFileSync(texPath);
-                  const dataUrl = 'data:image/png;base64,' + imgBuffer.toString('base64');
-                  textureMap[resLoc] = dataUrl;
-                  if (!textureMap.default) textureMap.default = dataUrl;
-                }
-
-                if (!Object.keys(textureMap).length) {
-                  console.warn('No textures could be loaded for model', srcPath);
-                  continue;
-                }
-
                 const baseName = path.basename(f.filename, '.json');
                 const outPath = path.join('renders', `${baseName}.png`);
                 console.log('Rendering model', srcPath, '->', outPath);
-
-                try {
-                  const pngBuffer = await renderModelWithPuppeteer(page, rendererBundleJs, model, textureMap);
-                  fs.writeFileSync(outPath, pngBuffer);
+                const ok = await renderModelFile(srcPath, outPath);
+                if (ok) {
                   renderedPaths.push(outPath);
-                } catch (err) {
-                  console.error('Failed to render model', srcPath, err);
                 }
               }
-
-              await browser.close();
 
               if (!renderedPaths.length) {
                 console.log('No model renders produced, skipping Discord call.');
