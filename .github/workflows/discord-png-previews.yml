@@ -20,16 +20,7 @@ jobs:
 
       - name: Install Node dependencies
         run: |
-          npm install \
-            sharp \
-            puppeteer \
-            esbuild \
-            @iskallia-dev/item-model-renderer \
-            react \
-            react-dom \
-            three \
-            @react-three/fiber \
-            @react-three/drei
+          npm install sharp esbuild puppeteer @iskallia-dev/item-model-renderer
 
       - name: Render changed models and send collage to Discord
         env:
@@ -41,8 +32,8 @@ jobs:
           const path = require('path');
           const https = require('https');
           const sharp = require('sharp');
-          const puppeteer = require('puppeteer');
           const esbuild = require('esbuild');
+          const puppeteer = require('puppeteer');
 
           const webhook = process.env.DISCORD_WEBHOOK;
           if (!webhook) {
@@ -50,7 +41,8 @@ jobs:
             process.exit(1);
           }
 
-          // GitHub event payload
+          // --- GitHub helpers -------------------------------------------------
+
           const payloadPath = process.env.GITHUB_EVENT_PATH;
           const payload = JSON.parse(fs.readFileSync(payloadPath, 'utf8'));
           const repoFull = payload.repository.full_name;
@@ -101,145 +93,171 @@ jobs:
             });
           }
 
-          // Resolve texture reference like "harambefmod:item/anyphone" -> actual PNG path
+          // --- Texture path resolution ----------------------------------------
+
           function resolveTexturePath(ref) {
             if (!ref || typeof ref !== 'string') return null;
             if (ref.startsWith('builtin/')) return null;
 
             let namespace = 'minecraft';
-            let pathKey = ref;
+            let key = ref;
 
             const parts = ref.split(':');
             if (parts.length === 2) {
               namespace = parts[0];
-              pathKey = parts[1];
+              key = parts[1];
             }
 
-            const texPath = pathKey.replace(/\//g, path.sep) + '.png';
+            const texRel = key.replace(/\//g, path.sep) + '.png';
+
             return path.join(
-              'src', 'main', 'resources',
-              'assets', namespace,
+              'src',
+              'main',
+              'resources',
+              'assets',
+              namespace,
               'textures',
-              texPath
+              texRel
             );
           }
 
-          // Create the React entry file that uses @iskallia-dev/item-model-renderer
-          function ensureRendererApp() {
-            const entryPath = path.join(process.cwd(), 'renderer-entry.jsx');
-            const htmlPath = path.join(process.cwd(), 'renderer.html');
+          // --- Build item-model-renderer bundle (once) ------------------------
 
-            if (!fs.existsSync(entryPath)) {
-              fs.writeFileSync(entryPath, `
-                import React from "react";
-                import ReactDOM from "react-dom/client";
-                import { ItemModelGlProvider, ItemModelDisplayer } from "@iskallia-dev/item-model-renderer";
+          async function buildRendererBundle() {
+            const entrySource = `
+              import React from 'react';
+              import { createRoot } from 'react-dom/client';
+              import { ItemModelGlProvider, ItemModelDisplayer } from '@iskallia-dev/item-model-renderer';
 
-                const model = window.__ITEM_MODEL__;
-                const textureMap = window.__TEXTURE_MAP__ || {};
+              const textureResolver = (resourceLocation) => {
+                const map = window.__TEXTURE_MAP__ || {};
+                if (map[resourceLocation]) return map[resourceLocation];
+                if (map['default']) return map['default'];
+                const keys = Object.keys(map);
+                if (keys.length > 0) return map[keys[0]];
+                return '';
+              };
 
-                const textureResolver = (resourceLocation) => {
-                  if (textureMap[resourceLocation]) return textureMap[resourceLocation];
-                  const first = Object.values(textureMap)[0];
-                  return first || "";
-                };
+              const mcmetaResolver = async () => null;
 
-                const mcmetaResolver = async () => null;
+              function App() {
+                const itemModel = window.__ITEM_MODEL__;
+                const zoomFactor = window.__ZOOM_FACTOR__ || 1.0;
 
-                const App = () => (
-                  <div style={{ width: "512px", height: "512px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "transparent" }}>
-                    <ItemModelGlProvider
-                      resolveTextureUrl={textureResolver}
-                      resolveMcmeta={mcmetaResolver}
-                      itemModelTransform="gui"
-                      zoomFactor={1}
-                    >
-                      <ItemModelDisplayer
-                        itemId="preview"
-                        itemModel={model}
-                        renderedSize={512}
-                        className="item-preview-image"
-                      />
-                    </ItemModelGlProvider>
-                  </div>
+                return React.createElement(
+                  ItemModelGlProvider,
+                  {
+                    resolveTextureUrl: textureResolver,
+                    resolveMcmeta: mcmetaResolver,
+                    itemModelTransform: 'gui',
+                    zoomFactor,
+                  },
+                  React.createElement(
+                    'div',
+                    {
+                      style: {
+                        width: '256px',
+                        height: '256px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      },
+                    },
+                    React.createElement(ItemModelDisplayer, {
+                      itemId: 'item',
+                      itemModel,
+                      renderedSize: 256,
+                      className: 'item-preview-image',
+                    })
+                  )
                 );
+              }
 
-                const rootEl = document.getElementById("root");
-                const root = ReactDOM.createRoot(rootEl);
-                root.render(<App />);
-              `);
-            }
+              const rootElement = document.getElementById('root');
+              if (rootElement) {
+                const root = createRoot(rootElement);
+                root.render(React.createElement(App));
+              }
+            `;
 
-            if (!fs.existsSync(htmlPath)) {
-              fs.writeFileSync(htmlPath, `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                  <meta charset="utf-8" />
-                  <title>Item Model Renderer</title>
-                  <style>
-                    html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; }
-                    #root { width: 512px; height: 512px; margin: 0; }
-                  </style>
-                </head>
-                <body>
-                  <div id="root"></div>
-                  <script src="renderer-bundle.js"></script>
-                </body>
-                </html>
-              `);
-            }
-
-            return { entryPath, htmlPath };
-          }
-
-          async function buildRendererBundle(entryPath) {
-            console.log('Building renderer bundle with esbuild...');
-            await esbuild.build({
-              entryPoints: [entryPath],
-              outfile: 'renderer-bundle.js',
+            const result = await esbuild.build({
+              stdin: {
+                contents: entrySource,
+                loader: 'js',
+                resolveDir: process.cwd(),
+              },
               bundle: true,
               platform: 'browser',
               format: 'iife',
-              globalName: 'ItemModelRendererApp',
-              loader: { '.jsx': 'jsx' },
-              define: { 'process.env.NODE_ENV': '"production"' },
-              logLevel: 'error'
+              write: false,
             });
+
+            return result.outputFiles[0].text;
           }
 
-          async function renderModelWithPuppeteer(model, textureMap, outPath, htmlPath) {
-            const browser = await puppeteer.launch({
-              headless: 'new',
-              args: ['--no-sandbox', '--disable-setuid-sandbox']
+          // --- Puppeteer rendering -------------------------------------------
+
+          async function renderModelWithPuppeteer(page, rendererBundleJs, model, textureMap) {
+            const html = `
+              <!DOCTYPE html>
+              <html>
+                <head>
+                  <meta charset="utf-8" />
+                  <style>
+                    html, body {
+                      margin: 0;
+                      padding: 0;
+                      width: 100%;
+                      height: 100%;
+                      background: transparent;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      overflow: hidden;
+                    }
+                    #root {
+                      width: 256px;
+                      height: 256px;
+                    }
+                  </style>
+                </head>
+                <body>
+                  <script>
+                    window.__ITEM_MODEL__ = ${JSON.stringify(model)};
+                    window.__TEXTURE_MAP__ = ${JSON.stringify(textureMap)};
+                    window.__ZOOM_FACTOR__ = 1.0;
+                  </script>
+                  <div id="root"></div>
+                  <script>
+                    ${rendererBundleJs.replace(/<\/script/gi, '<\\/script')}
+                  </script>
+                </body>
+              </html>
+            `;
+
+            await page.setContent(html, { waitUntil: 'load' });
+
+            await page.waitForFunction(() => {
+              const img = document.querySelector('img.item-preview-image');
+              if (!img) return false;
+              const src = img.src || '';
+              return src.startsWith('data:image');
+            }, { timeout: 20000 });
+
+            const dataUrl = await page.evaluate(() => {
+              const img = document.querySelector('img.item-preview-image');
+              return img ? img.src : null;
             });
 
-            try {
-              const page = await browser.newPage();
-
-              await page.evaluateOnNewDocument((m, t) => {
-                window.__ITEM_MODEL__ = m;
-                window.__TEXTURE_MAP__ = t;
-              }, model, textureMap);
-
-              await page.goto('file://' + htmlPath, { waitUntil: 'networkidle0' });
-
-              await page.waitForSelector('img.item-preview-image', { timeout: 10000 });
-
-              await page.waitForFunction(() => {
-                const img = document.querySelector('img.item-preview-image');
-                return img && typeof img.src === 'string' && img.src.startsWith('data:image');
-              }, { timeout: 10000 });
-
-              const dataUrl = await page.$eval('img.item-preview-image', img => img.src);
-              const base64 = dataUrl.split(',')[1];
-              const buf = Buffer.from(base64, 'base64');
-              fs.writeFileSync(outPath, buf);
-              console.log('Rendered model saved to', outPath);
-            } finally {
-              await browser.close();
+            if (!dataUrl) {
+              throw new Error('Renderer did not produce an image data URL');
             }
+
+            const base64 = dataUrl.split(',')[1] || '';
+            return Buffer.from(base64, 'base64');
           }
+
+          // --- Discord sending ------------------------------------------------
 
           async function sendCollageToDiscord(imagePaths) {
             if (!imagePaths.length) {
@@ -352,6 +370,8 @@ jobs:
             });
           }
 
+          // --- Main -----------------------------------------------------------
+
           (async () => {
             try {
               const comparePath = `/repos/${owner}/${repo}/compare/${baseSha}...${headSha}`;
@@ -378,12 +398,20 @@ jobs:
                 modelFiles.map(f => f.filename).join(', ')
               );
 
+              console.log('Building renderer bundle with esbuild...');
+              const rendererBundleJs = await buildRendererBundle();
+
+              const browser = await puppeteer.launch({
+                headless: 'new',
+                args: ['--no-sandbox', '--disable-setuid-sandbox'],
+              });
+              const page = await browser.newPage();
+              await page.setViewport({ width: 512, height: 512, deviceScaleFactor: 2 });
+
               fs.mkdirSync('renders', { recursive: true });
 
-              const { entryPath, htmlPath } = ensureRendererApp();
-              await buildRendererBundle(entryPath);
-
               const renderedPaths = [];
+
               for (const f of modelFiles) {
                 const srcPath = path.join(process.cwd(), f.filename);
                 if (!fs.existsSync(srcPath)) {
@@ -391,41 +419,49 @@ jobs:
                   continue;
                 }
 
-                let modelJson;
+                let model;
                 try {
-                  modelJson = JSON.parse(fs.readFileSync(srcPath, 'utf8'));
+                  model = JSON.parse(fs.readFileSync(srcPath, 'utf8'));
                 } catch (err) {
                   console.error('Failed to parse model JSON:', srcPath, err);
                   continue;
                 }
 
-                const texturesDef = modelJson.textures || {};
+                const texturesDef = model.textures || {};
                 const textureMap = {};
-                for (const ref of Object.values(texturesDef)) {
-                  if (typeof ref !== 'string') continue;
-                  if (textureMap[ref]) continue;
-
-                  const texPath = resolveTexturePath(ref);
+                for (const [, ref] of Object.entries(texturesDef)) {
+                  const resLoc = typeof ref === 'string' ? ref : null;
+                  if (!resLoc) continue;
+                  const texPath = resolveTexturePath(resLoc);
                   if (!texPath || !fs.existsSync(texPath)) {
-                    console.warn('Texture not found for', ref, '->', texPath);
+                    console.warn('Texture file not found for', resLoc, '->', texPath);
                     continue;
                   }
-                  const buf = fs.readFileSync(texPath);
-                  textureMap[ref] = 'data:image/png;base64,' + buf.toString('base64');
+                  const imgBuffer = fs.readFileSync(texPath);
+                  const dataUrl = 'data:image/png;base64,' + imgBuffer.toString('base64');
+                  textureMap[resLoc] = dataUrl;
+                  if (!textureMap.default) textureMap.default = dataUrl;
                 }
 
                 if (!Object.keys(textureMap).length) {
-                  console.warn('No textures could be resolved for model', srcPath);
+                  console.warn('No textures could be loaded for model', srcPath);
                   continue;
                 }
 
                 const baseName = path.basename(f.filename, '.json');
                 const outPath = path.join('renders', `${baseName}.png`);
-
                 console.log('Rendering model', srcPath, '->', outPath);
-                await renderModelWithPuppeteer(modelJson, textureMap, outPath, path.join(process.cwd(), 'renderer.html'));
-                renderedPaths.push(outPath);
+
+                try {
+                  const pngBuffer = await renderModelWithPuppeteer(page, rendererBundleJs, model, textureMap);
+                  fs.writeFileSync(outPath, pngBuffer);
+                  renderedPaths.push(outPath);
+                } catch (err) {
+                  console.error('Failed to render model', srcPath, err);
+                }
               }
+
+              await browser.close();
 
               if (!renderedPaths.length) {
                 console.log('No model renders produced, skipping Discord call.');
