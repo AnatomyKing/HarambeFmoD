@@ -99,12 +99,11 @@ jobs:
             });
           }
 
-          // Send a single collage buffer to Discord as a webhook message
+          // Send a single collage buffer to Discord as a webhook message (NO text, only image embed)
           function sendCollageToDiscord(collageBuffer, groupKey) {
             return new Promise((resolve, reject) => {
               const httpsReq = require('https').request;
               const payloadJson = JSON.stringify({
-                content: `PNG previews for size **${groupKey}**`,
                 embeds: [
                   {
                     image: { url: 'attachment://collage.png' }
@@ -204,8 +203,18 @@ jobs:
                 groups[item.key].push(item);
               }
 
-              const groupKeys = Object.keys(groups);
-              console.log('Found size groups:', groupKeys.join(', '));
+              // Sort size groups from smallest to largest (by area, then width)
+              const groupKeys = Object.keys(groups).sort((a, b) => {
+                const [aw, ah] = a.split('x').map(n => parseInt(n, 10) || 0);
+                const [bw, bh] = b.split('x').map(n => parseInt(n, 10) || 0);
+                const areaA = aw * ah;
+                const areaB = bw * bh;
+                if (areaA !== areaB) return areaA - areaB;
+                if (aw !== bw) return aw - bw;
+                return ah - bh;
+              });
+
+              console.log('Sorted size groups (smallest first):', groupKeys.join(', '));
 
               // For each group, build collage and send separate Discord message
               for (const groupKey of groupKeys) {
@@ -270,7 +279,7 @@ jobs:
                   Math.round(maxHeight * SCALE)
                 );
 
-                // Send this group's collage to Discord
+                // Send this group's collage to Discord (no text, just image)
                 await sendCollageToDiscord(collageBuffer, groupKey);
               }
 
