@@ -21,7 +21,7 @@ jobs:
       - name: Install sharp
         run: npm install sharp
 
-      - name: Build collage and send to Discord (HD)
+      - name: Build collage and send to Discord (HD, grouped by size)
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -84,105 +84,27 @@ jobs:
             });
           }
 
-          (async () => {
-            try {
-              const comparePath = `/repos/${owner}/${repo}/compare/${baseSha}...${headSha}`;
-              console.log('Calling GitHub compare API:', comparePath);
-              const compare = await ghRequest(comparePath);
-              const files = compare.files || [];
-              console.log('Compare returned', files.length, 'file(s)');
-
-              const pngFiles = files.filter(
-                f => typeof f.filename === 'string' && f.filename.toLowerCase().endsWith('.png')
-              );
-
-              if (!pngFiles.length) {
-                console.log('No PNG files changed in this push, skipping Discord call.');
-                process.exit(0);
-              }
-
-              console.log('PNG files:', pngFiles.map(f => f.filename).join(', '));
-
-              const selected = pngFiles.slice(0, 10); // safety limit
-
-              // Download PNGs
-              function downloadBuffer(url) {
-                return new Promise((resolve, reject) => {
-                  https.get(url, res => {
-                    if (res.statusCode !== 200) {
-                      reject(new Error(`Download ${url} failed: ${res.statusCode}`));
-                      return;
-                    }
-                    const chunks = [];
-                    res.on('data', chunk => chunks.push(chunk));
-                    res.on('end', () => resolve(Buffer.concat(chunks)));
-                  }).on('error', reject);
-                });
-              }
-
-              const buffers = [];
-              for (const f of selected) {
-                const rawUrl = `https://raw.githubusercontent.com/${repoFull}/${headSha}/${f.filename}`;
-                console.log('Downloading', rawUrl);
-                const buf = await downloadBuffer(rawUrl);
-                buffers.push(buf);
-              }
-
-              // Determine original sizes
-              const metas = await Promise.all(buffers.map(b => sharp(b).metadata()));
-              const heights = metas.map(m => m.height || 0);
-              const widths  = metas.map(m => m.width || 0);
-
-              const maxHeight = Math.max(...heights);
-              console.log('Original max height:', maxHeight);
-
-              // Resize each to same height (maxHeight) for clean row
-              const resizedBuffers = await Promise.all(
-                buffers.map(b => sharp(b).resize({ height: maxHeight }).toBuffer())
-              );
-              const resizedMetas = await Promise.all(resizedBuffers.map(b => sharp(b).metadata()));
-              const resizedWidths = resizedMetas.map(m => m.width || 0);
-
-              // Compute total width for the row
-              let x = 0;
-              const composites = [];
-              for (let i = 0; i < resizedBuffers.length; i++) {
-                composites.push({
-                  input: resizedBuffers[i],
-                  left: x,
-                  top: 0,
-                });
-                x += resizedWidths[i];
-              }
-
-              console.log('Collage base size:', x, 'x', maxHeight);
-
-              // Create base collage
-              let collageBuffer = await sharp({
-                create: {
-                  width: x,
-                  height: maxHeight,
-                  channels: 4,
-                  background: { r: 0, g: 0, b: 0, alpha: 0 },
+          // Download a file as Buffer
+          function downloadBuffer(url) {
+            return new Promise((resolve, reject) => {
+              https.get(url, res => {
+                if (res.statusCode !== 200) {
+                  reject(new Error(`Download ${url} failed: ${res.statusCode}`));
+                  return;
                 }
-              }).composite(composites).png().toBuffer();
+                const chunks = [];
+                res.on('data', chunk => chunks.push(chunk));
+                res.on('end', () => resolve(Buffer.concat(chunks)));
+              }).on('error', reject);
+            });
+          }
 
-              // HD UPSCALE (4x) with NEAREST for crisp pixel art
-              const SCALE = 4;
-              collageBuffer = await sharp(collageBuffer)
-                .resize({
-                  width: Math.round(x * SCALE),
-                  height: Math.round(maxHeight * SCALE),
-                  kernel: sharp.kernel.nearest,
-                })
-                .png()
-                .toBuffer();
-
-              console.log('Upscaled collage size:', Math.round(x * SCALE), 'x', Math.round(maxHeight * SCALE));
-
-              // Send collage to Discord as one embed image via multipart/form-data
+          // Send a single collage buffer to Discord as a webhook message
+          function sendCollageToDiscord(collageBuffer, groupKey) {
+            return new Promise((resolve, reject) => {
               const httpsReq = require('https').request;
               const payloadJson = JSON.stringify({
+                content: `PNG previews for size **${groupKey}**`,
                 embeds: [
                   {
                     image: { url: 'attachment://collage.png' }
@@ -211,25 +133,149 @@ jobs:
                 let respData = '';
                 res.on('data', chunk => respData += chunk);
                 res.on('end', () => {
-                  console.log('Discord response:', res.statusCode, respData);
+                  console.log(`Discord response for group ${groupKey}:`, res.statusCode, respData);
                   if (res.statusCode < 200 || res.statusCode >= 300) {
-                    process.exit(1);
+                    reject(new Error(`Discord returned status ${res.statusCode}`));
                   } else {
-                    process.exit(0);
+                    resolve();
                   }
                 });
               });
 
               req.on('error', err => {
                 console.error('Error sending to Discord:', err);
-                process.exit(1);
+                reject(err);
               });
 
               req.write(preamble);
               req.write(collageBuffer);
               req.write(closing);
               req.end();
+            });
+          }
 
+          (async () => {
+            try {
+              const comparePath = `/repos/${owner}/${repo}/compare/${baseSha}...${headSha}`;
+              console.log('Calling GitHub compare API:', comparePath);
+              const compare = await ghRequest(comparePath);
+              const files = compare.files || [];
+              console.log('Compare returned', files.length, 'file(s)');
+
+              const pngFiles = files.filter(
+                f => typeof f.filename === 'string' && f.filename.toLowerCase().endsWith('.png')
+              );
+
+              if (!pngFiles.length) {
+                console.log('No PNG files changed in this push, skipping Discord call.');
+                process.exit(0);
+              }
+
+              console.log('PNG files:', pngFiles.map(f => f.filename).join(', '));
+
+              const selected = pngFiles.slice(0, 10); // safety limit
+
+              // Download PNGs
+              const buffers = [];
+              for (const f of selected) {
+                const rawUrl = `https://raw.githubusercontent.com/${repoFull}/${headSha}/${f.filename}`;
+                console.log('Downloading', rawUrl);
+                const buf = await downloadBuffer(rawUrl);
+                buffers.push(buf);
+              }
+
+              // Determine original sizes
+              const metas = await Promise.all(buffers.map(b => sharp(b).metadata()));
+              const items = buffers.map((buf, idx) => {
+                const m = metas[idx] || {};
+                const width = m.width || 0;
+                const height = m.height || 0;
+                const key = `${width}x${height}`;
+                console.log(`File index ${idx} => size ${key}`);
+                return { buf, width, height, key };
+              });
+
+              // Group by size (width x height)
+              const groups = {};
+              for (const item of items) {
+                if (!groups[item.key]) {
+                  groups[item.key] = [];
+                }
+                groups[item.key].push(item);
+              }
+
+              const groupKeys = Object.keys(groups);
+              console.log('Found size groups:', groupKeys.join(', '));
+
+              // For each group, build collage and send separate Discord message
+              for (const groupKey of groupKeys) {
+                const groupItems = groups[groupKey];
+                console.log(`Building collage for group ${groupKey} with ${groupItems.length} image(s)`);
+
+                // All images in group share same size, but be safe and compute maxHeight
+                const heights = groupItems.map(i => i.height || 0);
+                const maxHeight = Math.max(...heights);
+                console.log(`Original max height for group ${groupKey}:`, maxHeight);
+
+                // Resize all to same height
+                const resizedBuffers = await Promise.all(
+                  groupItems.map(i =>
+                    sharp(i.buf)
+                      .resize({ height: maxHeight })
+                      .toBuffer()
+                  )
+                );
+                const resizedMetas = await Promise.all(resizedBuffers.map(b => sharp(b).metadata()));
+                const resizedWidths = resizedMetas.map(m => m.width || 0);
+
+                // Compute total width
+                let x = 0;
+                const composites = [];
+                for (let i = 0; i < resizedBuffers.length; i++) {
+                  composites.push({
+                    input: resizedBuffers[i],
+                    left: x,
+                    top: 0,
+                  });
+                  x += resizedWidths[i];
+                }
+
+                console.log(`Collage base size for group ${groupKey}: ${x} x ${maxHeight}`);
+
+                // Create base collage for this group
+                let collageBuffer = await sharp({
+                  create: {
+                    width: x,
+                    height: maxHeight,
+                    channels: 4,
+                    background: { r: 0, g: 0, b: 0, alpha: 0 },
+                  }
+                }).composite(composites).png().toBuffer();
+
+                // HD UPSCALE (4x) with NEAREST for crisp pixel art
+                const SCALE = 4;
+                collageBuffer = await sharp(collageBuffer)
+                  .resize({
+                    width: Math.round(x * SCALE),
+                    height: Math.round(maxHeight * SCALE),
+                    kernel: sharp.kernel.nearest,
+                  })
+                  .png()
+                  .toBuffer();
+
+                console.log(
+                  `Upscaled collage size for group ${groupKey}:`,
+                  Math.round(x * SCALE),
+                  'x',
+                  Math.round(maxHeight * SCALE)
+                );
+
+                // Send this group's collage to Discord
+                await sendCollageToDiscord(collageBuffer, groupKey);
+              }
+
+              console.log('All collages sent successfully.');
+              process.exit(0);
             } catch (err) {
               console.error('Error in workflow:', err);
               process.exit(1);
