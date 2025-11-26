@@ -174,6 +174,12 @@ public final class HarambeCore {
                     net.anatomyworld.harambefmod.menu.ModMenus.SIMPLE_CHEST.get(),
                     net.anatomyworld.harambefmod.client.gui.SimpleChestScreen::new
             );
+
+            event.register(
+                    net.anatomyworld.harambefmod.menu.ModMenus.ANY_CHEST.get(),
+                    net.anatomyworld.harambefmod.client.gui.AnyChestScreen::new
+            );
+
         }
     }
 }

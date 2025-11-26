@@ -3,6 +3,7 @@ package net.anatomyworld.harambefmod.block.entity;
 
 import net.anatomyworld.harambefmod.HarambeCore;
 import net.anatomyworld.harambefmod.block.ModBlockEntities;
+import net.anatomyworld.harambefmod.menu.AnyChestMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
@@ -13,11 +14,13 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
-import net.minecraft.world.level.block.entity.ContainerOpenersCounter;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.ChestLidController;
+import net.minecraft.world.level.block.entity.ContainerOpenersCounter;
 import net.minecraft.world.level.block.entity.LidBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
@@ -61,7 +64,7 @@ public class AnyChestBlockEntity extends BaseContainerBlockEntity implements Lid
 
         @Override
         protected boolean isOwnContainer(Player player) {
-            if (!(player.containerMenu instanceof ChestMenu menu)) {
+            if (!(player.containerMenu instanceof AnyChestMenu menu)) {
                 return false;
             }
             return menu.getContainer() == AnyChestBlockEntity.this;
@@ -97,8 +100,13 @@ public class AnyChestBlockEntity extends BaseContainerBlockEntity implements Lid
     }
 
     @Override
-    protected AbstractContainerMenu createMenu(int id, Inventory inv) {
-        return ChestMenu.threeRows(id, inv, this);
+    protected AbstractContainerMenu createMenu(int containerId, Inventory playerInv) {
+        return new AnyChestMenu(
+                containerId,
+                playerInv,
+                this,
+                ContainerLevelAccess.create(this.level, this.worldPosition)
+        );
     }
 
     /* ---------------- open / close & animation ---------------- */
