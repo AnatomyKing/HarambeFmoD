@@ -1,4 +1,3 @@
-// AnyChestBlockEntity.java
 package net.anatomyworld.harambefmod.block.entity;
 
 import net.anatomyworld.harambefmod.HarambeCore;
@@ -6,6 +5,7 @@ import net.anatomyworld.harambefmod.block.ModBlockEntities;
 import net.anatomyworld.harambefmod.menu.AnyChestMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -13,9 +13,9 @@ import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -25,6 +25,9 @@ import net.minecraft.world.level.block.entity.LidBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class AnyChestBlockEntity extends BaseContainerBlockEntity implements LidBlockEntity {
 
@@ -90,6 +93,44 @@ public class AnyChestBlockEntity extends BaseContainerBlockEntity implements Lid
     @Override
     protected void setItems(NonNullList<ItemStack> items) {
         this.items = items;
+    }
+
+    /* --------- helpers to save/load contents on the chest item --------- */
+
+    /**
+     * Save this chest's contents into the given ItemStack
+     * using the DataComponents.CONTAINER component.
+     */
+    public void saveToItem(ItemStack stack) {
+        int size = this.getContainerSize();
+        List<ItemStack> list = new ArrayList<>(size);
+        for (int i = 0; i < size; ++i) {
+            ItemStack slot = this.getItem(i);
+            list.add(slot.isEmpty() ? ItemStack.EMPTY : slot.copy());
+        }
+
+        ItemContainerContents contents = ItemContainerContents.fromItems(list);
+        if (contents != ItemContainerContents.EMPTY) {
+            stack.set(DataComponents.CONTAINER, contents);
+        }
+    }
+
+    /**
+     * Load contents from the chest ItemStack (if present) into this block entity.
+     */
+    public void loadFromItem(ItemStack stack) {
+        ItemContainerContents contents = stack.getOrDefault(
+                DataComponents.CONTAINER,
+                ItemContainerContents.EMPTY
+        );
+        if (contents == ItemContainerContents.EMPTY) {
+            return;
+        }
+
+        NonNullList<ItemStack> newItems = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
+        contents.copyInto(newItems);
+        this.setItems(newItems);
+        this.setChanged();
     }
 
     /* ---------------- UI / name ---------------- */

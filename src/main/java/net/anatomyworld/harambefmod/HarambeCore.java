@@ -72,6 +72,8 @@ public final class HarambeCore {
         EVENT_BUS.addListener(ImperiumGrassBonemealHandler::onBonemeal);
         EVENT_BUS.addListener(MischiefGrassBonemealHandler::onBonemeal);
 
+        EVENT_BUS.addListener(AnyChestSilkTouchHandler::onBlockBreak);
+
         EVENT_BUS.addListener((RegisterCommandsEvent e) ->
                 net.anatomyworld.harambefmod.command.SeedHereCommand.register(e.getDispatcher())
         );

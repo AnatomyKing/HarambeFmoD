@@ -8,7 +8,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
@@ -95,6 +97,24 @@ public class AnyChestBlock extends AbstractChestBlock<AnyChestBlockEntity> imple
     protected RenderShape getRenderShape(BlockState state) {
         // Vanilla-style chest rendering: block model + BER
         return RenderShape.MODEL;
+    }
+
+    // --- restore contents when placed from a saved chest item ---
+
+    @Override
+    public void setPlacedBy(Level level,
+                            BlockPos pos,
+                            BlockState state,
+                            LivingEntity placer,
+                            ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+
+        if (!level.isClientSide) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof AnyChestBlockEntity chest) {
+                chest.loadFromItem(stack);
+            }
+        }
     }
 
     // --- Waterlogging ---
