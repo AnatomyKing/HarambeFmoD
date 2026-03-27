@@ -1,3 +1,4 @@
+// file: src/main/java/net/anatomyworld/harambefmod/entity/mob/bananacow/clientmodel/BananaCowModel.java
 package net.anatomyworld.harambefmod.entity.mob.bananacow.clientmodel;
 
 import net.anatomyworld.harambefmod.HarambeCore;
@@ -5,7 +6,11 @@ import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
-import net.minecraft.client.model.geom.builders.*;
+import net.minecraft.client.model.geom.builders.CubeDeformation;
+import net.minecraft.client.model.geom.builders.CubeListBuilder;
+import net.minecraft.client.model.geom.builders.LayerDefinition;
+import net.minecraft.client.model.geom.builders.MeshDefinition;
+import net.minecraft.client.model.geom.builders.PartDefinition;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -13,13 +18,10 @@ import org.jetbrains.annotations.NotNull;
 
 public class BananaCowModel extends EntityModel<BananaCowModel.State> {
 
-    /** Minimal custom state (embedded so there’s no extra file). */
     public static class State extends LivingEntityRenderState {
-        /** Head rotations already in RADIANS (precomputed in renderer). */
         public float headYawRad;
         public float headPitchRad;
 
-        /** Walk anim + age */
         public float limbSwing;
         public float limbSwingAmount;
         public float ageTicks;
@@ -31,119 +33,144 @@ public class BananaCowModel extends EntityModel<BananaCowModel.State> {
                     "main"
             );
 
-    private final ModelPart head;
+    private final ModelPart hHead;
     private final ModelPart tail;
     private final ModelPart rightFrontLeg, leftFrontLeg, rightBackLeg, leftBackLeg;
 
+    private final float headBaseXRot;
+    private final float tailBaseXRot;
+
     public BananaCowModel(ModelPart bakedRoot) {
-        super(bakedRoot); // 1.21.x: pass root to super
-        ModelPart root = bakedRoot.getChild("root");
-        this.head          = root.getChild("head");
-        this.tail          = root.getChild("body").getChild("tail");
-        this.leftBackLeg   = root.getChild("left_back_leg");
-        this.rightFrontLeg = root.getChild("right_front_leg");
-        this.leftFrontLeg  = root.getChild("left_front_leg");
-        this.rightBackLeg  = root.getChild("right_back_leg");
+        super(bakedRoot);
+
+        ModelPart bananacow = bakedRoot.getChild("bananacow");
+
+        this.hHead = bananacow.getChild("h_head");
+
+        ModelPart torso = bananacow.getChild("torso");
+        this.tail = torso.getChild("tail");
+
+        this.rightBackLeg = bananacow.getChild("right_back_leg");
+        this.leftBackLeg = bananacow.getChild("left_back_leg");
+        this.rightFrontLeg = bananacow.getChild("right_front_leg");
+        this.leftFrontLeg = bananacow.getChild("left_front_leg");
+
+        this.headBaseXRot = this.hHead.xRot;
+        this.tailBaseXRot = this.tail.xRot;
     }
 
-    /* ===== Geometry (unchanged from your Blockbench export) ===== */
     public static LayerDefinition createBodyLayer() {
-        MeshDefinition mesh = new MeshDefinition();
-        PartDefinition part = mesh.getRoot();
+        MeshDefinition meshdefinition = new MeshDefinition();
+        PartDefinition partdefinition = meshdefinition.getRoot();
 
-        PartDefinition root = part.addOrReplaceChild("root",
+        PartDefinition bananacow = partdefinition.addOrReplaceChild(
+                "bananacow",
                 CubeListBuilder.create(),
-                PartPose.offset(0, 24, -1));
+                PartPose.offset(0.0F, 25.0F, -1.0F)
+        );
 
-        PartDefinition head = root.addOrReplaceChild("head",
-                CubeListBuilder.create(),
-                PartPose.offset(0, -12.5F, -7));
-
-        head.addOrReplaceChild("cube_r1",
+        PartDefinition h_head = bananacow.addOrReplaceChild(
+                "h_head",
                 CubeListBuilder.create()
-                        .texOffs(35, 29)
-                        .addBox(-4, -4.1F, -8.5F, 8, 8, 9),
-                PartPose.offsetAndRotation(0, -0.5796F, 0.2059F, rad(-22.5F), 0, 0));
+                        .texOffs(39, 31).addBox(-4.0F, -4.6159F, -7.0936F, 8.0F, 8.0F, 9.0F, new CubeDeformation(0.0F))
+                        .texOffs(24, 57).addBox(-3.0F, 0.3841F, -8.0936F, 6.0F, 3.0F, 1.0F, new CubeDeformation(0.0F))
+                        .texOffs(0, 57).addBox(4.0F, -4.6159F, -5.0936F, 1.0F, 3.0F, 1.0F, new CubeDeformation(0.0F))
+                        .texOffs(5, 57).addBox(-5.0F, -4.6159F, -5.0936F, 1.0F, 3.0F, 1.0F, new CubeDeformation(0.0F)),
+                PartPose.offsetAndRotation(0.0F, -13.5183F, -8.3348F, -0.3927F, 0.0F, 0.0F)
+        );
 
-        PartDefinition body = root.addOrReplaceChild("body",
+        PartDefinition torso = bananacow.addOrReplaceChild(
+                "torso",
                 CubeListBuilder.create(),
-                PartPose.offsetAndRotation(-1, -19, 2, rad(90), 0, 0));
+                PartPose.offsetAndRotation(-1.0F, -19.0F, 2.0F, 1.5708F, 0.0F, 0.0F)
+        );
 
-        body.addOrReplaceChild("torso",
+        PartDefinition body = torso.addOrReplaceChild(
+                "body",
                 CubeListBuilder.create()
-                        .texOffs(0, 0) .addBox(-5, -9, -5, 10, 18, 10)
-                        .texOffs(0,54).addBox(-2,  0, -6,  4,  4,  1),
-                PartPose.offset(1, -1, -6));
+                        .texOffs(0, 0).addBox(-5.5F, -9.0F, -5.0F, 11.0F, 19.0F, 11.0F, new CubeDeformation(0.03F)),
+                PartPose.offset(1.0F, -1.0F, -6.0F)
+        );
 
-        PartDefinition tail = body.addOrReplaceChild("tail",
+        PartDefinition tail = torso.addOrReplaceChild(
+                "tail",
+                CubeListBuilder.create()
+                        .texOffs(0, 31).addBox(-4.5F, -1.3965F, -4.98F, 9.0F, 15.0F, 10.0F, new CubeDeformation(0.0F)),
+                PartPose.offsetAndRotation(1.0F, 7.25F, -5.75F, 0.3927F, 0.0F, 0.0F)
+        );
+
+        PartDefinition tip = tail.addOrReplaceChild(
+                "tip",
                 CubeListBuilder.create(),
-                PartPose.offset(1, 7.25F, -5.75F));
+                PartPose.offsetAndRotation(-2.0F, 14.2535F, 0.5186F, 0.6981F, 0.0F, 0.0F)
+        );
 
-        tail.addOrReplaceChild("cube_r2",
+        tip.addOrReplaceChild(
+                "cube_r1",
                 CubeListBuilder.create()
-                        .texOffs(0, 29)
-                        .addBox(-4, -2.5F, -4.5F, 8, 15, 9),
-                PartPose.offsetAndRotation(0, 1.0035F, -0.2314F, rad(22.5F), 0, 0));
+                        .texOffs(45, 21).addBox(-4.0F, 4.6543F, -0.7758F, 7.0F, 5.0F, 4.0F, new CubeDeformation(0.0F)),
+                PartPose.offsetAndRotation(2.5F, 1.7463F, 4.2942F, -0.3927F, 0.0F, 0.0F)
+        );
 
-        PartDefinition tip = tail.addOrReplaceChild("tip",
-                CubeListBuilder.create(),
-                PartPose.offset(-2, 14.2535F, 0.5186F));
-
-        tip.addOrReplaceChild("cube_r3",
+        tip.addOrReplaceChild(
+                "cube_r2",
                 CubeListBuilder.create()
-                        .texOffs(41,19).addBox(-3,  4.6543F, 3.2242F, 6, 4, 3)
-                        .texOffs(41, 0) .addBox(-3, -2.3457F,-3.7758F, 6,11, 7),
-                PartPose.offsetAndRotation(2, -1.5171F, 4.3748F, rad(45), 0, 0));
+                        .texOffs(45, 0).addBox(-4.0F, -2.3457F, -3.7758F, 7.0F, 12.0F, 8.0F, new CubeDeformation(0.0F)),
+                PartPose.offsetAndRotation(2.5F, -0.1671F, -0.3252F, -0.3927F, 0.0F, 0.0F)
+        );
 
-        root.addOrReplaceChild("left_back_leg",
-                CubeListBuilder.create().texOffs(35,47)
-                        .addBox(-2.5F, -1.5F, -2, 4, 9, 4),
-                PartPose.offset( 2.998F, -7.5F,  7));
+        bananacow.addOrReplaceChild(
+                "right_back_leg",
+                CubeListBuilder.create()
+                        .texOffs(39, 49).mirror().addBox(-2.248F, -1.75F, -2.0F, 4.0F, 8.0F, 5.0F, new CubeDeformation(0.0F))
+                        .mirror(false),
+                PartPose.offset(-3.0F, -7.25F, 7.0F)
+        );
 
-        root.addOrReplaceChild("right_front_leg",
-                CubeListBuilder.create().texOffs(52,47).mirror()
-                        .addBox(-1.5F, -1.5F, -2, 4, 9, 4).mirror(false),
-                PartPose.offset(-2.998F, -7.5F, -5));
+        bananacow.addOrReplaceChild(
+                "left_back_leg",
+                CubeListBuilder.create()
+                        .texOffs(39, 49).addBox(-1.75F, -1.5F, -2.0F, 4.0F, 8.0F, 5.0F, new CubeDeformation(0.0F)),
+                PartPose.offset(2.998F, -7.5F, 7.0F)
+        );
 
-        root.addOrReplaceChild("left_front_leg",
-                CubeListBuilder.create().texOffs(52,47)
-                        .addBox(-2.252F, -1.5F, -2, 4, 9, 4),
-                PartPose.offset( 2.75F, -7.5F, -5));
+        bananacow.addOrReplaceChild(
+                "right_front_leg",
+                CubeListBuilder.create()
+                        .texOffs(39, 49).mirror().addBox(-2.25F, -1.5F, -2.0F, 4.0F, 8.0F, 5.0F, new CubeDeformation(0.0F))
+                        .mirror(false),
+                PartPose.offset(-2.998F, -7.5F, -5.0F)
+        );
 
-        root.addOrReplaceChild("right_back_leg",
-                CubeListBuilder.create().texOffs(35,47).mirror()
-                        .addBox(-1.498F, -1.75F, -2, 4, 9, 4).mirror(false),
-                PartPose.offset(-3, -7.25F, 7));
+        bananacow.addOrReplaceChild(
+                "left_front_leg",
+                CubeListBuilder.create()
+                        .texOffs(39, 49).addBox(-1.502F, -1.5F, -2.0F, 4.0F, 8.0F, 5.0F, new CubeDeformation(0.0F)),
+                PartPose.offset(2.75F, -7.5F, -5.0F)
+        );
 
-        return LayerDefinition.create(mesh, 128, 128);
+        return LayerDefinition.create(meshdefinition, 128, 128);
     }
 
-    /* ===== Animation (RenderState-based) ===== */
     @Override
     public void setupAnim(@NotNull State s) {
-        // Correct, smooth, relative head look (set in renderer in radians)
-        head.yRot = s.headYawRad;
-        head.xRot = s.headPitchRad;
+        hHead.yRot = s.headYawRad;
+        hHead.xRot = headBaseXRot + s.headPitchRad;
 
-        // Baby head scale (matches vanilla “big head” feel)
         if (s.isBaby) {
-            head.xScale = head.yScale = head.zScale = 1.40F;
+            hHead.xScale = hHead.yScale = hHead.zScale = 1.40F;
         } else {
-            head.xScale = head.yScale = head.zScale = 1.0F;
+            hHead.xScale = hHead.yScale = hHead.zScale = 1.0F;
         }
 
-        // Walk cycle
         float walk = s.limbSwing;
-        float amt  = s.limbSwingAmount;
+        float amt = s.limbSwingAmount;
 
-        rightFrontLeg.xRot = Mth.cos(walk * 0.6662F)          * 1.4F * amt;
-        leftBackLeg .xRot  = Mth.cos(walk * 0.6662F)          * 1.4F * amt;
+        rightFrontLeg.xRot = Mth.cos(walk * 0.6662F) * 1.4F * amt;
+        leftBackLeg.xRot   = Mth.cos(walk * 0.6662F) * 1.4F * amt;
         leftFrontLeg.xRot  = Mth.cos(walk * 0.6662F + Mth.PI) * 1.4F * amt;
         rightBackLeg.xRot  = Mth.cos(walk * 0.6662F + Mth.PI) * 1.4F * amt;
 
-        // Idle tail sway
-        tail.xRot = Mth.cos(s.ageTicks * 0.2F) * 0.05F;
+        tail.xRot = tailBaseXRot + (Mth.cos(s.ageTicks * 0.2F) * 0.05F);
     }
-
-    private static float rad(float deg) { return deg * Mth.DEG_TO_RAD; }
 }

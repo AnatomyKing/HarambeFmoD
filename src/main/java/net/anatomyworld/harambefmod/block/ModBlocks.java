@@ -126,10 +126,10 @@ public final class ModBlocks {
                             .pushReaction(PushReaction.NORMAL)));
 
 
-    public static final DeferredBlock<UntintedParticleLeavesBlock> MUSAVACCA_LEAVES =
+    public static final DeferredBlock<TintedParticleLeavesBlock> MUSAVACCA_LEAVES =
             BLOCKS.registerBlock("musavacca_leaves",
-                    props -> new UntintedParticleLeavesBlock(
-                            0.0F, ParticleTypes.ASH,
+                    props -> new TintedParticleLeavesBlock(
+                            0.0F,
                             props.mapColor(MapColor.PLANT)
                                     .strength(0.2F)
                                     .randomTicks()
@@ -205,10 +205,10 @@ public final class ModBlocks {
             );
 
 
-    public static final DeferredBlock<UntintedParticleLeavesBlock> MUSAVACCA_LEAVES_CROWN =
+    public static final DeferredBlock<TintedParticleLeavesBlock> MUSAVACCA_LEAVES_CROWN =
             BLOCKS.registerBlock("musavacca_leaves_crown",
-                    props -> new UntintedParticleLeavesBlock(
-                            0.0F, ParticleTypes.ASH,
+                    props -> new TintedParticleLeavesBlock(
+                            0.0F,
                             props.mapColor(MapColor.PLANT)
                                     .strength(0.2F)
                                     .randomTicks()

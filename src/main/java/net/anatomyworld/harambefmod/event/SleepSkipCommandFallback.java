@@ -42,9 +42,7 @@ public final class SleepSkipCommandFallback {
 
             // Early morning is 1000 ticks; feel free to swap to "time set day"
             server.getCommands().performPrefixedCommand(src, "time set 1000");
-
-            // If you want the classic “clear after sleep”, uncomment:
-            // server.getCommands().performPrefixedCommand(src, "weather clear");
+            server.getCommands().performPrefixedCommand(src, "weather clear");
 
             LOG.debug("[harambefmod] SleepSkipCommandFallback: ran 'time set 1000' in {}", level.dimension().location());
         });

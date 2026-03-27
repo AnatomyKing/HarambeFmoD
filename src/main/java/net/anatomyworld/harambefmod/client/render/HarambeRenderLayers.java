@@ -32,57 +32,22 @@ public final class HarambeRenderLayers {
 
     // 1) CUTOUT blocks (foliage, plants, clusters, etc.)
     private static final Set<Block> CUTOUT_BLOCKS = Sets.newHashSet(
-            ModBlocks.MUSAVACCA_FLOWER.get(),
-            ModBlocks.MUSAVACCA_LEAVES.get(),
-            ModBlocks.MUSAVACCA_LEAVES_CROWN.get(),
-            ModBlocks.MUSAVACCA_PLANT.get(),
-            ModBlocks.MUSAVACCA_SAPLING.get(),
-            ModBlocks.BANANA_COW_EGG.get(),
-            ModBlocks.PEARL_FIRE.get(),
-            ModBlocks.SMALL_HONEY_CRYSTAL_BUD.get(),
-            ModBlocks.MEDIUM_HONEY_CRYSTAL_BUD.get(),
-            ModBlocks.LARGE_HONEY_CRYSTAL_BUD.get(),
-            ModBlocks.HONEY_CRYSTAL_CLUSTER.get(),
-            ModBlocks.CAROTENE_SHORT_GRASS.get(),
-            ModBlocks.BELMONT_SHORT_GRASS.get(),
-            ModBlocks.DYNASTY_SHORT_GRASS.get(),
-            ModBlocks.IMPERIUM_SHORT_GRASS.get(),
-            ModBlocks.MISCHIEF_SHORT_GRASS.get(),
-            ModBlocks.BELMONT_LEAVES.get(),
-            ModBlocks.DYNASTY_LEAVES.get(),
-            ModBlocks.IMPERIUM_LEAVES.get(),
-            ModBlocks.MISCHIEF_LEAVES.get(),
-            ModBlocks.BELMONT_SAPLING.get(),
-            ModBlocks.DYNASTY_SAPLING.get(),
-            ModBlocks.IMPERIUM_SAPLING.get(),
-            ModBlocks.MISCHIEF_SAPLING.get(),
-            ModBlocks.BIG_BELMONT_BANNER.get(),
-            ModBlocks.BIG_DYNASTY_BANNER.get(),
-            ModBlocks.BIG_IMPERIUM_BANNER.get(),
-            ModBlocks.BIG_MISCHIEF_BANNER.get(),
-            ModBlocks.BELMONT_VEIN.get(),
-            ModBlocks.DYNASTY_VEIN.get(),
-            ModBlocks.IMPERIUM_VEIN.get(),
-            ModBlocks.MISCHIEF_VEIN.get()
 
+    ModBlocks.MUSAVACCA_PLANT.get(), ModBlocks.MUSAVACCA_FLOWER.get(),
+            ModBlocks.BANANA_COW_EGG.get(),
+            ModBlocks.MUSAVACCA_LEAVES.get(),
+            ModBlocks.PEARL_FIRE.get(),
+            ModBlocks.MUSAVACCA_SAPLING.get()
     );
 
     // 2) TRANSLUCENT blocks (portals, tinted glass-like, etc.)
     private static final Set<Block> TRANSLUCENT_BLOCKS = Sets.newHashSet(
-            ModBlocks.BANANA_PORTAL.get()
+
     );
 
 
     private static final Set<Block> NO_AO_BLOCKS = Sets.newHashSet(
-            ModBlocks.CAROTENE_SHORT_GRASS.get(),
-            ModBlocks.BELMONT_SHORT_GRASS.get(),
-            ModBlocks.DYNASTY_SHORT_GRASS.get(),
-            ModBlocks.IMPERIUM_SHORT_GRASS.get(),
-            ModBlocks.MISCHIEF_SHORT_GRASS.get(),
-            ModBlocks.BELMONT_SAPLING.get(),
-            ModBlocks.DYNASTY_SAPLING.get(),
-            ModBlocks.IMPERIUM_SAPLING.get(),
-            ModBlocks.MISCHIEF_SAPLING.get()
+
 
     );
 
